@@ -8,11 +8,6 @@ $run_dev.*
 ^README\.Rmd$
 ^.*\.html$
 ^CODE_OF_CONDUCT\.md$
-<<<<<<< HEAD
-^\.github$
-^*\.html$
-||||||| parent of 7f64747... ENH: use tidy gitbub setting
-=======
 ^\.github$
 
->>>>>>> 7f64747... ENH: use tidy gitbub setting
+
