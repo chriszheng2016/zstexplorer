@@ -50,7 +50,10 @@ usethis::git_sitrep()  # get current status of git setting
 
 # Set github
 usethis::use_github()  # set up initial repo in github
-usethis::use_tidy_github() # add auxiliary files for tidy github project
+# add auxiliary files for tidy github project, Don't forget to describe the code
+# of conduct in your README.rmd and render it again rmarkdown::render()
+usethis::use_tidy_github()
+rmarkdown::render("README.Rmd", quiet = TRUE, clean = TRUE)
 
 
 ## Init Testing Infrastructure ----
