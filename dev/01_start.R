@@ -11,6 +11,8 @@
 #### CURRENT FILE: ON START SCRIPT #####
 ########################################
 
+devtools::load_all(".") # load pkg in development
+
 ## Fill the DESCRIPTION ----
 ## Add meta data about your application
 golem::fill_desc(
@@ -22,20 +24,34 @@ golem::fill_desc(
   author_email = "chriszheng@vip.sina.com.cn", # Your Email
   repo_url = NULL # The URL of the GitHub Repo (optional)
 )
+usethis::use_tidy_description() # tidy description
 
 ## Set {golem} options ----
 golem::set_golem_options()
 
 ## Create Common Files ----
 ## See ?usethis for more information
-usethis::use_mit_license( name = "Chris Zheng" )  # You can set another license here
-usethis::use_readme_rmd( open = FALSE )
+usethis::use_mit_license(name = "Chris Zheng") # You can set another license here
 usethis::use_code_of_conduct()
-usethis::use_lifecycle_badge( "Experimental" )
-usethis::use_news_md( open = FALSE )
+usethis::use_news_md(open = FALSE)
 
-## Use git ----
-usethis::use_git()
+# Add readme files
+usethis::use_readme_rmd(open = FALSE)
+usethis::use_lifecycle_badge("Experimental")
+rmarkdown::render("README.Rmd", quiet = TRUE, clean = TRUE)
+usethis::use_git_ignore("*.html")
+usethis::use_build_ignore("*.html")
+
+## Set up git/github ----
+# Set up git
+usethis::use_git() # use git version control
+usethis::use_git_protocol("https") # use https as transport protocol
+usethis::git_sitrep()  # get current status of git setting
+
+# Set github
+usethis::use_github()  # set up initial repo in github
+usethis::use_tidy_github() # add auxiliary files for tidy github project
+
 
 ## Init Testing Infrastructure ----
 ## Create a template for tests
@@ -56,5 +72,4 @@ golem::use_utils_server()
 # You're now set! ----
 
 # go to dev/02_dev.R
-rstudioapi::navigateToFile( "dev/02_dev.R" )
-
+rstudioapi::navigateToFile("dev/02_dev.R")
