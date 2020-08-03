@@ -1,0 +1,18 @@
+Package: zstexplorer
+Title: Explorer for China Stock Market Investment
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Chris",
+           family = "Zheng",
+           role = c("cre", "aut"),
+           email = "chriszheng@vip.sina.com.cn")
+Description: An interactive tool to explore data of China stock
+    market.
+License: MIT + file LICENSE
+Imports: 
+    config,
+    golem,
+    shiny
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
