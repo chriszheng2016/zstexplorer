@@ -2,6 +2,7 @@ default:
   golem_name: zstexplorer
   golem_version: 0.0.0.9000
   app_prod: no
+  database_dsn: "GTA_SQLData"
 production:
   app_prod: yes
 dev:
