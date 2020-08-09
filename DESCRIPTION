@@ -14,6 +14,7 @@ BugReports: https://github.com/chriszheng2016/zstexplorer/issues
 Imports: 
     attempt,
     config,
+    DataExplorer,
     DT,
     glue,
     golem,
@@ -21,7 +22,10 @@ Imports:
     pkgload,
     processx,
     shiny,
-    zstmodelr
+    zstmodelr,
+    assertive,
+    tsibble,
+    shinydashboard
 Suggests: 
     mockery,
     testthat,

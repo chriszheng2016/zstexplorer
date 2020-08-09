@@ -4,9 +4,11 @@
 \alias{run_app}
 \title{Run the Shiny Application}
 \usage{
-run_app(...)
+run_app(app_module = c("explore_factor"), ...)
 }
 \arguments{
+\item{app_module}{A character of app module to be launched.}
+
 \item{...}{A series of options to be used inside the app.}
 }
 \description{
