@@ -4,7 +4,7 @@
 
 ---
 
-    {"x":{"filter":"none","container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>date<\/th>\n      <th>period<\/th>\n      <th>stkcd<\/th>\n      <th>indcd<\/th>\n      <th>CR<\/th>\n      <th>CFOR<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-center"},{"className":"dt-right","targets":[5,6]},{"orderable":false,"targets":0}],"pageLength":25,"order":[],"autoWidth":false,"orderClasses":false,"serverSide":true,"processing":true},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[],"deps":[{"name":"dt-core","version":"1.10.20","src":{"href":"dt-core-1.10.20"},"meta":null,"script":"js/jquery.dataTables.min.js","stylesheet":["css/jquery.dataTables.min.css","css/jquery.dataTables.extra.css"],"head":null,"attachment":null,"package":null,"all_files":false},{"name":"jquery","version":"1.11.3","src":{"href":"jquery-1.11.3"},"meta":null,"script":"jquery.min.js","stylesheet":null,"head":null,"attachment":null,"all_files":true},{"name":"crosstalk","version":"1.1.0.1","src":{"href":"crosstalk-1.1.0.1"},"meta":null,"script":"js/crosstalk.min.js","stylesheet":"css/crosstalk.css","head":null,"attachment":null,"all_files":true}]} 
+    {"x":{"filter":"none","container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>date<\/th>\n      <th>period<\/th>\n      <th>stkcd<\/th>\n      <th>indcd<\/th>\n      <th>QR<\/th>\n      <th>CR<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-center"},{"className":"dt-right","targets":[5,6]},{"orderable":false,"targets":0}],"pageLength":25,"order":[],"autoWidth":false,"orderClasses":false,"serverSide":true,"processing":true},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[],"deps":[{"name":"dt-core","version":"1.10.20","src":{"href":"dt-core-1.10.20"},"meta":null,"script":"js/jquery.dataTables.min.js","stylesheet":["css/jquery.dataTables.min.css","css/jquery.dataTables.extra.css"],"head":null,"attachment":null,"package":null,"all_files":false},{"name":"jquery","version":"1.11.3","src":{"href":"jquery-1.11.3"},"meta":null,"script":"jquery.min.js","stylesheet":null,"head":null,"attachment":null,"all_files":true},{"name":"crosstalk","version":"1.1.0.1","src":{"href":"crosstalk-1.1.0.1"},"meta":null,"script":"js/crosstalk.min.js","stylesheet":"css/crosstalk.css","head":null,"attachment":null,"all_files":true}]} 
 
 # load_factors_app - Module App works
 
@@ -24,7 +24,7 @@
             "names": {
               "type": "character",
               "attributes": {},
-              "value": ["load_factors_ui-factor_groups", "load_factors_ui-factors_in_group", "load_factors_ui-factors_info_table_cell_clicked", "load_factors_ui-factors_info_table_rows_all", "load_factors_ui-factors_info_table_rows_current", "load_factors_ui-factors_info_table_rows_selected", "load_factors_ui-factors_info_table_search", "load_factors_ui-factors_info_table_state", "load_factors_ui-load_factors", "load_factors_ui-select_factors"]
+              "value": ["load_factors_module-factor_groups", "load_factors_module-factors_in_group", "load_factors_module-factors_info_table_cell_clicked", "load_factors_module-factors_info_table_rows_all", "load_factors_module-factors_info_table_rows_current", "load_factors_module-factors_info_table_rows_selected", "load_factors_module-factors_info_table_search", "load_factors_module-factors_info_table_state", "load_factors_module-load_factors", "load_factors_module-select_factors"]
             }
           },
           "value": [
@@ -90,7 +90,7 @@
             "names": {
               "type": "character",
               "attributes": {},
-              "value": ["load_factors_ui-factors_info_table"]
+              "value": ["load_factors_module-factors_info_table"]
             }
           },
           "value": [

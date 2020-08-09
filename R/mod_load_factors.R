@@ -1,9 +1,9 @@
 #' Loading factors
 #'
-#' @description A shiny Module for loading factors specified by user from database.
+#' @description A shiny module for loading factors specified by user from database.
 #'
 #' @details
-#'  The module is to an UI for user to choose some factors to load from
+#'  The module is an UI for user to choose some factors to load from
 #'  database.
 #'
 #'  To use this module, you should assign same id parameter for
@@ -23,27 +23,20 @@
 #'    zstmodelr::close_stock_db(stock_db)
 #'
 #'  ```
-#'  To conduct integration testing, you could ran `load_factors_app()`,
+#'  To conduct integration testing, you could run `load_factors_app()`,
 #'  for example:
 #'
-#'
-#'
 #'  ```
-#'    ## Scenario A: Use factors info outside Testing App
 #'
 #'    # Fetch factors information from database
 #'    stock_db <- zstmodelr::stock_db(zstmodelr::gta_db,
 #'                                    get_golem_config("database_dsn"))
+#'
 #'    zstmodelr::open_stock_db(stock_db)
 #'    factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
 #'
-#'    # Load Testing App
+#'    # Run Testing App
 #'    load_factors_app(factors_info)
-#'
-#'    ## Scenario B: Use factors_info inside Testing App
-#'
-#'    # Load Testing App
-#'    load_factors_app()
 #'
 #'  ```
 #'
@@ -57,36 +50,31 @@
 #'
 #' @examples
 #' \dontrun{
-#'    # Set up control UI in app UI
-#'    ui <- fluidPage(
-#'      load_factors_ui("load_factors_ui_1", factors_info = factors_info)
-#'    )
+#' # Set up control UI in app UI
+#' ui <- fluidPage(
+#'   load_factors_ui("load_factors_module", factors_info = factors_info)
+#' )
 #'
-#'    # Call control server in App server
-#'    server <- function(input, output, session) {
-#'      load_factors <- load_factors_server("load_factors_ui_1",
-#'                          factors_info = reactive(factors_info)
-#'      )
-#'    }
+#' # Call control server in App server
+#' server <- function(input, output, session) {
+#'   load_factors <- load_factors_server("load_factors_module",
+#'     factors_info = reactive(factors_info)
+#'   )
+#' }
 #'
-#'    # Run testing App for integration testing
-#'    load_factors_app(factors_info = NULL)
+#' # Run testing App for integration testing
+#' load_factors_app(factors_info)
 #' }
 #'
 NULL
 
-#' UI function of load factors
+#' UI function of load_factors
 #'
 #' @return * UI function doesn't return value.
 #'
 #' @describeIn load_factors  UI function of loading factors.
 #' @importFrom shiny NS tagList
-load_factors_ui <- function(id, factors_info) {
-
-  # Prepare factor groups/factor list
-  factors_info_by_group <- factors_info %>%
-    dplyr::group_by(factor_group) %>%
-    dplyr::summarise(factors_list = list(factor_code))
+load_factors_ui <- function(id) {
 
   ns <- NS(id)
 
@@ -101,8 +89,8 @@ load_factors_ui <- function(id, factors_info) {
       selectInput(
         inputId = ns("factor_groups"),
         label = strong("Factor Groups:"),
-        choices = unique(factors_info_by_group$factor_group),
-        selected = head(factors_info_by_group$factor_group, n = 1),
+        choices = NULL,
+        selected = NULL,
         multiple = TRUE
       ),
 
@@ -141,48 +129,61 @@ load_factors_ui <- function(id, factors_info) {
   )
 }
 
-#' Server function of load factors
+#' Server function of load_factors
 #'
-#' @describeIn load_factors  Server function of load factors.
+#' @describeIn load_factors  Server function of loading factors.
 #' @return * Server function return a data frame of selected factors from database.
 load_factors_server <- function(id, factors_info) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Validate parameters
-    if (!is.null(factors_info)) {
-      stopifnot(is.reactive(factors_info))
-    }
+    assertive::assert_all_are_true(is.reactive(factors_info))
+
+    # Initial update controls (Only run when initializing values of controls)
+    observe({
+
+      factors_info <- factors_info()
+
+      # Update setting of factors_groups
+      factor_groups <- sort(unique(factors_info$factor_group))
+      updateSelectizeInput(session,
+        inputId = "factor_groups",
+        choices = unique(factor_groups),
+        selected = head(factor_groups, n = 1)
+      )
+    })
 
     # Update factors_in_group input according selected factor group
     observe({
 
-      # get new selected factor group
+      # Get new selected factor group
       selected_factor_groups <- req(input$factor_groups)
 
       factors_info <- factors_info()
 
       # Prepare factor groups/factor list
-      factors_in_selected_group <- factors_info %>%
+      factors_in_selected_group <-
+        factors_info %>%
         dplyr::filter(factor_group %in% !!selected_factor_groups)
 
-      select_factor_code <- factors_in_selected_group$factor_code
-      names(select_factor_code) <- factors_in_selected_group$factor_name
+      candidate_factor_code <- factors_in_selected_group$factor_code
+      names(candidate_factor_code) <- factors_in_selected_group$factor_name
 
       # Update factors in group input by specified groups
       updateSelectizeInput(session,
         inputId = "factors_in_group",
-        choices = select_factor_code
+        choices = candidate_factor_code
       )
     })
 
     # Update select_factors input according new selected factors
     observe({
 
-      # get new selected factors
+      # Get new selected factors
       new_select_factors <- req(input$factors_in_group)
 
-      # construct current select factors by new and old selected factors
+      # Construct current select factors by new and old selected factors
       current_select_factors <- isolate(input$select_factors)
       current_select_factors <- unique(c(current_select_factors, new_select_factors))
 
@@ -196,8 +197,6 @@ load_factors_server <- function(id, factors_info) {
 
     # Load factors
     load_factors <- reactive({
-      # browser()
-
       req(input$load_factors)
 
       factors_list <- isolate(req(input$select_factors))
@@ -206,8 +205,10 @@ load_factors_server <- function(id, factors_info) {
         incProgress(message = "open_stock_db")
 
         # Open stock database
-        stock_db <- zstmodelr::stock_db(zstmodelr::gta_db,
-                                        get_golem_config("database_dsn"))
+        stock_db <- zstmodelr::stock_db(
+          zstmodelr::gta_db,
+          get_golem_config("database_dsn")
+        )
         zstmodelr::open_stock_db(stock_db)
 
         incProgress(message = "init_stock_db")
@@ -225,12 +226,18 @@ load_factors_server <- function(id, factors_info) {
             values_from = "factor_value"
           )
 
+        # Turn into tsibble
+        tsbl_factors <- tsibble::as_tsibble(ds_factors,
+          index = date,
+          key = c(period, stkcd, indcd)
+        )
+
         zstmodelr::close_stock_db(stock_db)
       })
 
       showNotification("Load factors successfully.")
 
-      return(ds_factors)
+      return(tsbl_factors)
     })
 
     # Display factors Info
@@ -259,28 +266,27 @@ load_factors_server <- function(id, factors_info) {
   })
 }
 
-#' Module App for test
+#' Testing module app of load_factors
 #'
-#' @describeIn load_factors  Testing App for loading factors.
-load_factors_app <- function(factors_info = NULL) {
+#' @describeIn load_factors  Testing App of loading factors.
+load_factors_app <- function() {
 
-  # Get factors info
-  if(is.null(factors_info)) {
-    stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, get_golem_config("database_dsn"))
-    zstmodelr::open_stock_db(stock_db)
-    factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
-    zstmodelr::close_stock_db(stock_db)
-  }
-  assertive::is_data.frame(factors_info)
+  # Fetch factors information from database
+  stock_db <- zstmodelr::stock_db(zstmodelr::gta_db,
+                                 get_golem_config("database_dsn"))
+
+  zstmodelr::open_stock_db(stock_db)
+  factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
+  zstmodelr::close_stock_db(stock_db)
+
 
   ui <- fluidPage(
-    load_factors_ui("load_factors_ui", factors_info = factors_info)
+    load_factors_ui("load_factors_module")
   )
   server <- function(input, output, session) {
-    load_factors <- load_factors_server("load_factors_ui",
+    load_factors <- load_factors_server("load_factors_module",
       factors_info = reactive(factors_info)
     )
   }
   shinyApp(ui, server)
 }
-

@@ -7,11 +7,11 @@
 \alias{load_factors_app}
 \title{Loading factors}
 \usage{
-load_factors_ui(id, factors_info)
+load_factors_ui(id)
 
 load_factors_server(id, factors_info)
 
-load_factors_app(factors_info = NULL)
+load_factors_app()
 }
 \arguments{
 \item{id}{An ID string of module to connecting UI function and Server
@@ -29,10 +29,10 @@ function.}
 }
 }
 \description{
-A shiny Module for loading factors specified by user from database.
+A shiny module for loading factors specified by user from database.
 }
 \details{
-The module is to an UI for user to choose some factors to load from
+The module is an UI for user to choose some factors to load from
 database.
 
 To use this module, you should assign same id parameter for
@@ -50,22 +50,17 @@ by \code{\link[zstmodelr:get_factors_info]{zstmodelr::get_factors_info()}}, for 
 
 }
 
-To conduct integration testing, you could ran \code{load_factors_app()},
-for example:\preformatted{  ## Scenario A: Use factors info outside Testing App
-
+To conduct integration testing, you could run \code{load_factors_app()},
+for example:\preformatted{
   # Fetch factors information from database
   stock_db <- zstmodelr::stock_db(zstmodelr::gta_db,
                                   get_golem_config("database_dsn"))
+
   zstmodelr::open_stock_db(stock_db)
   factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
 
-  # Load Testing App
+  # Run Testing App
   load_factors_app(factors_info)
-
-  ## Scenario B: Use factors_info inside Testing App
-
-  # Load Testing App
-  load_factors_app()
 
 }
 }
@@ -73,27 +68,27 @@ for example:\preformatted{  ## Scenario A: Use factors info outside Testing App
 \itemize{
 \item \code{load_factors_ui}: UI function of loading factors.
 
-\item \code{load_factors_server}: Server function of load factors.
+\item \code{load_factors_server}: Server function of loading factors.
 
-\item \code{load_factors_app}: Testing App for loading factors.
+\item \code{load_factors_app}: Testing App of loading factors.
 }}
 
 \examples{
 \dontrun{
-   # Set up control UI in app UI
-   ui <- fluidPage(
-     load_factors_ui("load_factors_ui_1", factors_info = factors_info)
-   )
+# Set up control UI in app UI
+ui <- fluidPage(
+  load_factors_ui("load_factors_module", factors_info = factors_info)
+)
 
-   # Call control server in App server
-   server <- function(input, output, session) {
-     load_factors <- load_factors_server("load_factors_ui_1",
-                         factors_info = reactive(factors_info)
-     )
-   }
+# Call control server in App server
+server <- function(input, output, session) {
+  load_factors <- load_factors_server("load_factors_module",
+    factors_info = reactive(factors_info)
+  )
+}
 
-   # Run testing App for integration testing
-   load_factors_app(factors_info = NULL)
+# Run testing App for integration testing
+load_factors_app(factors_info)
 }
 
 }

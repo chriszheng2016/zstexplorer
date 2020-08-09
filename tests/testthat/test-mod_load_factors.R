@@ -1,16 +1,16 @@
-# Tests for module of loading factors  ----
+# Tests for module of load_factors  ----
 options(testthat.edition_ignore = TRUE)
 
-context("Tests for module of loading factors")
+context("Tests for module of load_factors")
 
 dsn <- get_golem_config("database_dsn")
 stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, dsn)
 suppressMessages(db_ready <- zstmodelr::open_stock_db(stock_db))
 # Skip tests if test dsn is not ready
 skip_if_not(db_ready,
-  message = sprintf("DSN(%s) is not ready, skip all tests for loading factors", dsn)
+  message = sprintf("DSN(%s) is not ready, skip all tests for load_factors", dsn)
 )
-
+suppressMessages(zstmodelr::open_stock_db(stock_db))
 
 # Set up test environment
 
@@ -23,7 +23,7 @@ mockery::stub(load_factors_app,
 )
 ds_factors <- readRDS("data/ds_factors.rds")
 mockery::stub(load_factors_server,
-  what = "zstmodelr::get_factors",
+  what = "zstmodelr::get_factors_info",
   how = ds_factors,
   depth = 2
 )
@@ -33,8 +33,8 @@ test_that("load_factors_server - reactives and output updates", {
     args = list(factors_info = reactive(factors_info)),
     {
       # load_factors_server with typical user inputs ====
-      # Set input for testing loading factors
-      select_factors <- c("CR", "CFOR")
+      # Set input for load_factors
+      select_factors <- c("CR", "QR")
       session$setInputs(
         factor_groups = "Financial Risk",
         select_factors = select_factors,
@@ -66,18 +66,26 @@ test_that("load_factors_app - Module App works", {
 
     # Load test App
     suppressWarnings({
-      app <- shinytest::ShinyDriver$new(".", loadTimeout = 50000 * 2)
+      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 100)
     })
 
+
     # load_factors_app with typical user inputs ====
-    select_factors <- c("CR", "CFOR")
+    select_factors <- c("CR", "QR")
+    #browser()
     app$setInputs(
-      `load_factors_ui-factor_groups` = "Financial Risk",
-      `load_factors_ui-select_factors` = select_factors,
-      `load_factors_ui-load_factors` = "click"
+      `load_factors_module-factor_groups` = "Financial Risk",
+      `load_factors_module-factors_in_group` = select_factors,
+      `load_factors_module-load_factors` = "click",
+      timeout_ = 1000 * 10
     )
+
+    #app$expectUpdate("factors_data_table", iotype = "output", timeout = 1000*10)
+
     expect_snapshot_value(app$getAllValues(), style = "json2")
 
     app$stop()
   })
 })
+
+
