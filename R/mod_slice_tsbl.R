@@ -121,7 +121,6 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
 
     # Debug Control for output
     if (debug) tableOutput(outputId = ns("debug_output"))
-
   )
 }
 
@@ -185,21 +184,21 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 
       updateSliderInput(
         session = session, inputId = "report_date",
-        min = min(unique(tsbl_vars$date)),
-        max = max(unique(tsbl_vars$date)),
-        value = max(unique(tsbl_vars$date))
+        min = min(unique(tsbl_vars$date), na.rm = TRUE),
+        max = max(unique(tsbl_vars$date), na.rm = TRUE),
+        value = max(unique(tsbl_vars$date), na.rm = TRUE)
       )
 
       updateSelectInput(
         session = session, inputId = "start_date",
-        choices = unique(tsbl_vars$date),
-        selected = min(unique(tsbl_vars$date))
+        choices = sort(unique(tsbl_vars$date)),
+        selected = min(unique(tsbl_vars$date), na.rm = TRUE)
       )
 
       updateSelectInput(
         session = session, inputId = "end_date",
-        choices = unique(tsbl_vars$date),
-        selected = max(unique(tsbl_vars$date))
+        choices = sort(unique(tsbl_vars$date)),
+        selected = max(unique(tsbl_vars$date), na.rm = TRUE)
       )
     })
 
@@ -212,7 +211,8 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
       switch(date_type,
         "single_period" = {
           report_dates <- sort(unique(tsbl_vars$date))
-          start_date <- min(report_dates[report_dates >= input$report_date])
+          start_date <- min(report_dates[report_dates >= input$report_date],
+                            na.rm = TRUE)
           end_date <- start_date
           start_date <- format(start_date, "%Y-%m-%d")
           end_date <- format(end_date, "%Y-%m-%d")
@@ -324,7 +324,6 @@ slice_tsbl_app <- function() {
   }
   testApp <- shinyApp(ui, server)
 
-  # enable_temp_controls <<- FALSE
 
   return(testApp)
 }
