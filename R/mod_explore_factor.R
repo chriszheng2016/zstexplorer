@@ -9,6 +9,7 @@
 #'
 #' @param id  An ID string of module to connecting UI function and Server
 #'   function.
+#' @param factors_info  A data frame of factor information for user to choose.
 #'
 #'
 #' @examples

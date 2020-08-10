@@ -163,9 +163,9 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
       } else {
         avaiable_stkcds <-
           tsbl_vars %>%
-          dplyr::filter(indcd %in% input$indcd) %>%
-          dplyr::distinct(stkcd) %>%
-          dplyr::arrange(stkcd) %>%
+          dplyr::filter(.data$indcd %in% input$indcd) %>%
+          dplyr::distinct(.data$stkcd) %>%
+          dplyr::arrange(.data$stkcd) %>%
           dplyr::pull()
       }
       updateSelectInput(
@@ -245,14 +245,14 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
         select_indcd <- input$indcd
         slice_dataset <-
           slice_dataset %>%
-          dplyr::filter(indcd %in% select_indcd)
+          dplyr::filter(.data$indcd %in% select_indcd)
       }
 
       if (!is.null(input$stkcd)) {
         select_stkcd <- input$stkcd
         slice_dataset <-
           slice_dataset %>%
-          dplyr::filter(stkcd %in% select_stkcd)
+          dplyr::filter(.data$stkcd %in% select_stkcd)
       }
 
       select_date_range <- select_date_range()
@@ -260,8 +260,8 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
         (select_date_range$end_date != "")) {
         slice_dataset <-
           slice_dataset %>%
-          dplyr::filter(date >= select_date_range$start_date &
-            date <= select_date_range$end_date)
+          dplyr::filter(.data$date >= select_date_range$start_date &
+                        .data$date <= select_date_range$end_date)
       }
 
       if (!is.null(input$focus_vars)) {
@@ -308,7 +308,7 @@ slice_tsbl_app <- function() {
   # Turn into tsibble
   tsbl_vars <- tsibble::as_tsibble(ds_factors,
     index = date,
-    key = c(period, stkcd, indcd)
+    key = c("period", "stkcd", "indcd")
   )
   zstmodelr::close_stock_db(stock_db)
 

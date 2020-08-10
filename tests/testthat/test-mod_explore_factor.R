@@ -14,6 +14,10 @@ mockery::stub(explore_factor_app,
 )
 
 test_that("explore_factor_app - Module App works", {
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
+
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 
@@ -24,7 +28,7 @@ test_that("explore_factor_app - Module App works", {
 
     # Load test App
     suppressWarnings({
-      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 100)
+      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 300)
     })
 
 

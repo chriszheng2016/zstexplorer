@@ -16,6 +16,8 @@ explore_factor_app()
 \arguments{
 \item{id}{An ID string of module to connecting UI function and Server
 function.}
+
+\item{factors_info}{A data frame of factor information for user to choose.}
 }
 \value{
 \itemize{

@@ -14,29 +14,47 @@ BugReports: https://github.com/chriszheng2016/zstexplorer/issues
 Depends: 
     R (>= 3.5.0)
 Imports: 
+    assertive,
     attempt,
     config,
     DataExplorer,
+    dplyr,
     DT,
+    ggplot2,
     glue,
     golem,
     htmltools,
+    magrittr,
+    PerformanceAnalytics,
     pkgload,
-    processx,
     shiny,
-    zstmodelr,
-    assertive,
-    tsibble,
     shinydashboard,
-    ggplot2
+    tidyr,
+    tsibble,
+    zstmodelr
 Suggests: 
+    covr,
     mockery,
-    testthat,
-    withr,
+    processx,
+    shinytest,
     spelling,
-    covr
+    testthat,
+    withr
 Encoding: UTF-8
+Language: en-US
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
-Language: en-US
+Collate: 
+    'app_config.R'
+    'app_server.R'
+    'app_ui.R'
+    'golem_utils_server.R'
+    'golem_utils_ui.R'
+    'mod_explore_factor.R'
+    'mod_load_factors.R'
+    'mod_slice_tsbl.R'
+    'mod_univar_dist.R'
+    'run_app.R'
+    'utils-pipe.R'
+    'zstexplorer-package.R'

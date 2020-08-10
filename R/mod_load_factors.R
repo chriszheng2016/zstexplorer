@@ -165,7 +165,7 @@ load_factors_server <- function(id, factors_info) {
       # Prepare factor groups/factor list
       factors_in_selected_group <-
         factors_info %>%
-        dplyr::filter(factor_group %in% !!selected_factor_groups)
+        dplyr::filter(.data$factor_group %in% !!selected_factor_groups)
 
       candidate_factor_code <- factors_in_selected_group$factor_code
       names(candidate_factor_code) <- factors_in_selected_group$factor_name
@@ -229,7 +229,7 @@ load_factors_server <- function(id, factors_info) {
         # Turn into tsibble
         tsbl_factors <- tsibble::as_tsibble(ds_factors,
           index = date,
-          key = c(period, stkcd, indcd)
+          key = c("period", "stkcd", "indcd")
         )
 
         zstmodelr::close_stock_db(stock_db)

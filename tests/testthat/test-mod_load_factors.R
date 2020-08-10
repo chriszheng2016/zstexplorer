@@ -22,11 +22,11 @@ mockery::stub(load_factors_app,
   how = factors_info
 )
 ds_factors <- readRDS("data/ds_factors.rds")
-mockery::stub(load_factors_server,
-  what = "zstmodelr::get_factors_info",
-  how = ds_factors,
-  depth = 2
-)
+# mockery::stub(load_factors_server,
+#   what = "zstmodelr::get_factors_info",
+#   how = ds_factors,
+#   depth = 2
+# )
 
 test_that("load_factors_server - reactives and output updates", {
   testServer(load_factors_server,
@@ -56,6 +56,11 @@ test_that("load_factors_server - reactives and output updates", {
 })
 
 test_that("load_factors_app - Module App works", {
+
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
+
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 
@@ -66,13 +71,13 @@ test_that("load_factors_app - Module App works", {
 
     # Load test App
     suppressWarnings({
-      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 100)
+      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 300)
     })
 
 
     # load_factors_app with typical user inputs ====
     select_factors <- c("CR", "QR")
-    #browser()
+
     app$setInputs(
       `load_factors_module-factor_groups` = "Financial Risk",
       `load_factors_module-factors_in_group` = select_factors,

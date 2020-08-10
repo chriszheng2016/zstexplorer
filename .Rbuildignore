@@ -9,8 +9,7 @@ $run_dev.*
 ^.*\.html$
 ^CODE_OF_CONDUCT\.md$
 ^\.github$
-
-
 ^app\.R$
 ^rsconnect$
 ^codecov\.yml$
+check
