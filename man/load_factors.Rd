@@ -11,13 +11,16 @@ load_factors_ui(id)
 
 load_factors_server(id, factors_info)
 
-load_factors_app()
+load_factors_app(use_online_data = FALSE)
 }
 \arguments{
 \item{id}{An ID string of module to connecting UI function and Server
 function.}
 
 \item{factors_info}{A data frame of factor information for user to choose.}
+
+\item{use_online_data}{A logical to determine whether to use test data from
+database or not. Default FALSE means to use achieved data for tests.}
 }
 \value{
 \itemize{

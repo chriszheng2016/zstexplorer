@@ -22,7 +22,7 @@
 #' # Call control server in App server
 #' server <- function(input, output, session) {
 #'   explore_factor_server("explore_factor_module",
-#'                       factors_info = reactive(factors_info)
+#'     factors_info = reactive(factors_info)
 #'   )
 #' }
 #'
@@ -40,7 +40,6 @@ NULL
 #'
 #' @importFrom shiny NS tagList
 explore_factor_ui <- function(id) {
-
   ns <- NS(id)
   tagList(
     dashboardPage(
@@ -56,8 +55,7 @@ explore_factor_ui <- function(id) {
           tabItem(
             tabName = "prepare_data",
             tabsetPanel(
-              tabPanel("Load Factors", load_factors_ui(ns("load_factors")
-              ))
+              tabPanel("Load Factors", load_factors_ui(ns("load_factors")))
             )
           ),
           tabItem(
@@ -92,8 +90,8 @@ explore_factor_server <- function(id, factors_info) {
 
     # Analyze univariate distribution
     univar_dis_server("univar_dist",
-                      tsbl_vars = load_factors)
-
+      tsbl_vars = load_factors
+    )
   })
 }
 

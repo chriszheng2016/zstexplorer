@@ -75,7 +75,6 @@ NULL
 #' @describeIn load_factors  UI function of loading factors.
 #' @importFrom shiny NS tagList
 load_factors_ui <- function(id) {
-
   ns <- NS(id)
 
   tagList(
@@ -142,7 +141,6 @@ load_factors_server <- function(id, factors_info) {
 
     # Initial update controls (Only run when initializing values of controls)
     observe({
-
       factors_info <- factors_info()
 
       # Update setting of factors_groups
@@ -268,16 +266,32 @@ load_factors_server <- function(id, factors_info) {
 
 #' Testing module app of load_factors
 #'
+#' @param use_online_data A logical to determine whether to use test data from
+#'  database or not. Default FALSE means to use achieved data for tests.
+#'
 #' @describeIn load_factors  Testing App of loading factors.
-load_factors_app <- function() {
+load_factors_app <- function(use_online_data = FALSE) {
 
-  # Fetch factors information from database
-  stock_db <- zstmodelr::stock_db(zstmodelr::gta_db,
-                                 get_golem_config("database_dsn"))
+  # Prepare data
+  if (use_online_data) {
+    # Fetch factors information from database
+    stock_db <- zstmodelr::stock_db(
+      zstmodelr::gta_db,
+      get_golem_config("database_dsn")
+    )
+    zstmodelr::open_stock_db(stock_db)
+    factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
+    zstmodelr::close_stock_db(stock_db)
+  } else {
+    # Load test dataset
+    factors_info_file <- fs::path(
+      here::here(), "tests/testthat/data/factors_info.rds"
+    )
+    factors_info <- readRDS(factors_info_file)
+    assertive::assert_is_inherited_from(factors_info, c("tbl_df"))
+  }
 
-  zstmodelr::open_stock_db(stock_db)
-  factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
-  zstmodelr::close_stock_db(stock_db)
+
 
 
   ui <- fluidPage(

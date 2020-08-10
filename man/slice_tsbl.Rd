@@ -11,7 +11,7 @@ slice_tsbl_ui(id, debug = FALSE)
 
 slice_tsbl_server(id, tsbl_vars, debug = FALSE)
 
-slice_tsbl_app()
+slice_tsbl_app(use_online_data = FALSE)
 }
 \arguments{
 \item{id}{An ID string of module to connecting UI function and Server
@@ -21,6 +21,9 @@ function.}
 means to disable output of debug.}
 
 \item{tsbl_vars}{A tsibble of time series to be sliced.}
+
+\item{use_online_data}{A logical to determine whether to use test data from
+database or not. Default FALSE means to use achieved data for tests.}
 }
 \value{
 \itemize{

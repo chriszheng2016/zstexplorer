@@ -53,7 +53,7 @@ ui <- fluidPage(
 # Call control server in App server
 server <- function(input, output, session) {
   explore_factor_server("explore_factor_module",
-                      factors_info = reactive(factors_info)
+    factors_info = reactive(factors_info)
   )
 }
 

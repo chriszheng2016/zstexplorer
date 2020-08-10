@@ -20,9 +20,11 @@ Imports:
     DataExplorer,
     dplyr,
     DT,
+    fs,
     ggplot2,
     glue,
     golem,
+    here,
     htmltools,
     magrittr,
     PerformanceAnalytics,
@@ -45,16 +47,3 @@ Language: en-US
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
-Collate: 
-    'app_config.R'
-    'app_server.R'
-    'app_ui.R'
-    'golem_utils_server.R'
-    'golem_utils_ui.R'
-    'mod_explore_factor.R'
-    'mod_load_factors.R'
-    'mod_slice_tsbl.R'
-    'mod_univar_dist.R'
-    'run_app.R'
-    'utils-pipe.R'
-    'zstexplorer-package.R'

@@ -22,11 +22,6 @@ mockery::stub(load_factors_app,
   how = factors_info
 )
 ds_factors <- readRDS("data/ds_factors.rds")
-# mockery::stub(load_factors_server,
-#   what = "zstmodelr::get_factors_info",
-#   how = ds_factors,
-#   depth = 2
-# )
 
 test_that("load_factors_server - reactives and output updates", {
   testServer(load_factors_server,

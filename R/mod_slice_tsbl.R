@@ -212,7 +212,8 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
         "single_period" = {
           report_dates <- sort(unique(tsbl_vars$date))
           start_date <- min(report_dates[report_dates >= input$report_date],
-                            na.rm = TRUE)
+            na.rm = TRUE
+          )
           end_date <- start_date
           start_date <- format(start_date, "%Y-%m-%d")
           end_date <- format(end_date, "%Y-%m-%d")
@@ -261,7 +262,7 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
         slice_dataset <-
           slice_dataset %>%
           dplyr::filter(.data$date >= select_date_range$start_date &
-                        .data$date <= select_date_range$end_date)
+            .data$date <= select_date_range$end_date)
       }
 
       if (!is.null(input$focus_vars)) {
@@ -285,32 +286,43 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 
 #' Testing module app of slice_tsbl
 #'
+#' @param use_online_data A logical to determine whether to use test data from
+#'  database or not. Default FALSE means to use achieved data for tests.
+#'
 #' @describeIn slice_tsbl  Testing App for slicing tibble of time series.
-slice_tsbl_app <- function() {
+slice_tsbl_app <- function(use_online_data = FALSE) {
 
   # Prepare data
-  stock_db <- zstmodelr::stock_db(
-    zstmodelr::gta_db,
-    get_golem_config("database_dsn")
-  )
-  zstmodelr::open_stock_db(stock_db)
-  zstmodelr::init_stock_db(stock_db)
-
-  # Fetch selected factors from database
-  select_factors <- c("CR", "QR")
-  ds_factors <-
-    zstmodelr::get_factors(stock_db, factor_codes = select_factors) %>%
-    tidyr::pivot_wider(
-      names_from = "factor_name",
-      values_from = "factor_value"
+  if (use_online_data) {
+    # Load data from database
+    stock_db <- zstmodelr::stock_db(
+      zstmodelr::gta_db,
+      get_golem_config("database_dsn")
     )
+    zstmodelr::open_stock_db(stock_db)
+    zstmodelr::init_stock_db(stock_db)
 
-  # Turn into tsibble
-  tsbl_vars <- tsibble::as_tsibble(ds_factors,
-    index = date,
-    key = c("period", "stkcd", "indcd")
-  )
-  zstmodelr::close_stock_db(stock_db)
+    # Fetch selected factors from database
+    select_factors <- c("CR", "QR")
+    ds_factors <-
+      zstmodelr::get_factors(stock_db, factor_codes = select_factors) %>%
+      tidyr::pivot_wider(
+        names_from = "factor_name",
+        values_from = "factor_value"
+      )
+
+    # Turn into tsibble
+    tsbl_vars <- tsibble::as_tsibble(ds_factors,
+      index = date,
+      key = c("period", "stkcd", "indcd")
+    )
+    zstmodelr::close_stock_db(stock_db)
+  } else {
+    # Load test dataset
+    tsbl_vars_file <- fs::path(here::here(), "tests/testthat/data/tsbl_vars.rds")
+    tsbl_vars <- readRDS(tsbl_vars_file)
+    assertive::assert_is_inherited_from(tsbl_vars, c("tbl_ts"))
+  }
 
   # Launch App
   ui <- fluidPage(

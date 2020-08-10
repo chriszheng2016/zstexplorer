@@ -7,6 +7,7 @@
 #' @export
 #' @importFrom shiny shinyApp
 #' @importFrom golem with_golem_options
+
 run_app <- function( app_module= c("explore_factor"), ...) {
 
   app_module <-  match.arg(app_module)
