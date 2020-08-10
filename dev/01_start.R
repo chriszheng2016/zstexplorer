@@ -72,6 +72,7 @@ golem::use_favicon() # path = "path/to/ico". Can be an online file.
 golem::use_utils_ui()
 golem::use_utils_server()
 
+
 # You're now set! ----
 
 # go to dev/02_dev.R

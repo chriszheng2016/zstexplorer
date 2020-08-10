@@ -1,12 +1,12 @@
 # Building a Prod-Ready, Robust Shiny Application.
-# 
-# README: each step of the dev files is optional, and you don't have to 
-# fill every dev scripts before getting started. 
-# 01_start.R should be filled at start. 
+#
+# README: each step of the dev files is optional, and you don't have to
+# fill every dev scripts before getting started.
+# 01_start.R should be filled at start.
 # 02_dev.R should be used to keep track of your development during the project.
 # 03_deploy.R should be used once you need to deploy your app.
-# 
-# 
+#
+#
 ###################################
 #### CURRENT FILE: DEV SCRIPT #####
 ###################################
@@ -24,7 +24,7 @@ golem::add_module( name = "name_of_module2" ) # Name of the module
 
 ## Add helper functions ----
 ## Creates ftc_* and utils_*
-golem::add_fct( "helpers" ) 
+golem::add_fct( "helpers" )
 golem::add_utils( "helpers" )
 
 ## External resources
@@ -35,21 +35,72 @@ golem::add_css_file( "custom" )
 
 ## Add internal datasets ----
 ## If you have data in your package
-usethis::use_data_raw( name = "my_dataset", open = FALSE ) 
+usethis::use_data_raw( name = "my_dataset", open = FALSE )
+
+## Add module to dependency ----
+usethis::use_package("package")
+usethis::use_tidy_description()
+
+## Style codes ----
+usethis::use_tidy_style()
 
 ## Tests ----
 ## Add one line by test you want to create
 usethis::use_test( "app" )
+devtools::wd("tests/testthat")
+testthat::test_file("test-app.R") # test a file
+devtools::test() # test package
 
-# Documentation
+# Document ----
+#
+# Update function doc
+devtools::document()
+?fun_abc
 
-## Vignette ----
+# Check spelling in doc
+usethis::use_spell_check() # set up spelling check in doc
+devtools::document()  # update all doc
+devtools::spell_check()  # check spelling in doc
+spelling::update_wordlist() # accept new words if need
+
+# Vignette
 usethis::use_vignette("zstexplorer")
 devtools::build_vignettes()
 
+## Check before merging ----
+
+# Test package
+devtools::test()
+
+# Update doc and check spelling
+devtools::document()
+usethis::use_spell_check() # Set up spelling check in doc
+devtools::spell_check()
+
+# Check doc
+devtools::check_man()
+
+# R CMD Check
+result <- devtools::check(cran = FALSE, args = c("--timings", "--no-tests"),
+                          check_dir = "check")
+cat(result$errors)
+cat(result$warnings)
+cat(result$notes)
+
+# Update document of pkgdown
+devtools::build_site(quiet = FALSE)
+
 ## Code coverage ----
-## (You'll need GitHub there)
+devtools::test_coverage()
+usethis::use_coverage()
+
+## Pkgdown site ----
+usethis::use_pkgdown()
+devtools::build_site()
+
+## Setup CI if need ----
 usethis::use_github()
+usethis::use_tidy_github_actions()
 usethis::use_travis()
 usethis::use_appveyor()
 
