@@ -11,6 +11,8 @@ Description: An interactive tool to explore data of China stock
 License: MIT + file LICENSE
 URL: https://github.com/chriszheng2016/zstexplorer
 BugReports: https://github.com/chriszheng2016/zstexplorer/issues
+Depends: 
+    R (>= 3.5.0)
 Imports: 
     attempt,
     config,
@@ -25,12 +27,16 @@ Imports:
     zstmodelr,
     assertive,
     tsibble,
-    shinydashboard
+    shinydashboard,
+    ggplot2
 Suggests: 
     mockery,
     testthat,
-    withr
+    withr,
+    spelling,
+    covr
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+Language: en-US
