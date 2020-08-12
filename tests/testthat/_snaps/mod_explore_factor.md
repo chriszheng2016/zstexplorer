@@ -16,10 +16,68 @@
             "names": {
               "type": "character",
               "attributes": {},
-              "value": ["explore_factor_module-load_factors-factor_groups", "explore_factor_module-load_factors-factors_in_group", "explore_factor_module-load_factors-factors_info_table_cell_clicked", "explore_factor_module-load_factors-factors_info_table_rows_all", "explore_factor_module-load_factors-factors_info_table_rows_current", "explore_factor_module-load_factors-factors_info_table_rows_selected", "explore_factor_module-load_factors-factors_info_table_search", "explore_factor_module-load_factors-factors_info_table_state", "explore_factor_module-load_factors-load_factors", "explore_factor_module-load_factors-select_factors", "explore_factor_module-univar_dist-bins_adjust", "explore_factor_module-univar_dist-plot_type", "explore_factor_module-univar_dist-slice_tsbl_ui-date_type", "explore_factor_module-univar_dist-slice_tsbl_ui-end_date", "explore_factor_module-univar_dist-slice_tsbl_ui-focus_vars", "explore_factor_module-univar_dist-slice_tsbl_ui-indcd", "explore_factor_module-univar_dist-slice_tsbl_ui-report_date", "explore_factor_module-univar_dist-slice_tsbl_ui-start_date", "explore_factor_module-univar_dist-slice_tsbl_ui-stkcd", "sidebarCollapsed", "sidebarItemExpanded"]
+              "value": ["explore_factor_module-cs_distribution-slice_tsbl_module-date_type", "explore_factor_module-cs_distribution-slice_tsbl_module-end_date", "explore_factor_module-cs_distribution-slice_tsbl_module-focus_vars", "explore_factor_module-cs_distribution-slice_tsbl_module-indcd", "explore_factor_module-cs_distribution-slice_tsbl_module-report_date", "explore_factor_module-cs_distribution-slice_tsbl_module-start_date", "explore_factor_module-cs_distribution-slice_tsbl_module-stkcd", "explore_factor_module-cs_summary-slice_tsbl_module-date_type", "explore_factor_module-cs_summary-slice_tsbl_module-end_date", "explore_factor_module-cs_summary-slice_tsbl_module-focus_vars", "explore_factor_module-cs_summary-slice_tsbl_module-indcd", "explore_factor_module-cs_summary-slice_tsbl_module-report_date", "explore_factor_module-cs_summary-slice_tsbl_module-start_date", "explore_factor_module-cs_summary-slice_tsbl_module-stkcd", "explore_factor_module-load_factors-factor_groups", "explore_factor_module-load_factors-factors_in_group", "explore_factor_module-load_factors-factors_info_table_cell_clicked", "explore_factor_module-load_factors-factors_info_table_rows_all", "explore_factor_module-load_factors-factors_info_table_rows_current", "explore_factor_module-load_factors-factors_info_table_rows_selected", "explore_factor_module-load_factors-factors_info_table_search", "explore_factor_module-load_factors-factors_info_table_state", "explore_factor_module-load_factors-load_factors", "explore_factor_module-load_factors-select_factors", "sidebarCollapsed", "sidebarItemExpanded"]
             }
           },
           "value": [
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["multi_period"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": [""]
+            },
+            {
+              "type": "NULL"
+            },
+            {
+              "type": "NULL"
+            },
+            {
+              "type": "integer",
+              "attributes": {},
+              "value": [0]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": [""]
+            },
+            {
+              "type": "NULL"
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["multi_period"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": [""]
+            },
+            {
+              "type": "NULL"
+            },
+            {
+              "type": "NULL"
+            },
+            {
+              "type": "integer",
+              "attributes": {},
+              "value": [0]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": [""]
+            },
+            {
+              "type": "NULL"
+            },
             {
               "type": "character",
               "attributes": {},
@@ -66,45 +124,6 @@
                 }
               },
               "value": [0]
-            },
-            {
-              "type": "NULL"
-            },
-            {
-              "type": "integer",
-              "attributes": {},
-              "value": [30]
-            },
-            {
-              "type": "character",
-              "attributes": {},
-              "value": ["boxplot"]
-            },
-            {
-              "type": "character",
-              "attributes": {},
-              "value": ["multi_period"]
-            },
-            {
-              "type": "character",
-              "attributes": {},
-              "value": [""]
-            },
-            {
-              "type": "NULL"
-            },
-            {
-              "type": "NULL"
-            },
-            {
-              "type": "integer",
-              "attributes": {},
-              "value": [0]
-            },
-            {
-              "type": "character",
-              "attributes": {},
-              "value": [""]
             },
             {
               "type": "NULL"

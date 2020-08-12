@@ -1,3 +1,5 @@
+# Utility functions of development ----
+
 #' Add shiny module file
 #'
 #' Create source/test file for a shiny module by template file in

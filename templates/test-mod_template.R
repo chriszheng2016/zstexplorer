@@ -21,11 +21,12 @@ test_that("{{module_name}}_server - reactives and output updates", {
       #   {{module_name}} = 1 # Non-null value indicating use click button
       # )
       # Check {{module_name}}()
-      # expect_is({{module_name}}(), "data.frame")
+      # {{module_name}} <- {{module_name}}()
+      # expect_s3_class({{module_name}}, "data.frame")
       # expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_factors)
-      # actual_fields <- names({{module_name}}())
+      # actual_fields <- names({{module_name}}
       # expect_true(all(actual_fields %in% expect_fields))
-      # expect_true(nrow({{module_name}}()) >= 0)
+      # expect_true(nrow({{module_name}} >= 0)
       # Check output
       # expect_snapshot_output(output$factors_info_table)
       # expect_snapshot_output(output$factors_data_table)

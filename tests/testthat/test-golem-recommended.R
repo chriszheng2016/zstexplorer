@@ -9,7 +9,7 @@ test_that("app ui", {
 
 test_that("app server", {
   server <- app_server
-  expect_is(server, "function")
+  expect_type(server, "closure")
 })
 
 # Configure this test to fit your need
@@ -19,9 +19,9 @@ test_that(
     skip_on_travis()
     skip_on_appveyor()
     x <- processx::process$new(
-      "R", 
+      "R",
       c(
-        "-e", 
+        "-e",
         "pkgload::load_all(here::here());run_app()"
       )
     )

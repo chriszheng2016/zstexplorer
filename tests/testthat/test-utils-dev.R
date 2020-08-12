@@ -4,6 +4,9 @@ context("Tests for utility functions of development")
 
 test_that("add_shiny_module, with various arguments", {
 
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
 
   # add_shiny_module on default arguments  ====
   expect_true(create_success <- add_shiny_module("xyz"))

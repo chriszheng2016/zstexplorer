@@ -273,26 +273,7 @@ load_factors_server <- function(id, factors_info) {
 load_factors_app <- function(use_online_data = FALSE) {
 
   # Prepare data
-  if (use_online_data) {
-    # Fetch factors information from database
-    stock_db <- zstmodelr::stock_db(
-      zstmodelr::gta_db,
-      get_golem_config("database_dsn")
-    )
-    zstmodelr::open_stock_db(stock_db)
-    factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
-    zstmodelr::close_stock_db(stock_db)
-  } else {
-    # Load test dataset
-    factors_info_file <- fs::path(
-      here::here(), "tests/testthat/data/factors_info.rds"
-    )
-    factors_info <- readRDS(factors_info_file)
-    assertive::assert_is_inherited_from(factors_info, c("tbl_df"))
-  }
-
-
-
+  factors_info <- load_factors_info(use_online_data)
 
   ui <- fluidPage(
     load_factors_ui("load_factors_module")

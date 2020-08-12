@@ -3,26 +3,9 @@ options(testthat.edition_ignore = TRUE)
 
 context("Tests for module of slice_tsbl")
 
-dsn <- get_golem_config("database_dsn")
-stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, dsn)
-suppressMessages(db_ready <- zstmodelr::open_stock_db(stock_db))
-# Skip tests if test dsn is not ready
-skip_if_not(db_ready,
-  message = sprintf("DSN(%s) is not ready, skip all tests for slice_tsbl", dsn)
-)
-
-
 # Set up test environment
 
-# use fixed data(instead of dynamic data from database) for testing, which make
-# validate output easier
 tsbl_vars <- readRDS("data/tsbl_vars.rds")
-ds_factors <- readRDS("data/ds_factors.rds")
-mockery::stub(slice_tsbl_app,
-  what = "zstmodelr::get_factors",
-  how = ds_factors,
-  depth = 1
-)
 
 test_that("slice_tsbl_server - reactives and output updates", {
   testServer(slice_tsbl_server,
@@ -49,7 +32,7 @@ test_that("slice_tsbl_server - reactives and output updates", {
 
       # Check slice_dataset()
       slice_tsbl <- invisible(slice_dataset())
-      expect_is(slice_tsbl, "tbl_ts")
+      expect_s3_class(slice_tsbl, "tbl_ts")
       expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_vars)
       actual_fields <- names(slice_tsbl)
       expect_true(all(actual_fields %in% expect_fields))
@@ -77,7 +60,7 @@ test_that("slice_tsbl_server - reactives and output updates", {
 
       # Check slice_dataset()
       slice_tsbl <- slice_dataset()
-      expect_is(slice_tsbl, "tbl_ts")
+      expect_s3_class(slice_tsbl, "tbl_ts")
       expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_vars)
       actual_fields <- names(slice_tsbl)
       expect_true(all(actual_fields %in% expect_fields))
@@ -89,15 +72,15 @@ test_that("slice_tsbl_server - reactives and output updates", {
 })
 
 test_that("slice_tsbl_app - Module App works", {
-   skip_on_cran()
-   skip_on_ci()
-   skip_on_covr()
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
 
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 
     # Set up temp app.R for loading App
-    writeLines("pkgload::load_all()\nslice_tsbl_app()",
+    writeLines("pkgload::load_all()\nslice_tsbl_app(use_online_data = FALSE)",
       con = test_app_file
     )
 

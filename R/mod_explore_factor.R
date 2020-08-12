@@ -61,7 +61,7 @@ explore_factor_ui <- function(id) {
           tabItem(
             tabName = "analyze_data",
             tabsetPanel(
-              tabPanel("Distribution", univar_dis_ui(ns("univar_dist")))
+              tabPanel("Cross-sectional Analysis", cs_analysis_ui(ns("cs_analysis_module")))
             )
           )
         )
@@ -88,27 +88,25 @@ explore_factor_server <- function(id, factors_info) {
       factors_info = factors_info
     )
 
-    # Analyze univariate distribution
-    univar_dis_server("univar_dist",
-      tsbl_vars = load_factors
+    # Cross-sectional analysis
+    cs_analysis_server("cs_analysis_module",
+                      tsbl_vars = load_factors
     )
+
   })
 }
 
 
 #' Testing module app of explore_factor
 #'
+#' @param use_online_data A logical to determine whether to use test data from
+#'  database or not. Default FALSE means to use achieved data for tests.
+#'
 #' @describeIn explore_factor  Testing App of exploring factors.
-explore_factor_app <- function() {
+explore_factor_app <- function(use_online_data = FALSE) {
 
-  # Get factors info
-  stock_db <- zstmodelr::stock_db(
-    zstmodelr::gta_db,
-    get_golem_config("database_dsn")
-  )
-  zstmodelr::open_stock_db(stock_db)
-  factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
-  zstmodelr::close_stock_db(stock_db)
+  # Prepare data
+  factors_info <- load_factors_info(use_online_data)
 
   ui <- fluidPage(
     explore_factor_ui("explore_factor_module")

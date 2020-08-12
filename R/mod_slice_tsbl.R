@@ -293,43 +293,14 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 slice_tsbl_app <- function(use_online_data = FALSE) {
 
   # Prepare data
-  if (use_online_data) {
-    # Load data from database
-    stock_db <- zstmodelr::stock_db(
-      zstmodelr::gta_db,
-      get_golem_config("database_dsn")
-    )
-    zstmodelr::open_stock_db(stock_db)
-    zstmodelr::init_stock_db(stock_db)
-
-    # Fetch selected factors from database
-    select_factors <- c("CR", "QR")
-    ds_factors <-
-      zstmodelr::get_factors(stock_db, factor_codes = select_factors) %>%
-      tidyr::pivot_wider(
-        names_from = "factor_name",
-        values_from = "factor_value"
-      )
-
-    # Turn into tsibble
-    tsbl_vars <- tsibble::as_tsibble(ds_factors,
-      index = date,
-      key = c("period", "stkcd", "indcd")
-    )
-    zstmodelr::close_stock_db(stock_db)
-  } else {
-    # Load test dataset
-    tsbl_vars_file <- fs::path(here::here(), "tests/testthat/data/tsbl_vars.rds")
-    tsbl_vars <- readRDS(tsbl_vars_file)
-    assertive::assert_is_inherited_from(tsbl_vars, c("tbl_ts"))
-  }
+  tsbl_vars <- load_tsbl_vars(use_online_data)
 
   # Launch App
   ui <- fluidPage(
     slice_tsbl_ui("slice_tsbl_module", debug = TRUE)
   )
   server <- function(input, output, session) {
-    load_factors <- slice_tsbl_server("slice_tsbl_module",
+    slice_vars <- slice_tsbl_server("slice_tsbl_module",
       tsbl_vars = reactive(tsbl_vars),
       debug = TRUE
     )

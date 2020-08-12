@@ -10,18 +10,10 @@ suppressMessages(db_ready <- zstmodelr::open_stock_db(stock_db))
 skip_if_not(db_ready,
   message = sprintf("DSN(%s) is not ready, skip all tests for load_factors", dsn)
 )
-suppressMessages(zstmodelr::open_stock_db(stock_db))
+suppressMessages(zstmodelr::close_stock_db(stock_db))
 
 # Set up test environment
-
-# use fixed data(instead of dynamic data from database) for testing, which make
-# validate output easier
 factors_info <- readRDS("data/factors_info.rds")
-mockery::stub(load_factors_app,
-  what = "zstmodelr::get_factors_info",
-  how = factors_info
-)
-ds_factors <- readRDS("data/ds_factors.rds")
 
 test_that("load_factors_server - reactives and output updates", {
   testServer(load_factors_server,
@@ -37,11 +29,12 @@ test_that("load_factors_server - reactives and output updates", {
       )
 
       # Check load_factors()
-      expect_is(load_factors(), "data.frame")
+      load_factors <- load_factors()
+      expect_s3_class(load_factors,c("tbl_df", "data.frame"))
       expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_factors)
-      actual_fields <- names(load_factors())
+      actual_fields <- names(load_factors)
       expect_true(all(actual_fields %in% expect_fields))
-      expect_true(nrow(load_factors()) >= 0)
+      expect_true(nrow(load_factors) >= 0)
 
       # Check output
       expect_snapshot_output(output$factors_info_table)
@@ -60,7 +53,7 @@ test_that("load_factors_app - Module App works", {
   withr::with_file(test_app_file, {
 
     # Set up temp app.R for loading App
-    writeLines("pkgload::load_all()\nload_factors_app()",
+    writeLines("pkgload::load_all()\nload_factors_app(use_online_data = FALSE)",
       con = test_app_file
     )
 
