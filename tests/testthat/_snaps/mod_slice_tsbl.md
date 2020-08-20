@@ -76,7 +76,7 @@
             {
               "type": "character",
               "attributes": {},
-              "value": ["<table  class = 'table shiny-table table- spacing-s' style = 'width:auto;'>\n<thead> <tr> <th style='text-align: left;'> date <\/th> <th style='text-align: left;'> period <\/th> <th style='text-align: left;'> stkcd <\/th> <th style='text-align: left;'> indcd <\/th> <th style='text-align: right;'> CR <\/th>  <\/tr> <\/thead> <tbody>\n  <tr> <td> 17896.00 <\/td> <td> quarter <\/td> <td> 000651 <\/td> <td> C38 <\/td> <td align=\"right\"> 0.18 <\/td> <\/tr>\n  <tr> <td> 17986.00 <\/td> <td> quarter <\/td> <td> 000651 <\/td> <td> C38 <\/td> <td align=\"right\"> 0.17 <\/td> <\/tr>\n  <tr> <td> 18077.00 <\/td> <td> quarter <\/td> <td> 000651 <\/td> <td> C38 <\/td> <td align=\"right\"> 0.20 <\/td> <\/tr>\n  <tr> <td> 18169.00 <\/td> <td> quarter <\/td> <td> 000651 <\/td> <td> C38 <\/td> <td align=\"right\"> 0.24 <\/td> <\/tr>\n   <\/tbody> <\/table>"]
+              "value": ["<table  class = 'table shiny-table table- spacing-s' style = 'width:auto;'>\n<thead> <tr> <th style='text-align: left;'> date <\/th> <th style='text-align: left;'> stkcd <\/th> <th style='text-align: right;'> CR <\/th>  <\/tr> <\/thead> <tbody>\n  <tr> <td> 17896.00 <\/td> <td> 000651 <\/td> <td align=\"right\"> 0.18 <\/td> <\/tr>\n  <tr> <td> 17986.00 <\/td> <td> 000651 <\/td> <td align=\"right\"> 0.17 <\/td> <\/tr>\n  <tr> <td> 18077.00 <\/td> <td> 000651 <\/td> <td align=\"right\"> 0.20 <\/td> <\/tr>\n  <tr> <td> 18169.00 <\/td> <td> 000651 <\/td> <td align=\"right\"> 0.24 <\/td> <\/tr>\n   <\/tbody> <\/table>"]
             }
           ]
         },

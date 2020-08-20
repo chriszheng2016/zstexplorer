@@ -16,13 +16,98 @@
             "names": {
               "type": "character",
               "attributes": {},
-              "value": ["explore_factor_module-cs_distribution-slice_tsbl_module-date_type", "explore_factor_module-cs_distribution-slice_tsbl_module-end_date", "explore_factor_module-cs_distribution-slice_tsbl_module-focus_vars", "explore_factor_module-cs_distribution-slice_tsbl_module-indcd", "explore_factor_module-cs_distribution-slice_tsbl_module-report_date", "explore_factor_module-cs_distribution-slice_tsbl_module-start_date", "explore_factor_module-cs_distribution-slice_tsbl_module-stkcd", "explore_factor_module-cs_summary-slice_tsbl_module-date_type", "explore_factor_module-cs_summary-slice_tsbl_module-end_date", "explore_factor_module-cs_summary-slice_tsbl_module-focus_vars", "explore_factor_module-cs_summary-slice_tsbl_module-indcd", "explore_factor_module-cs_summary-slice_tsbl_module-report_date", "explore_factor_module-cs_summary-slice_tsbl_module-start_date", "explore_factor_module-cs_summary-slice_tsbl_module-stkcd", "explore_factor_module-load_factors-factor_groups", "explore_factor_module-load_factors-factors_in_group", "explore_factor_module-load_factors-factors_info_table_cell_clicked", "explore_factor_module-load_factors-factors_info_table_rows_all", "explore_factor_module-load_factors-factors_info_table_rows_current", "explore_factor_module-load_factors-factors_info_table_rows_selected", "explore_factor_module-load_factors-factors_info_table_search", "explore_factor_module-load_factors-factors_info_table_state", "explore_factor_module-load_factors-load_factors", "explore_factor_module-load_factors-select_factors", "sidebarCollapsed", "sidebarItemExpanded"]
+              "value": ["explore_factor_module-cs_analysis_module-cs_cor_corrplot_module-cor_method", "explore_factor_module-cs_analysis_module-cs_cor_corrplot_module-cor_use", "explore_factor_module-cs_analysis_module-cs_cor_corrplot_module-corrplot_addrect", "explore_factor_module-cs_analysis_module-cs_cor_corrplot_module-corrplot_hclust_method", "explore_factor_module-cs_analysis_module-cs_cor_corrplot_module-corrplot_lower_plot", "explore_factor_module-cs_analysis_module-cs_cor_corrplot_module-corrplot_order", "explore_factor_module-cs_analysis_module-cs_cor_corrplot_module-corrplot_plotCI", "explore_factor_module-cs_analysis_module-cs_cor_corrplot_module-corrplot_upper_plot", "explore_factor_module-cs_analysis_module-cs_dist_DataExplorer_module-hist_bins", "explore_factor_module-cs_analysis_module-cs_dist_DataExplorer_module-max_cats", "explore_factor_module-cs_analysis_module-cs_dist_DataExplorer_module-plot_tabs", "explore_factor_module-cs_analysis_module-cs_dist_DataExplorer_module-setting_tabs", "explore_factor_module-cs_analysis_module-cs_dist_DataExplorer_module-value_scale", "explore_factor_module-cs_analysis_module-cs_dist_PerformanceAnalytics_module-hist_bins", "explore_factor_module-cs_analysis_module-cs_dist_PerformanceAnalytics_module-value_scale", "explore_factor_module-cs_analysis_module-cs_missing_visdat_module-show_from", "explore_factor_module-cs_analysis_module-cs_missing_visdat_module-show_window_size", "explore_factor_module-cs_analysis_module-slice_tsbl_module-date_type", "explore_factor_module-cs_analysis_module-slice_tsbl_module-end_date", "explore_factor_module-cs_analysis_module-slice_tsbl_module-focus_vars", "explore_factor_module-cs_analysis_module-slice_tsbl_module-indcd", "explore_factor_module-cs_analysis_module-slice_tsbl_module-report_date", "explore_factor_module-cs_analysis_module-slice_tsbl_module-start_date", "explore_factor_module-cs_analysis_module-slice_tsbl_module-stkcd", "explore_factor_module-cs_analysis_module-tabs", "explore_factor_module-load_factors-factor_groups", "explore_factor_module-load_factors-factors_in_group", "explore_factor_module-load_factors-factors_info_table_cell_clicked", "explore_factor_module-load_factors-factors_info_table_rows_all", "explore_factor_module-load_factors-factors_info_table_rows_current", "explore_factor_module-load_factors-factors_info_table_rows_selected", "explore_factor_module-load_factors-factors_info_table_search", "explore_factor_module-load_factors-factors_info_table_state", "explore_factor_module-load_factors-load_factors", "explore_factor_module-load_factors-select_factors", "explore_factor_module-ts_analysis_module-slice_tsbl_module-date_type", "explore_factor_module-ts_analysis_module-slice_tsbl_module-end_date", "explore_factor_module-ts_analysis_module-slice_tsbl_module-focus_vars", "explore_factor_module-ts_analysis_module-slice_tsbl_module-indcd", "explore_factor_module-ts_analysis_module-slice_tsbl_module-report_date", "explore_factor_module-ts_analysis_module-slice_tsbl_module-start_date", "explore_factor_module-ts_analysis_module-slice_tsbl_module-stkcd", "explore_factor_module-ts_analysis_module-tabs", "sidebarCollapsed", "sidebarItemExpanded"]
             }
           },
           "value": [
             {
               "type": "character",
               "attributes": {},
+              "value": ["pearson"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["pairwise.complete.obs"]
+            },
+            {
+              "type": "integer",
+              "attributes": {},
+              "value": [3]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["complete"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["number"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["hclust"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["n"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["circle"]
+            },
+            {
+              "type": "integer",
+              "attributes": {},
+              "value": [30]
+            },
+            {
+              "type": "integer",
+              "attributes": {},
+              "value": [100]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["Bar Chart(freq)"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["discrete_vars"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["continuous"]
+            },
+            {
+              "type": "integer",
+              "attributes": {},
+              "value": [30]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["continuous"]
+            },
+            {
+              "type": "integer",
+              "attributes": {},
+              "value": [1]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["500"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
               "value": ["multi_period"]
             },
             {
@@ -52,31 +137,7 @@
             {
               "type": "character",
               "attributes": {},
-              "value": ["multi_period"]
-            },
-            {
-              "type": "character",
-              "attributes": {},
-              "value": [""]
-            },
-            {
-              "type": "NULL"
-            },
-            {
-              "type": "NULL"
-            },
-            {
-              "type": "integer",
-              "attributes": {},
-              "value": [0]
-            },
-            {
-              "type": "character",
-              "attributes": {},
-              "value": [""]
-            },
-            {
-              "type": "NULL"
+              "value": ["base::summary()"]
             },
             {
               "type": "character",
@@ -98,10 +159,14 @@
               "value": []
             },
             {
-              "type": "NULL"
+              "type": "integer",
+              "attributes": {},
+              "value": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             },
             {
-              "type": "NULL"
+              "type": "integer",
+              "attributes": {},
+              "value": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             },
             {
               "type": "NULL"
@@ -127,6 +192,40 @@
             },
             {
               "type": "NULL"
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["multi_period"]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": [""]
+            },
+            {
+              "type": "NULL"
+            },
+            {
+              "type": "NULL"
+            },
+            {
+              "type": "integer",
+              "attributes": {},
+              "value": [0]
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": [""]
+            },
+            {
+              "type": "NULL"
+            },
+            {
+              "type": "character",
+              "attributes": {},
+              "value": ["base::summary()"]
             },
             {
               "type": "logical",

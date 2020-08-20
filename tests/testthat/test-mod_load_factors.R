@@ -30,10 +30,12 @@ test_that("load_factors_server - reactives and output updates", {
 
       # Check load_factors()
       load_factors <- load_factors()
-      expect_s3_class(load_factors,c("tbl_df", "data.frame"))
+      expect_s3_class(load_factors, "tbl_ts")
       expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_factors)
       actual_fields <- names(load_factors)
       expect_true(all(actual_fields %in% expect_fields))
+      expect_equal(tsibble::index_var(load_factors), "date")
+      expect_true(all(tsibble::key_vars(load_factors) %in% c("stkcd")))
       expect_true(nrow(load_factors) >= 0)
 
       # Check output

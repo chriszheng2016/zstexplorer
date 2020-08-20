@@ -61,7 +61,10 @@ explore_factor_ui <- function(id) {
           tabItem(
             tabName = "analyze_data",
             tabsetPanel(
-              tabPanel("Cross-sectional Analysis", cs_analysis_ui(ns("cs_analysis_module")))
+              tabPanel("Cross-section Analysis",
+                       cs_analysis_ui(ns("cs_analysis_module"))),
+              tabPanel("Time-series Analysis",
+                       ts_analysis_ui(ns("ts_analysis_module")))
             )
           )
         )
@@ -88,11 +91,15 @@ explore_factor_server <- function(id, factors_info) {
       factors_info = factors_info
     )
 
-    # Cross-sectional analysis
+    # Cross-section analysis
     cs_analysis_server("cs_analysis_module",
                       tsbl_vars = load_factors
     )
 
+    # Time-series analysis
+    ts_analysis_server("ts_analysis_module",
+                       tsbl_vars = load_factors
+    )
   })
 }
 

@@ -227,7 +227,7 @@ load_factors_server <- function(id, factors_info) {
         # Turn into tsibble
         tsbl_factors <- tsibble::as_tsibble(ds_factors,
           index = date,
-          key = c("period", "stkcd", "indcd")
+          key = c("stkcd")
         )
 
         zstmodelr::close_stock_db(stock_db)

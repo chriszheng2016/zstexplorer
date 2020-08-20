@@ -16,7 +16,7 @@ test_that("slice_tsbl_server - reactives and output updates", {
       # Set input for slice_tsbl
       select_indcd <- c("C38")
       select_stkcd <- c("000651")
-      select_vars <- c("CR")
+      select_vars <- c("period", "indcd", "CR")
       select_date_type <- "multi_period"
       select_start_date <- "2018-12-31"
       select_end_date <- "2019-12-31"
@@ -30,9 +30,12 @@ test_that("slice_tsbl_server - reactives and output updates", {
         end_date = select_end_date
       )
 
+
       # Check slice_dataset()
       slice_tsbl <- invisible(slice_dataset())
       expect_s3_class(slice_tsbl, "tbl_ts")
+      expect_equal(tsibble::index_var(slice_tsbl), "date")
+      expect_true(all(tsibble::key_vars(slice_tsbl) %in% c("stkcd")))
       expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_vars)
       actual_fields <- names(slice_tsbl)
       expect_true(all(actual_fields %in% expect_fields))
@@ -46,7 +49,7 @@ test_that("slice_tsbl_server - reactives and output updates", {
       # Set input for slice_tsbl
       select_indcd <- c("C38")
       select_stkcd <- c("000651")
-      select_vars <- c("CR")
+      select_vars <- c("period", "indcd", "CR")
       select_date_type <- "single_period"
       select_report_date <- "2018-12-31"
 
@@ -61,7 +64,9 @@ test_that("slice_tsbl_server - reactives and output updates", {
       # Check slice_dataset()
       slice_tsbl <- slice_dataset()
       expect_s3_class(slice_tsbl, "tbl_ts")
-      expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_vars)
+      expect_equal(tsibble::index_var(slice_tsbl), "date")
+      expect_true(all(tsibble::key_vars(slice_tsbl) %in% c("stkcd")))
+      expect_fields <- c(c("date", "stkcd"), select_vars)
       actual_fields <- names(slice_tsbl)
       expect_true(all(actual_fields %in% expect_fields))
       expect_true(all(slice_tsbl$indcd %in% select_indcd))

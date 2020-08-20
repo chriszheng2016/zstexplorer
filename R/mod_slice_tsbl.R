@@ -239,6 +239,8 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
       key_vars <- tsibble::key_vars(tsbl_vars)
       focus_vars <- setdiff(names(tsbl_vars), c(date_var, key_vars))
 
+
+
       # Slice dataset in term of user's inputs
 
       slice_dataset <- tsbl_vars
