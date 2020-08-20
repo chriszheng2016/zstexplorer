@@ -1,0 +1,359 @@
+#' cs_analysis
+#'
+#' @description A shiny module for cs_analysis.
+#'
+#' @details
+#'  The module is an UI for user to ...
+#'
+#' @name cs_analysis
+#'
+#' @param id  An ID string of module to connecting UI function and Server
+#'   function.
+#'
+#'
+#' @examples
+#' \dontrun{
+#' # Set up control UI in app UI
+#' ui <- fluidPage(
+#'   cs_analysis_ui("cs_analysis_module")
+#' )
+#'
+#' # Call control server in App server
+#' server <- function(input, output, session) {
+#'   cs_analysis <- cs_analysis_server(
+#'     "cs_analysis_module",
+#'     tsbl_vars = reactive(tsbl_vars)
+#'   )
+#' }
+#'
+#' # Run testing App for integration testing
+#' cs_analysis_app()
+#' }
+#'
+NULL
+
+#' UI function of cs_analysis
+#'
+#' @return * UI function doesn't return value.
+#'
+#' @describeIn cs_analysis  UI function of cs_analysis.
+#' @importFrom shiny NS tagList
+cs_analysis_ui <- function(id) {
+  ns <- NS(id)
+  tagList(
+    # Side panel for input
+    sidebarPanel(
+      width = 2,
+
+      # Ui for slicing tsbl_vars
+      slice_tsbl_ui(ns("slice_tsbl_module"))
+    ),
+
+    # MainPanel for Output
+    mainPanel(
+      width = 10,
+      titlePanel(textOutput(outputId = ns("caption"))),
+      navbarPage("Navigate:",
+        id = ns("tabs"),
+        navbarMenu(
+          "Summary",
+          tabPanel(
+            "base::summary()",
+            verbatimTextOutput(ns("base_summary_text"))
+          ),
+          tabPanel(
+            "Hmisc::describe()",
+            verbatimTextOutput(ns("Hmisc_describe_text"))
+          ),
+          tabPanel(
+            "DataExplorer::introduce()",
+            tableOutput(ns("DataExplorer_intro_table")),
+            br(),
+            plotOutput(ns("DataExplorer_intro_plot"))
+          ),
+          tabPanel(
+            "skimr::skim()",
+            verbatimTextOutput(ns("skimr_skim_text"))
+          ),
+          tabPanel(
+            "fBasics::basicStats()",
+            h4("summary of continuous varables"),
+            tableOutput(ns("fBasics_basic_table"))
+          ),
+          tabPanel(
+            "my_summary()",
+            h4("summary of continuous varables"),
+            tableOutput(ns("my_summary_table"))
+          )
+        ),
+        navbarMenu(
+          "Missing",
+          tabPanel(
+            "DataExplorer::profile_missing()",
+            plotOutput(ns("DataExplorer_missing_plot")),
+            br(),
+            tableOutput(ns("DataExplorer_missing_table"))
+          ),
+          tabPanel(
+            "visdat::vis_miss()",
+            cs_missing_visdat_ui(ns("cs_missing_visdat_module"))
+          ),
+          tabPanel(
+            "mice::md.pattern()",
+            cs_missing_mice_ui(ns("cs_missing_mice_module"))
+          )
+        ),
+        navbarMenu(
+          "Distribution",
+          tabPanel(
+            "DataExplorer::funs()",
+            cs_dist_DataExplorer_ui(ns("cs_dist_DataExplorer_module"))
+          ),
+          tabPanel(
+            "PerformanceAnalytics::funs()",
+            cs_dist_PerformanceAnalytics_ui(
+              ns("cs_dist_PerformanceAnalytics_module")
+            )
+          )
+        ),
+        navbarMenu(
+          "Correlation",
+          tabPanel(
+            "DataExplorer::plot_correlation()",
+            cs_cor_DataExplorer_ui(ns("cs_cor_DataExplorer_module"))
+          ),
+          tabPanel(
+            "corrplot::corrplot()",
+            cs_cor_corrplot_ui(ns("cs_cor_corrplot_module"))
+          ),
+          tabPanel(
+            "GGally::ggpairs()",
+            plotOutput(ns("GGally_corrlation_plot"))
+          )
+        ),
+        navbarMenu(
+          "PCA",
+          tabPanel(
+            "DataExplorer::plot_correlation()"
+          )
+        ),
+        navbarMenu(
+          "Cluster",
+          tabPanel(
+            "DataExplorer::plot_correlation()"
+          )
+        )
+      )
+    )
+  )
+}
+
+#' Server function of cs_analysis
+#'
+#' @describeIn cs_analysis  Server function of cs_analysis.
+#' @return * Server function return a data frame of ...
+cs_analysis_server <- function(id, tsbl_vars) {
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    # Validate parameters
+    assertive::assert_all_are_true(is.reactive(tsbl_vars))
+
+    slice_tsbl_vars <- slice_tsbl_server("slice_tsbl_module",
+      tsbl_vars = tsbl_vars
+    )
+
+    slice_csbl_vars <- reactive({
+      slice_csbl_vars <- tsbl2csbl(slice_tsbl_vars())
+      return(slice_csbl_vars)
+    })
+
+
+    date_range <- reactive({
+      start_date <- min(unique(slice_tsbl_vars()$date), na.rm = TRUE)
+      start_date <- format(start_date, "%Y-%m-%d")
+      end_date <- min(unique(slice_tsbl_vars()$date), na.rm = TRUE)
+      end_date <- format(end_date, "%Y-%m-%d")
+
+      return(list(start_date = start_date, end_date = end_date))
+    })
+
+    # Render captions
+    output$caption <- renderText({
+      start_date <- date_range()$start_date
+      end_date <- date_range()$end_date
+
+      caption <- sprintf("Cross-sectional Analysis(%s~%s)", start_date, end_date)
+
+      return(caption)
+    })
+
+    # Summary output ----
+
+    output$base_summary_text <- renderPrint({
+      slice_csbl_vars() %>%
+        summary()
+    })
+
+    output$Hmisc_describe_text <- renderPrint({
+      slice_csbl_vars() %>%
+        Hmisc::describe()
+    })
+
+    output$fBasics_basic_table <- renderTable({
+      continuous_vars <- slice_csbl_vars() %>%
+        dplyr::select(where(is.numeric))
+
+      suppressMessages({
+        continuous_vars_summary <- continuous_vars %>%
+          purrr::map_dfc(.f = ~ fBasics::basicStats(.x))
+        names(continuous_vars_summary) <- names(continuous_vars)
+      })
+
+      continuous_vars_summary <- tibble::as_tibble(t(continuous_vars_summary), rownames = "Variable")
+
+      continuous_vars_summary <- continuous_vars_summary %>%
+        dplyr::select(-c("Sum")) %>%
+        dplyr::rename(
+          Quartile.1 = `1. Quartile`,
+          Quartile.3 = `3. Quartile`,
+          Mean.SE = `SE Mean`,
+          Mean.LCL = `LCL Mean`,
+          Mean.UCL = `UCL Mean`
+        )
+
+      return(continuous_vars_summary)
+    })
+
+    output$DataExplorer_intro_table <- renderTable({
+      slice_csbl_vars() %>%
+        DataExplorer::introduce()
+    })
+
+    output$DataExplorer_intro_plot <- renderPlot({
+      slice_csbl_vars() %>%
+        DataExplorer::plot_intro()
+    })
+
+
+    output$skimr_skim_text <- renderPrint({
+      slice_csbl_vars() %>%
+        skimr::skim()
+    })
+
+    output$my_summary_table <- renderTable({
+      continuous_vars <- slice_csbl_vars() %>%
+        dplyr::select(where(is.numeric)) %>%
+        tidyr::pivot_longer(
+          cols = everything(),
+          names_to = "variable", values_to = "value"
+        )
+
+      continuous_vars_summary <- continuous_vars %>%
+        dplyr::group_by(.data$variable) %>%
+        dplyr::summarise(
+          dplyr::across(.data$value,
+            .fns = list(
+              obs = ~ mean(length(.x)),
+              NAs = ~ sum(is.na(.x)),
+              mean = mean,
+              median = median,
+              sd = sd,
+              mad = mad,
+              min = min,
+              Q1 = ~ quantile(.x, probs = 0.25, na.rm = TRUE),
+              Q3 = ~ quantile(.x, probs = 0.75, na.rm = TRUE),
+              max = max,
+              skewness = ~ PerformanceAnalytics::skewness(.x),
+              kurtosis = ~ PerformanceAnalytics::kurtosis(.x, method = "moment")
+            ),
+            na.rm = TRUE,
+            .names = "{fn}"
+          )
+        )
+
+      return(continuous_vars_summary)
+    })
+
+    # Missing output ----
+    output$DataExplorer_missing_table <- renderTable({
+      slice_csbl_vars() %>%
+        DataExplorer::profile_missing()
+    })
+
+    output$DataExplorer_missing_plot <- renderPlot({
+      slice_csbl_vars() %>%
+        DataExplorer::plot_missing()
+    })
+
+    # Draw missing data pattern by visdat
+    cs_missing_visdat_server("cs_missing_visdat_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+
+    # Draw missing data pattern by mice
+    cs_missing_mice_server("cs_missing_mice_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Distribution output ----
+
+    # Draw distribution plots by DataExplorer
+    cs_dist_DataExplorer_server("cs_dist_DataExplorer_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Draw distribution plots by PerformanceAnalytics
+    cs_dist_PerformanceAnalytics_server("cs_dist_PerformanceAnalytics_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Correlation output ----
+
+    # Draw DataExplorer correlation
+    cs_cor_DataExplorer_server("cs_cor_DataExplorer_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Draw corrplot
+    cs_cor_corrplot_server("cs_cor_corrplot_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Draw GGally correlation
+    output$GGally_corrlation_plot <- renderPlot({
+      slice_csbl_vars() %>%
+        GGally::ggpairs(
+          lower = list(
+            continuous =
+              GGally::wrap("smooth", alpha = 0.3)
+          ),
+          progress = FALSE
+        )
+    })
+  })
+}
+
+#' Testing module app of cs_analysis
+#'
+#' @param use_online_data A logical to determine whether to use test data from
+#'  database or not. Default FALSE means to use achieved data for tests.
+#'
+#' @describeIn cs_analysis  Testing App of cs_analysis.
+cs_analysis_app <- function(use_online_data = FALSE) {
+
+  # Prepare data
+  tsbl_vars <- load_tsbl_vars(use_online_data)
+
+  ui <- fluidPage(
+    cs_analysis_ui("cs_analysis_module")
+  )
+  server <- function(input, output, session) {
+    slice_vars <- cs_analysis_server(
+      "cs_analysis_module",
+      tsbl_vars = reactive(tsbl_vars)
+    )
+  }
+  shinyApp(ui, server)
+}
