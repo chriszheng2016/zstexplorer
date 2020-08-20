@@ -32,12 +32,12 @@ load_factors_info <- function(use_online_data = FALSE) {
 }
 
 
-#' Load test data of vars in tsibble
+#' Load test data of vars of time-series in tsibble
 #'
 #' @param use_online_data A logical to determine whether to use test data from
 #'  database or not. Default FALSE means to use achieved data for tests.
 #'
-#' @return A tsibble of vars.
+#' @return A tsibble of vars of time-series.
 #'
 
 load_tsbl_vars <- function(use_online_data = FALSE) {
@@ -63,8 +63,8 @@ load_tsbl_vars <- function(use_online_data = FALSE) {
 
     # Turn into tsibble
     tsbl_vars <- tsibble::as_tsibble(ds_factors,
-                                     index = date,
-                                     key = c("period", "stkcd", "indcd")
+      index = date,
+      key = c("stkcd")
     )
     zstmodelr::close_stock_db(stock_db)
   } else {
@@ -75,5 +75,53 @@ load_tsbl_vars <- function(use_online_data = FALSE) {
   }
 
   return(tsbl_vars)
+}
 
+
+#' Load test data of vars of cross-section in tibble
+#'
+#' @param use_online_data A logical to determine whether to use test data from
+#'  database or not. Default FALSE means to use achieved data for tests.
+#'
+#' @return A tibble of vars of cross-section.
+
+
+load_csbl_vars <- function(use_online_data = FALSE) {
+
+  # Prepare data
+  tsbl_vars <- load_tsbl_vars(use_online_data)
+
+  # Convert vars time-series vars to vars of cross-section
+  csbl_vars <- tsbl2csbl(tsbl_vars)
+
+  return(csbl_vars)
+}
+
+
+
+#' Convert tsbl of vars to csbl of vars
+#'
+#' Convert vars of time-series into vars of cross-section.
+#'
+#' @param tsbl_vars A tsibble of time series vars.
+#'
+#' @return A tibble of vars of cross-section.
+#'
+tsbl2csbl <- function(tsbl_vars) {
+
+  # Validate parameters
+  assertive::assert_is_inherited_from(tsbl_vars, c("tbl_ts"))
+
+  # date_var <- tsibble::index_var(tsbl_vars)
+  # key_vars <- tsibble::key_vars(tsbl_vars)
+  # focus_vars <- setdiff(names(tsbl_vars), c(date_var, key_vars))
+
+  # Convert tsbl_vars to csbl_vars
+  measured_vars <- tsibble::measured_vars(tsbl_vars)
+
+  csbl_vars <- tsbl_vars %>%
+    tsibble::as_tibble() %>%
+    dplyr::select({{ measured_vars }})
+
+  return(csbl_vars)
 }
