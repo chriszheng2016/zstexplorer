@@ -108,7 +108,7 @@ test_that("slice_tsbl_app - Module App works", {
       `slice_tsbl_module-start_date` = select_start_date,
       `slice_tsbl_module-end_date` = select_end_date
     )
-    expect_snapshot_value(app$getAllValues(), style = "json2")
+    expect_snapshot_value(app$getAllValues(), style = "serialize")
 
     app$stop()
   })

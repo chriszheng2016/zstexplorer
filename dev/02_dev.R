@@ -15,27 +15,27 @@
 
 ## Dependencies ----
 ## Add one line by package you want to add as dependency
-usethis::use_package( "thinkr" )
+usethis::use_package("thinkr")
 
 ## Add modules ----
 ## Create a module infrastructure in R/
-golem::add_module( name = "name_of_module1" ) # Name of the module
-golem::add_module( name = "name_of_module2" ) # Name of the module
+golem::add_module(name = "name_of_module1") # Name of the module
+golem::add_module(name = "name_of_module2") # Name of the module
 
 ## Add helper functions ----
 ## Creates ftc_* and utils_*
-golem::add_fct( "helpers" )
-golem::add_utils( "helpers" )
+golem::add_fct("helpers")
+golem::add_utils("helpers")
 
 ## External resources
 ## Creates .js and .css files at inst/app/www
-golem::add_js_file( "script" )
-golem::add_js_handler( "handlers" )
-golem::add_css_file( "custom" )
+golem::add_js_file("script")
+golem::add_js_handler("handlers")
+golem::add_css_file("custom")
 
 ## Add internal datasets ----
 ## If you have data in your package
-usethis::use_data_raw( name = "my_dataset", open = FALSE )
+usethis::use_data_raw(name = "my_dataset", open = FALSE)
 
 ## Add module to dependency ----
 usethis::use_package("package")
@@ -46,9 +46,22 @@ usethis::use_tidy_style()
 
 ## Tests ----
 ## Add one line by test you want to create
-usethis::use_test( "app" )
+usethis::use_test("app")
 devtools::wd("tests/testthat")
 testthat::test_file("test-app.R") # test a file
+
+# Test a file which contains "skip_on_cran()/skip_on_ci()/skip_on_covr()"
+# Method A:
+withr::with_envvar(
+  new = c("NOT_CRAN" = "true",
+          "CI" = "false",
+          "R_COVR" = "false"),
+  testthat::test_file("test-app.R")
+)
+# Method B:
+Sys.setenv("NOT_CRAN" = "true")
+testthat::test_file("test-app.R")
+
 devtools::test() # test package
 
 # Document ----
@@ -59,8 +72,8 @@ devtools::document()
 
 # Check spelling in doc
 usethis::use_spell_check() # set up spelling check in doc
-devtools::document()  # update all doc
-devtools::spell_check()  # check spelling in doc
+devtools::document() # update all doc
+devtools::spell_check() # check spelling in doc
 spelling::update_wordlist() # accept new words if need
 
 # Vignette
@@ -81,8 +94,10 @@ devtools::spell_check()
 devtools::check_man()
 
 # R CMD Check
-result <- devtools::check(cran = FALSE, args = c("--timings", "--no-tests"),
-                          check_dir = "check")
+result <- devtools::check(
+  cran = FALSE, args = c("--timings", "--no-tests"),
+  check_dir = "check"
+)
 cat(result$errors)
 cat(result$warnings)
 cat(result$notes)
@@ -107,4 +122,3 @@ usethis::use_appveyor()
 # You're now set! ----
 # go to dev/03_deploy.R
 rstudioapi::navigateToFile("dev/03_deploy.R")
-

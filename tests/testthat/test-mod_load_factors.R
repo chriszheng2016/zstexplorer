@@ -77,7 +77,7 @@ test_that("load_factors_app - Module App works", {
 
     #app$expectUpdate("factors_data_table", iotype = "output", timeout = 1000*10)
 
-    expect_snapshot_value(app$getAllValues(), style = "json2")
+    expect_snapshot_value(app$getAllValues(), style = "serialize")
 
     app$stop()
   })

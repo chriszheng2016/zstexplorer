@@ -36,6 +36,10 @@ test_that("{{module_name}}_server - reactives and output updates", {
 })
 
 test_that("{{module_name}}_app - Module App works", {
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
+
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 
@@ -61,6 +65,7 @@ test_that("{{module_name}}_app - Module App works", {
     #   timeout_ = 1000 * 10
     # )
     # expect_snapshot_value(app$getAllValues(), style = "json2")
+    # expect_snapshot_value(app$getAllValues(), style = "serialize")
 
     app$stop()
   })
