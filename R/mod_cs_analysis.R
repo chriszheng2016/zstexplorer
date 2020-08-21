@@ -128,7 +128,7 @@ cs_analysis_ui <- function(id) {
           ),
           tabPanel(
             "GGally::ggpairs()",
-            plotOutput(ns("GGally_corrlation_plot"))
+            cs_cor_GGally_ui(ns("cs_cor_GGally_module"))
           )
         ),
         navbarMenu(
@@ -316,22 +316,15 @@ cs_analysis_server <- function(id, tsbl_vars) {
       csbl_vars = slice_csbl_vars
     )
 
-    # Draw corrplot
+    # Draw corrplot correlation
     cs_cor_corrplot_server("cs_cor_corrplot_module",
       csbl_vars = slice_csbl_vars
     )
 
     # Draw GGally correlation
-    output$GGally_corrlation_plot <- renderPlot({
-      slice_csbl_vars() %>%
-        GGally::ggpairs(
-          lower = list(
-            continuous =
-              GGally::wrap("smooth", alpha = 0.3)
-          ),
-          progress = FALSE
-        )
-    })
+    cs_cor_GGally_server("cs_cor_GGally_module",
+      csbl_vars = slice_csbl_vars
+    )
   })
 }
 
