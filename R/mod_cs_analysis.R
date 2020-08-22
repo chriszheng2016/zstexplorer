@@ -129,6 +129,10 @@ cs_analysis_ui <- function(id) {
           tabPanel(
             "GGally::ggpairs()",
             cs_cor_GGally_ui(ns("cs_cor_GGally_module"))
+          ),
+          tabPanel(
+            "correlationfunnel::plot_correlation_funnel()",
+            cs_cor_correlationfunnel_ui(ns("cs_cor_correlationfunnel_module"))
           )
         ),
         navbarMenu(
@@ -311,20 +315,28 @@ cs_analysis_server <- function(id, tsbl_vars) {
 
     # Correlation output ----
 
-    # Draw DataExplorer correlation
+    # Draw DataExplorer correlation plot
     cs_cor_DataExplorer_server("cs_cor_DataExplorer_module",
       csbl_vars = slice_csbl_vars
     )
 
-    # Draw corrplot correlation
+    # Draw corrplot correlation plot
     cs_cor_corrplot_server("cs_cor_corrplot_module",
       csbl_vars = slice_csbl_vars
     )
 
-    # Draw GGally correlation
+    # Draw GGally correlation plot
     cs_cor_GGally_server("cs_cor_GGally_module",
       csbl_vars = slice_csbl_vars
     )
+
+    # Draw correlationfunnel correlation plot
+    cs_cor_correlationfunnel_server(
+      "cs_cor_correlationfunnel_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+
   })
 }
 
