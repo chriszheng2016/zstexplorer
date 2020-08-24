@@ -101,6 +101,10 @@ cs_analysis_ui <- function(id) {
           tabPanel(
             "mice::md.pattern()",
             cs_missing_mice_ui(ns("cs_missing_mice_module"))
+          ),
+          tabPanel(
+            "naniar::funs()",
+            cs_missing_naniar_ui(ns("cs_missing_naniar_module"))
           )
         ),
         navbarMenu(
@@ -298,6 +302,11 @@ cs_analysis_server <- function(id, tsbl_vars) {
 
     # Draw missing data pattern by mice
     cs_missing_mice_server("cs_missing_mice_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Draw missing data pattern by naniar
+    cs_missing_naniar_server("cs_missing_naniar_module",
       csbl_vars = slice_csbl_vars
     )
 

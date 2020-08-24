@@ -32,6 +32,7 @@ Imports:
     Hmisc,
     htmltools,
     magrittr,
+    naniar,
     PerformanceAnalytics,
     pkgload,
     shiny,
