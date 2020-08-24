@@ -1,0 +1,85 @@
+# ----- Snippet of Chris Zheng -----
+snippet zb_r_script_header
+	`r paste("# ---------------------------------\n# Date: ",Sys.time(),"\n# Author:Chris Zheng\n# Email: chrizheng@vip.sina.com.cn\n# ---------------------------------\n# project: ${1:project}\n")`
+
+
+snippet zb_shiny_module
+	# Ui function of module
+	${1:name}_ui <- function(id) {
+		ns <- NS(id)
+		tagList(
+		h1("${0}")
+		)
+	}
+
+	# Server function of module
+	${1:name}_server<- function(id) {
+		moduleServer(id, function(input, output, session) {
+			ns <- session$ns
+
+		})
+	}
+
+	## Copy in UI
+	#${1:name}_ui(ns("${1:name}_module"))
+
+
+	## Copy in server
+	#${1:name}_server("${1:name}_module")
+
+
+snippet zb_sidebarLayout
+	sidebarLayout(
+		position = "right",
+		sidebarPanel(
+			width = 3,
+
+		),
+		mainPanel(
+			width = 9,
+
+		)
+	)
+
+snippet zb_tabsetPanel_tabs
+	tabsetPanel(
+		id = ns("${1:tabset_name}"),
+		type = "tabs",
+		tabPanel(
+		"${2:tab_title}",
+		 # plotOutput(ns("plot1"))
+		),
+		tabPanel(
+		"${3:tab_title}",
+		# plotOutput(ns("plot2"))
+		)
+	)
+
+snippet zb_tabsetPanel_hidden
+	tabsetPanel(
+		id = ns("${1:tabset_name}"),
+		type = "hidden",
+		tabPanelBody(
+			value = "${2:tab_name}",
+			# plotOutput(ns("plot1"))
+		),
+		tabPanelBody(
+			value = "${3:tab_name}",
+			# plotOutput(ns("plot1"))
+		)
+	)
+
+	## Show/hide tab in server function
+	#updateTabsetPanel(session,
+	#	inputId = "${1:tabset_name}", # notice: don't use ns("${1:tabset_name}")
+	#	selected = "${2:tab_name}"
+	#)
+
+
+
+
+
+
+
+
+
