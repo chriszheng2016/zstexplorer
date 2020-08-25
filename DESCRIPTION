@@ -41,7 +41,8 @@ Imports:
     tidyr,
     tsibble,
     visdat,
-    zstmodelr
+    zstmodelr,
+    plotly
 Suggests: 
     covr,
     mockery,
