@@ -174,6 +174,8 @@ cs_analysis_ui <- function(id) {
 
 #' Server function of cs_analysis
 #'
+#' @param tsbl_vars A tsibble of vars for cross-sectional analysis.
+#'
 #' @describeIn cs_analysis  Server function of cs_analysis.
 #' @return * Server function return a data frame of ...
 cs_analysis_server <- function(id, tsbl_vars) {
@@ -239,11 +241,11 @@ cs_analysis_server <- function(id, tsbl_vars) {
       continuous_vars_summary <- continuous_vars_summary %>%
         dplyr::select(-c("Sum")) %>%
         dplyr::rename(
-          Quartile.1 = `1. Quartile`,
-          Quartile.3 = `3. Quartile`,
-          Mean.SE = `SE Mean`,
-          Mean.LCL = `LCL Mean`,
-          Mean.UCL = `UCL Mean`
+          Quartile.1 = .data$`1. Quartile`,
+          Quartile.3 = .data$`3. Quartile`,
+          Mean.SE = .data$`SE Mean`,
+          Mean.LCL = .data$`LCL Mean`,
+          Mean.UCL = .data$`UCL Mean`
         )
 
       return(continuous_vars_summary)
