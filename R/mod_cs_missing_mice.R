@@ -41,16 +41,35 @@ NULL
 cs_missing_mice_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    tabsetPanel(
-      type = "tabs",
-      tabPanel(
-        "Pattern plot",
-        plotOutput(ns("missing_pattern_plot"))
+    fluidRow(
+
+      # Display in tableset mode
+      # tabsetPanel(
+      #   type = "tabs",
+      #   tabPanel(
+      #     "Pattern plot",
+      #     plotOutput(ns("missing_pattern_plot"), height = "700px")
+      #   ),
+      #   tabPanel(
+      #     "Pattern table",
+      #     verbatimTextOutput(ns("missing_pattern_info") )
+      #   )
+      # )
+
+      # Display in box mode
+      box(
+        title = "Pattern Plot", status = "primary",
+        solidHeader = TRUE, collapsible = TRUE, width = 8,
+
+        plotOutput(ns("missing_pattern_plot"), height = "630px")
       ),
-      tabPanel(
-        "Pattern info",
+      box(
+        title = "Pattern Info", status = "primary",
+        solidHeader = TRUE, collapsible = TRUE, width = 4,
+
         verbatimTextOutput(ns("missing_pattern_info"))
       )
+
     )
   )
 }
@@ -69,8 +88,8 @@ cs_missing_mice_server <- function(id, csbl_vars) {
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
     output$missing_pattern_plot <- renderPlot(
-      width = 800,
-      height = 800,
+      # width = 800,
+      # height = 800,
       {
         csbl_vars() %>%
           mice::md.pattern(rotate.names = TRUE)

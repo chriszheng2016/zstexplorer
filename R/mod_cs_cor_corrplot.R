@@ -39,86 +39,94 @@ NULL
 cs_cor_corrplot_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    column(
-      3,
-      selectInput(
-        inputId = ns("corrplot_upper_plot"),
-        label = strong("Upper Plot:"),
-        choices = c(
-          "circle", "square", "ellipse", "number", "shade",
-          "color", "pie"
+    fluidRow(
+      column(
+        3,
+        selectInput(
+          inputId = ns("corrplot_upper_plot"),
+          label = strong("Upper Plot:"),
+          choices = c(
+            "circle", "square", "ellipse", "number", "shade",
+            "color", "pie"
+          ),
+          selected = "circle"
         ),
-        selected = "circle"
+        selectInput(
+          inputId = ns("corrplot_lower_plot"),
+          label = strong("Lower Plot:"),
+          choices = c(
+            "circle", "square", "ellipse", "number", "shade",
+            "color", "pie"
+          ),
+          selected = "number"
+        )
       ),
-      selectInput(
-        inputId = ns("corrplot_lower_plot"),
-        label = strong("Lower Plot:"),
-        choices = c(
-          "circle", "square", "ellipse", "number", "shade",
-          "color", "pie"
+      column(
+        3,
+        selectInput(
+          inputId = ns("cor_method"),
+          label = strong("cor method:"),
+          choices = c("pearson", "spearman")
         ),
-        selected = "number"
-      )
-    ),
-    column(
-      3,
-      selectInput(
-        inputId = ns("cor_method"),
-        label = strong("cor method:"),
-        choices = c("pearson", "spearman")
+        selectInput(
+          inputId = ns("cor_use"),
+          label = strong("cor use:"),
+          choices = c(
+            "everything",
+            "all.obs",
+            "complete.obs",
+            "na.or.complete",
+            "pairwise.complete.obs"
+          ),
+          selected = "pairwise.complete.obs"
+        )
       ),
-      selectInput(
-        inputId = ns("cor_use"),
-        label = strong("cor use:"),
-        choices = c(
-          "everything",
-          "all.obs",
-          "complete.obs",
-          "na.or.complete",
-          "pairwise.complete.obs"
+      column(
+        3,
+        selectInput(
+          inputId = ns("corrplot_order"),
+          label = strong("plot method:"),
+          choices = c(
+            "original",
+            "AOE", "FPC", "hclust"
+          ),
+          selected = "hclust"
         ),
-        selected = "pairwise.complete.obs"
-      )
-    ),
-    column(
-      3,
-      selectInput(
-        inputId = ns("corrplot_order"),
-        label = strong("plot method:"),
-        choices = c(
-          "original",
-          "AOE", "FPC", "hclust"
-        ),
-        selected = "hclust"
+        selectInput(
+          inputId = ns("corrplot_hclust_method"),
+          label = strong("hclust.method:"),
+          choices = c(
+            "complete", "ward", "ward.D", "ward.D2",
+            "single", "average", "mcquitty", "median",
+            "centroid"
+          )
+        )
       ),
-      selectInput(
-        inputId = ns("corrplot_hclust_method"),
-        label = strong("hclust.method:"),
-        choices = c(
-          "complete", "ward", "ward.D", "ward.D2",
-          "single", "average", "mcquitty", "median",
-          "centroid"
+      column(
+        3,
+        selectInput(
+          inputId = ns("corrplot_plotCI"),
+          label = strong("plotCI:"),
+          choices = c("n", "square", "circle", "rect")
+        ),
+        sliderInput(
+          inputId = ns("corrplot_addrect"),
+          label = strong("Segment Rects:"),
+          min = 0,
+          max = 5,
+          value = 3,
+          step = 1
         )
       )
     ),
-    column(
-      3,
-      selectInput(
-        inputId = ns("corrplot_plotCI"),
-        label = strong("plotCI:"),
-        choices = c("n", "square", "circle", "rect")
-      ),
-      sliderInput(
-        inputId = ns("corrplot_addrect"),
-        label = strong("Segment Rects:"),
-        min = 0,
-        max = 5,
-        value = 3,
-        step = 1
-      )
-    ),
 
-    plotOutput(ns("corrplot_corrlation_plot"))
+    box(
+      title = "Corrlation Plot", status = "primary",
+      solidHeader = TRUE, collapsible = TRUE, width = 12,
+      collapsed = FALSE,
+      plotOutput(ns("corrplot_corrlation_plot"))
+    )
+
   )
 }
 

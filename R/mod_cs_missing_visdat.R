@@ -3,7 +3,8 @@
 #' @description A shiny module for cs_missing_visdat.
 #'
 #' @details
-#'  The module is an UI for user to display missing data by [`visdat`][visdat::visdat] package.
+#'  The module is an UI for user to display missing pattern by
+#'  [`visdat`][visdat::visdat] package.
 #'
 #' @name cs_missing_visdat
 #'
@@ -62,7 +63,13 @@ cs_missing_visdat_ui <- function(id) {
       ),
       mainPanel(
         width = 9,
-        plotOutput(ns("missing_plot"))
+        box(
+         title = "Missing Pattern", status = "primary",
+         solidHeader = TRUE, collapsible = TRUE,
+         width = 12,
+
+         plotOutput(ns("missing_plot"), height = 600)
+        )
       )
     )
   )
@@ -94,8 +101,6 @@ cs_missing_visdat_server <- function(id, csbl_vars) {
     })
 
     output$missing_plot <- renderPlot(
-      width = 800,
-      height = 800,
       {
         show_from <- input$show_from
         show_to <- show_from + as.numeric(input$show_window_size) - 1

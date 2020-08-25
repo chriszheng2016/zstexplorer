@@ -88,13 +88,18 @@ cs_missing_naniar_ui <- function(id) {
           ),
           tabPanelBody(
             value = "miss_cases",
-            # plotOutput(ns("plot1"))
+            h4("Ploting missing cases might take very long time, click to proceed."),
+            actionButton(
+              inputId = ns("plot_miss_cases"),
+              label = strong("Plot missing cases")
+            )
           )
         )
       ),
       mainPanel(
         width = 9,
         tabsetPanel(
+        #tabBox( width = 12,
           id = ns("plot_tabs"),
           type = "tabs",
           tabPanel(
@@ -111,31 +116,43 @@ cs_missing_naniar_ui <- function(id) {
           ),
           tabPanel(
             "Missing vars",
-            h3("Overal Missing vars"),
+            br(),
             fluidRow(
-              column(
-                width = 6,
+              box(
+                title = "Missing Vars Plot", status = "primary",
+                solidHeader = TRUE, collapsible = TRUE, width = 8,
                 plotOutput(ns("miss_vars_plot")),
               ),
-              column(
-                width = 6,
+              box(
+                title = "Missing Vars Table", status = "primary",
+                solidHeader = TRUE, collapsible = TRUE, width = 4,
                 tableOutput(ns("miss_vars_summary_table"))
               )
             ),
-            h3("Missing vars by factor"),
-            plotOutput(ns("miss_vars_byfct_plot"))
+            fluidRow(
+              box(
+                title = "Missing vars by factor", status = "primary",
+                solidHeader = TRUE, collapsible = TRUE, width = 12,
+                collapsed = TRUE,
 
+                plotOutput(ns("miss_vars_byfct_plot"))
+              )
+            )
           ),
           tabPanel(
             "Missing cases",
+            br(),
             fluidRow(
-              column(
-                width = 6,
-                plotOutput(ns("miss_cases_plot"))
-              ),
-              column(
-                width = 6,
+              box(
+                title = "Missing Cases Table", status = "primary",
+                solidHeader = TRUE, collapsible = TRUE, width = 6,
                 tableOutput(ns("miss_case_table"))
+              ),
+              box(
+                title = "Missing Cases Plot", status = "primary",
+                solidHeader = TRUE, collapsible = TRUE, width = 6,
+                collapsed = TRUE,
+                plotOutput(ns("miss_cases_plot"))
               )
             )
           )
@@ -266,7 +283,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     ## Shadow plot ----
     output$miss_shadow_plot <- renderPlot({
 
-      req(input$target_var, input$target_var)
+      req(input$target_var, input$shadow_var)
       csbl_vars_shadow() %>%
         ggplot(aes(
           x = .data[[input$target_var]],
@@ -304,6 +321,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
 
     ##  Missing cases plot ----
     output$miss_cases_plot <- renderPlot({
+      req(input$plot_miss_cases)
       csbl_vars() %>%
         naniar::gg_miss_case(order_cases = TRUE) +
         labs(x = "Number of Cases")

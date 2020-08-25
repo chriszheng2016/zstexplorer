@@ -43,7 +43,7 @@ explore_factor_ui <- function(id) {
   ns <- NS(id)
   tagList(
     dashboardPage(
-      dashboardHeader(),
+      dashboardHeader(title = "Explore factors"),
       dashboardSidebar(
         sidebarMenu(
           menuItem("Prepare", tabName = "prepare_data", icon = icon("dashboard")),

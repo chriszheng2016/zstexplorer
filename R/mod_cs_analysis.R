@@ -59,40 +59,56 @@ cs_analysis_ui <- function(id) {
           "Summary",
           tabPanel(
             "base::summary()",
-            verbatimTextOutput(ns("base_summary_text"))
+            box(
+              status = "primary", width = 12,
+              verbatimTextOutput(ns("base_summary_text"))
+            )
           ),
           tabPanel(
             "Hmisc::describe()",
-            verbatimTextOutput(ns("Hmisc_describe_text"))
+            box(
+              status = "primary", width = 12,
+              verbatimTextOutput(ns("Hmisc_describe_text"))
+            )
           ),
           tabPanel(
             "DataExplorer::introduce()",
-            tableOutput(ns("DataExplorer_intro_table")),
-            br(),
-            plotOutput(ns("DataExplorer_intro_plot"))
+            box(
+              status = "primary", width = 12,
+              tableOutput(ns("DataExplorer_intro_table")),
+              br(),
+              plotOutput(ns("DataExplorer_intro_plot"))
+            )
           ),
           tabPanel(
             "skimr::skim()",
-            verbatimTextOutput(ns("skimr_skim_text"))
+            box(
+              status = "primary", width = 12,
+              verbatimTextOutput(ns("skimr_skim_text"))
+            )
           ),
           tabPanel(
             "fBasics::basicStats()",
-            h4("summary of continuous varables"),
-            tableOutput(ns("fBasics_basic_table"))
+            box(
+              title = "Summary of continuous varables",
+              status = "primary", width = 12,
+              tableOutput(ns("fBasics_basic_table"))
+            )
           ),
           tabPanel(
             "my_summary()",
-            h4("summary of continuous varables"),
-            tableOutput(ns("my_summary_table"))
+            box(
+              title = "Summary of continuous varables",
+              status = "primary", width = 12,
+              tableOutput(ns("my_summary_table"))
+            )
           )
         ),
         navbarMenu(
           "Missing",
           tabPanel(
             "DataExplorer::profile_missing()",
-            plotOutput(ns("DataExplorer_missing_plot")),
-            br(),
-            tableOutput(ns("DataExplorer_missing_table"))
+            cs_missing_DataExplorer_ui(ns("cs_missing_DataExplorer_module"))
           ),
           tabPanel(
             "visdat::vis_miss()",
@@ -180,7 +196,7 @@ cs_analysis_server <- function(id, tsbl_vars) {
     date_range <- reactive({
       start_date <- min(unique(slice_tsbl_vars()$date), na.rm = TRUE)
       start_date <- format(start_date, "%Y-%m-%d")
-      end_date <- min(unique(slice_tsbl_vars()$date), na.rm = TRUE)
+      end_date <- max(unique(slice_tsbl_vars()$date), na.rm = TRUE)
       end_date <- format(end_date, "%Y-%m-%d")
 
       return(list(start_date = start_date, end_date = end_date))
@@ -284,15 +300,11 @@ cs_analysis_server <- function(id, tsbl_vars) {
     })
 
     # Missing output ----
-    output$DataExplorer_missing_table <- renderTable({
-      slice_csbl_vars() %>%
-        DataExplorer::profile_missing()
-    })
 
-    output$DataExplorer_missing_plot <- renderPlot({
-      slice_csbl_vars() %>%
-        DataExplorer::plot_missing()
-    })
+    # Draw missing data pattern by DataExplorer
+    cs_missing_DataExplorer_server("cs_missing_DataExplorer_module",
+      csbl_vars = reactive(csbl_vars)
+    )
 
     # Draw missing data pattern by visdat
     cs_missing_visdat_server("cs_missing_visdat_module",
@@ -344,8 +356,6 @@ cs_analysis_server <- function(id, tsbl_vars) {
       "cs_cor_correlationfunnel_module",
       csbl_vars = slice_csbl_vars
     )
-
-
   })
 }
 

@@ -84,21 +84,30 @@ cs_cor_GGally_ui <- function(id) {
       position = "right",
       sidebarPanel(
         width = 3,
-        wellPanel(
-          actionButton(
-            inputId = ns("refresh_plot"),
-            label = strong("Refresh Plot")
+        fluidRow(
+          h4("Click 'Refresh Plot' to display plot..."),
+          column(
+            width = 6,
+            actionButton(
+              inputId = ns("refresh_plot"),
+              label = strong("Refresh Plot"),
+              width = '100%'
+            )
           ),
-
-          actionButton(
-            inputId = ns("reset_default"),
-            label = strong("Reset Default")
+          column(
+            width = 6,
+            actionButton(
+              inputId = ns("reset_default"),
+              label = strong("Reset Default"),
+              width = '100%'
+            )
           )
         ),
 
         tabsetPanel(
           id = ns("setting_tabs"),
           type = "hidden",
+          selected = "ggpairs_setting",
           tabPanelBody(
             value = "ggscatmat_setting",
             h3("ggscatmat setting"),
@@ -196,6 +205,7 @@ cs_cor_GGally_ui <- function(id) {
         tabsetPanel(
           id = ns("plot_tabs"),
           type = "tabs",
+          selected = "ggpairs plot",
           tabPanel(
             "ggscatmat plot",
             plotOutput(ns("ggscatmat_plot"))
@@ -284,11 +294,10 @@ cs_cor_GGally_server <- function(id, csbl_vars) {
         session = session, inputId = "cardinality_threshold",
         value = cardinality_threshold_default
       )
-
     })
 
 
-    output$ggscatmat_plot <- renderCachedPlot(
+    output$ggscatmat_plot <- renderPlot(
       {
         req(input$refresh_plot)
 
@@ -298,13 +307,13 @@ cs_cor_GGally_server <- function(id, csbl_vars) {
             alpha = 0.3,
             corMethod = input$cor_method
           )
-      },
-      cacheKeyExpr = {
-        list(input$refresh_plot)
+      # },
+      # cacheKeyExpr = {
+      #   list(input$refresh_plot)
       }
     )
 
-    output$ggpairs_plot <- renderCachedPlot(
+    output$ggpairs_plot <- renderPlot(
       {
         req(input$refresh_plot)
 
@@ -342,9 +351,9 @@ cs_cor_GGally_server <- function(id, csbl_vars) {
             cardinality_threshold = input$cardinality_threshold,
             progress = FALSE
           )
-      },
-      cacheKeyExpr = {
-        list(input$refresh_plot)
+      # },
+      # cacheKeyExpr = {
+      #   list(input$refresh_plot)
       }
     )
   })
