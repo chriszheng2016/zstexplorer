@@ -35,7 +35,7 @@ test_that("load_factors_server - reactives and output updates", {
       actual_fields <- names(load_factors)
       expect_true(all(actual_fields %in% expect_fields))
       expect_equal(tsibble::index_var(load_factors), "date")
-      expect_true(all(tsibble::key_vars(load_factors) %in% c("stkcd")))
+      expect_true(all(tsibble::key_vars(load_factors) %in% c("stkcd", "period")))
       expect_true(nrow(load_factors) >= 0)
 
       # Check output

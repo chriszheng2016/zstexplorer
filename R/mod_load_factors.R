@@ -195,6 +195,7 @@ load_factors_server <- function(id, factors_info) {
 
     # Load factors
     load_factors <- reactive({
+
       req(input$load_factors)
 
       factors_list <- isolate(req(input$select_factors))
@@ -224,11 +225,16 @@ load_factors_server <- function(id, factors_info) {
             values_from = "factor_value"
           )
 
+        incProgress(message = "convert to tsibble")
+
         # Turn into tsibble
-        tsbl_factors <- tsibble::as_tsibble(ds_factors,
-          index = date,
-          key = c("stkcd")
-        )
+        tsbl_factors <-
+          ds_factors %>%
+          dplyr::filter(!(is.na(date)) & (!is.na(stkcd)) & (!is.na(indcd))) %>%
+          tsibble::as_tsibble(
+            index = date,
+            key = c("stkcd", "period")
+          )
 
         zstmodelr::close_stock_db(stock_db)
       })
@@ -244,19 +250,20 @@ load_factors_server <- function(id, factors_info) {
         factors_info(),
         options = list(
           columnDefs = list(list(className = "dt-center")),
-          pageLength = 25
+          pageLength = 10
         )
       )
     )
 
-    # Display loaded factors
     output$factors_data_table <- DT::renderDataTable(
-      DT::datatable(
-        load_factors(),
-        options = list(
-          columnDefs = list(list(className = "dt-center")),
-          pageLength = 25
-        )
+       load_factors(),
+      options = list(
+        autoWidth = FALSE,
+        columnDefs = list(
+          list(className = "dt-center"),
+          list(width = "20px")
+          ),
+        pageLength = 10
       )
     )
 
