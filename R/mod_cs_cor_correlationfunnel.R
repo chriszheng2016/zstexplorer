@@ -107,10 +107,30 @@ cs_cor_correlationfunnel_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
+    # Clear NAs in csbl_vars
+    csbl_vars_nona <- reactive({
+      csbl_vars_nona <-
+        csbl_vars() %>%
+        # remove column with all NAs
+        dplyr::select(where(~ all(!is.na(.x)))) %>%
+        # remove row with some NA value
+        na.omit()
+
+      if (nrow(csbl_vars_nona) == 0) {
+        showNotification(
+          "No data appropriate for correlationfunnel due to too many NAs!",
+          type = "error"
+        )
+      }
+
+      return(csbl_vars_nona)
+    })
+
     # Binarize csbl_vars
     vars_binarized <- reactive({
-      csbl_vars() %>%
-        na.omit() %>%
+      req(nrow(csbl_vars_nona()) > 0)
+      vars_binarized <-
+        csbl_vars_nona() %>%
         correlationfunnel::binarize(
           n_bins = req(input$continuous_bins),
           thresh_infreq = req(input$discrete_thresh_infreq)
@@ -119,7 +139,9 @@ cs_cor_correlationfunnel_server <- function(id, csbl_vars) {
 
     # Compute correlations
     vars_correlation <- reactive({
-      vars_binarized() %>%
+      req(nrow(vars_binarized()) > 0)
+      vars_correlation <-
+        vars_binarized() %>%
         correlationfunnel::correlate(target = req(input$target_var_level))
     })
 
@@ -127,7 +149,7 @@ cs_cor_correlationfunnel_server <- function(id, csbl_vars) {
     observe({
 
       # Target variable input
-      target_vars <- names(csbl_vars())
+      target_vars <- names(csbl_vars_nona())
       updateSelectInput(
         session = session, inputId = "target_var",
         choices = target_vars,
@@ -152,6 +174,7 @@ cs_cor_correlationfunnel_server <- function(id, csbl_vars) {
     output$correlation_funnel_plot <- renderPlot({
 
       # Compute limits of vars_correlation
+      req(nrow(vars_correlation()) > 0)
       vars_correlation_limit <-
         vars_correlation() %>%
         dplyr::group_by(.data$feature) %>%

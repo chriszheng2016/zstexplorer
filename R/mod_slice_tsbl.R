@@ -80,6 +80,12 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
       choices = "", multiple = TRUE
     ),
 
+    selectInput(
+      inputId = ns("period"),
+      label = strong("Period:"),
+      choices = "", multiple = TRUE
+    ),
+
     radioButtons(
       inputId = ns("date_type"),
       label = strong("Date Range"),
@@ -87,7 +93,7 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
         "Single Period" = "single_period",
         "Multiple Periods" = "multi_period"
       ),
-      selected = "multi_period"
+      selected = "single_period"
     ),
 
     conditionalPanel(
@@ -120,7 +126,10 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
     ),
 
     # Debug Control for output
-    if (debug) tableOutput(outputId = ns("debug_output"))
+    if (debug) {
+      # tableOutput(outputId = ns("debug_output"))
+      dataTableOutput(outputId = ns("debug_output"))
+    }
   )
 }
 
@@ -137,8 +146,6 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
 
-    # Define constant string for all selection option
-    # all_tag <- reactive("ALL")
 
     # Update UI with dataset and user inputs
     observe({
@@ -146,7 +153,7 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
       date_var <- tsibble::index_var(tsbl_vars)
       key_vars <- tsibble::key_vars(tsbl_vars)
       assertive::assert_all_are_true(date_var == "date")
-      assertive::assert_all_are_true(key_vars %in% c("period", "stkcd", "indcd"))
+      assertive::assert_all_are_true(key_vars %in% c("period", "stkcd"))
       focus_vars <- setdiff(names(tsbl_vars), c(date_var, key_vars))
 
       # Set choices for select inputs
@@ -182,6 +189,13 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
         selected = input$focus_vars
       )
 
+      updateSelectInput(
+        session = session, inputId = "period",
+        choices = sort(unique(tsbl_vars$period)),
+        # Set selected with current value to ensure not clear current input
+        selected = input$period
+      )
+
       updateSliderInput(
         session = session, inputId = "report_date",
         min = min(unique(tsbl_vars$date), na.rm = TRUE),
@@ -202,6 +216,7 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
       )
     })
 
+
     # Select date range
     select_date_range <- reactive({
       tsbl_vars <- tsbl_vars()
@@ -210,27 +225,34 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 
       switch(date_type,
         "single_period" = {
+
+          req(input$report_date > 0)
+
           report_dates <- sort(unique(tsbl_vars$date))
           start_date <- min(report_dates[report_dates >= input$report_date],
-            na.rm = TRUE
+                            na.rm = TRUE
           )
+
           end_date <- start_date
           start_date <- format(start_date, "%Y-%m-%d")
           end_date <- format(end_date, "%Y-%m-%d")
         },
         "multi_period" = {
-          start_date <- input$start_date
-          end_date <- input$end_date
+          start_date <- req(input$start_date)
+          end_date <- req(input$end_date)
           if (end_date < start_date) end_date <- start_date
         }
       )
 
-      # golem::cat_dev(
-      #   "selected date:", start_date, ":", end_date, "\n"
-      # )
+      if (debug) {
+        golem::cat_dev(
+          "selected date:", start_date, ":", end_date, "\n"
+        )
+      }
 
       return(list(start_date = start_date, end_date = end_date))
     })
+
 
     # Filter data according user inputs
     slice_dataset <- reactive({
@@ -258,6 +280,13 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
           dplyr::filter(.data$stkcd %in% select_stkcd)
       }
 
+      if (!is.null(input$period)) {
+        select_period <- input$period
+        slice_dataset <-
+          slice_dataset %>%
+          dplyr::filter(.data$period %in% select_period)
+      }
+
       select_date_range <- select_date_range()
       if ((select_date_range$start_date != "") &&
         (select_date_range$end_date != "")) {
@@ -279,7 +308,13 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 
     # Render output for debug
     if (debug) {
-      output$debug_output <- renderTable(head(slice_dataset()))
+      # output$debug_output <- renderTable(head(slice_dataset()))
+      output$debug_output <- renderDataTable(
+        slice_dataset(),
+        options = list(
+          pageLength = 5
+        )
+      )
     }
 
     return(slice_dataset)
@@ -291,20 +326,23 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 #' @param use_online_data A logical to determine whether to use test data from
 #'  database or not. Default FALSE means to use achieved data for tests.
 #'
+#' @param debug A logic to enable debug or not, default is on_debug() which
+#'  returns DEBUG environment variable.
+#'
 #' @describeIn slice_tsbl  Testing App for slicing tibble of time series.
-slice_tsbl_app <- function(use_online_data = FALSE) {
+slice_tsbl_app <- function(use_online_data = FALSE, debug = on_debug()) {
 
   # Prepare data
   tsbl_vars <- load_tsbl_vars(use_online_data)
 
   # Launch App
   ui <- fluidPage(
-    slice_tsbl_ui("slice_tsbl_module", debug = TRUE)
+    slice_tsbl_ui("slice_tsbl_module", debug = debug)
   )
   server <- function(input, output, session) {
     slice_vars <- slice_tsbl_server("slice_tsbl_module",
       tsbl_vars = reactive(tsbl_vars),
-      debug = TRUE
+      debug = debug
     )
   }
   testApp <- shinyApp(ui, server)

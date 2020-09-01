@@ -123,3 +123,29 @@ add_skeleton_cs_module <- function(name,
   return(success)
 
 }
+
+
+# Enable environment variable for debug
+enable_debug <- function(quiet = FALSE) {
+  Sys.setenv(APP_DEBUG = "TRUE")
+  if(!quiet){
+    rlang::inform(glue::glue("Environment Variable: APP_DEBUG = ",
+                             Sys.getenv("APP_DEBUG")))
+  }
+
+}
+
+# Enable environment variable for debug
+disable_debug <- function(quiet = FALSE) {
+  Sys.setenv(APP_DEBUG = "FALSE")
+  if(!quiet){
+    rlang::inform(glue::glue("Environment Variable: APP_DEBUG = ",
+                             Sys.getenv("APP_DEBUG")))
+  }
+}
+
+# Judge whether debug is enable or not
+on_debug <- function() {
+  isTRUE(as.logical(Sys.getenv("APP_DEBUG")))
+}
+

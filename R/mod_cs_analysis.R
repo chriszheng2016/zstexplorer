@@ -38,7 +38,7 @@ NULL
 #'
 #' @describeIn cs_analysis  UI function of cs_analysis.
 #' @importFrom shiny NS tagList
-cs_analysis_ui <- function(id) {
+cs_analysis_ui <- function(id, debug = FALSE ) {
   ns <- NS(id)
   tagList(
     # Side panel for input
@@ -46,7 +46,7 @@ cs_analysis_ui <- function(id) {
       width = 2,
 
       # Ui for slicing tsbl_vars
-      slice_tsbl_ui(ns("slice_tsbl_module"))
+      slice_tsbl_ui(ns("slice_tsbl_module"), debug = debug)
     ),
 
     # MainPanel for Output
@@ -178,7 +178,7 @@ cs_analysis_ui <- function(id) {
 #'
 #' @describeIn cs_analysis  Server function of cs_analysis.
 #' @return * Server function return a data frame of ...
-cs_analysis_server <- function(id, tsbl_vars) {
+cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -186,7 +186,7 @@ cs_analysis_server <- function(id, tsbl_vars) {
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
 
     slice_tsbl_vars <- slice_tsbl_server("slice_tsbl_module",
-      tsbl_vars = tsbl_vars
+      tsbl_vars = tsbl_vars, debug = debug
     )
 
     slice_csbl_vars <- reactive({
@@ -305,7 +305,7 @@ cs_analysis_server <- function(id, tsbl_vars) {
 
     # Draw missing data pattern by DataExplorer
     cs_missing_DataExplorer_server("cs_missing_DataExplorer_module",
-      csbl_vars = reactive(csbl_vars)
+      csbl_vars = slice_csbl_vars
     )
 
     # Draw missing data pattern by visdat
@@ -366,19 +366,23 @@ cs_analysis_server <- function(id, tsbl_vars) {
 #' @param use_online_data A logical to determine whether to use test data from
 #'  database or not. Default FALSE means to use achieved data for tests.
 #'
+#' @param debug A logic to enable debug or not, default is on_debug() which
+#'  returns DEBUG environment variable.
+#'
 #' @describeIn cs_analysis  Testing App of cs_analysis.
-cs_analysis_app <- function(use_online_data = FALSE) {
+cs_analysis_app <- function(use_online_data = FALSE,  debug = on_debug()) {
 
   # Prepare data
   tsbl_vars <- load_tsbl_vars(use_online_data)
 
   ui <- fluidPage(
-    cs_analysis_ui("cs_analysis_module")
+    cs_analysis_ui("cs_analysis_module", debug = debug)
   )
   server <- function(input, output, session) {
     slice_vars <- cs_analysis_server(
       "cs_analysis_module",
-      tsbl_vars = reactive(tsbl_vars)
+      tsbl_vars = reactive(tsbl_vars),
+      debug = debug
     )
   }
   shinyApp(ui, server)
