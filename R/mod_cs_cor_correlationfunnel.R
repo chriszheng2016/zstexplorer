@@ -112,7 +112,7 @@ cs_cor_correlationfunnel_server <- function(id, csbl_vars) {
       csbl_vars_nona <-
         csbl_vars() %>%
         # remove column with all NAs
-        dplyr::select(where(~ all(!is.na(.x)))) %>%
+        dplyr::select(where(~ !all(is.na(.x)))) %>%
         # remove row with some NA value
         na.omit()
 

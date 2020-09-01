@@ -303,6 +303,11 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
           dplyr::select(c({{ date_var }}, {{ key_vars }}, {{ select_vars }}))
       }
 
+      # Remove column with all NAs which contains meaningless information
+      slice_dataset <-
+        slice_dataset %>%
+        dplyr::select(where(~ !all(is.na(.x))))
+
       return(slice_dataset)
     })
 
