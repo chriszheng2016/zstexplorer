@@ -130,6 +130,10 @@ cs_analysis_ui <- function(id, debug = FALSE ) {
             cs_dist_DataExplorer_ui(ns("cs_dist_DataExplorer_module"))
           ),
           tabPanel(
+            "plotly::funs()",
+            cs_dist_plotly_ui(ns("cs_dist_plotly_module"))
+          ),
+          tabPanel(
             "PerformanceAnalytics::funs()",
             cs_dist_PerformanceAnalytics_ui(
               ns("cs_dist_PerformanceAnalytics_module")
@@ -328,6 +332,11 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
 
     # Draw distribution plots by DataExplorer
     cs_dist_DataExplorer_server("cs_dist_DataExplorer_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Draw distribution plots by plotly
+    cs_dist_plotly_server("cs_dist_plotly_module",
       csbl_vars = slice_csbl_vars
     )
 

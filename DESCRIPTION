@@ -19,6 +19,7 @@ Imports:
     config,
     correlationfunnel,
     corrplot,
+    crosstalk,
     DataExplorer,
     dplyr,
     DT,
