@@ -195,7 +195,6 @@ load_factors_server <- function(id, factors_info) {
 
     # Load factors
     load_factors <- reactive({
-
       req(input$load_factors)
 
       factors_list <- isolate(req(input$select_factors))
@@ -255,17 +254,38 @@ load_factors_server <- function(id, factors_info) {
       )
     )
 
-    output$factors_data_table <- DT::renderDataTable(
-       load_factors(),
-      options = list(
-        autoWidth = FALSE,
-        columnDefs = list(
-          list(className = "dt-center"),
-          list(width = "20px")
-          ),
-        pageLength = 10
+    output$factors_data_table <- DT::renderDataTable({
+      numeric_vars <- setdiff(
+        names(load_factors()),
+        c("date", "period", "stkcd", "indcd")
       )
-    )
+      DT::datatable(
+        load_factors(),
+        filter = "top",
+        extensions = "Scroller",
+        options = list(
+          columnDefs = list(list(className = "dt-center")),
+          pageLength = 10,
+          dom = "t",
+          deferRender = TRUE,
+          scrollY = 320,
+          scrollX = TRUE,
+          scroller = TRUE
+        )
+      ) %>%
+        DT::formatRound(columns = numeric_vars, digits = 2)
+    })
+
+    #    load_factors(),
+    #   options = list(
+    #     autoWidth = FALSE,
+    #     columnDefs = list(
+    #       list(className = "dt-center"),
+    #       list(width = "20px")
+    #       ),
+    #     pageLength = 10
+    #   )
+    # )
 
     return(load_factors)
   })
