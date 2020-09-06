@@ -44,6 +44,14 @@ usethis::use_tidy_description()
 ## Style codes ----
 usethis::use_tidy_style()
 
+## Tools for plot ----
+
+# Returns the built-in color names which R knows about.
+colors()
+# Display similar colors
+plotCol(nearRcolor("skyblue", dist=.1))
+
+
 ## Tests ----
 ## Add one line by test you want to create
 usethis::use_test("app")
