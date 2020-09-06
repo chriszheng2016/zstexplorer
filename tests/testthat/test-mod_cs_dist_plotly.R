@@ -53,7 +53,7 @@ test_that("cs_dist_plotly_app - Module App works", {
 
     # Load test App
     suppressWarnings({
-      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 100)
+      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 200)
     })
 
 
