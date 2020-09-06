@@ -157,6 +157,10 @@ cs_analysis_ui <- function(id, debug = FALSE ) {
           tabPanel(
             "correlationfunnel::plot_correlation_funnel()",
             cs_cor_correlationfunnel_ui(ns("cs_cor_correlationfunnel_module"))
+          ),
+          tabPanel(
+            "plotly::funs()",
+            cs_cor_plotly_ui(ns("cs_cor_plotly_module"))
           )
         ),
         navbarMenu(
@@ -367,6 +371,13 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
       "cs_cor_correlationfunnel_module",
       csbl_vars = slice_csbl_vars
     )
+
+    # Draw correlation plot by plotly
+    cs_cor_plotly_server(
+      "cs_cor_plotly_module",
+      csbl_vars = slice_csbl_vars
+    )
+
   })
 }
 
