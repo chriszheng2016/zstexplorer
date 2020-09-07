@@ -233,6 +233,12 @@ cs_cor_GGally_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
+    # Focus csbl_vars for analyzing
+    csbl_vars_focus <- reactive({
+      csbl_vars() %>%
+        dplyr::select(-c("id"))
+    })
+
     # Update UI when user choose plot tabs
     observeEvent(input$plot_tabs, {
 
@@ -301,7 +307,7 @@ cs_cor_GGally_server <- function(id, csbl_vars) {
       {
         req(input$refresh_plot)
 
-        csbl_vars() %>%
+        csbl_vars_focus() %>%
           dplyr::select(where(~ is.numeric(.x))) %>%
           GGally::ggscatmat(
             alpha = 0.3,
@@ -319,15 +325,15 @@ cs_cor_GGally_server <- function(id, csbl_vars) {
 
         focus_vars <- switch(input$vars_type,
           "continuous" = {
-            csbl_vars() %>%
+            csbl_vars_focus() %>%
               dplyr::select(where(~ is.numeric(.x)))
           },
           "discrete" = {
-            csbl_vars() %>%
+            csbl_vars_focus() %>%
               dplyr::select(where(~ !is.numeric(.x)))
           },
           "all" = {
-            csbl_vars()
+            csbl_vars_focus()
           }
         )
 

@@ -124,6 +124,12 @@ cs_dist_DataExplorer_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
+    # Focus csbl_vars for analyzing
+    csbl_vars_focus <- reactive({
+      csbl_vars() %>%
+        dplyr::select(-c("id"))
+    })
+
     # Update UI when user choose plot tabs
     observeEvent(input$plot_tabs, {
 
@@ -145,13 +151,13 @@ cs_dist_DataExplorer_server <- function(id, csbl_vars) {
       # width = 800,
       height = 600,
       {
-        csbl_vars() %>%
+        csbl_vars_focus() %>%
           DataExplorer::plot_bar(maxcat = input$max_cats)
       }
     )
 
     output$boxplot_plot <- renderPlot({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         dplyr::mutate(id = "value") %>%
         DataExplorer::plot_boxplot(
           by = "id",
@@ -164,7 +170,7 @@ cs_dist_DataExplorer_server <- function(id, csbl_vars) {
     })
 
     output$histogram_plot <- renderPlot({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         DataExplorer::plot_histogram(
           geom_histogram_args = list(
             bins = input$hist_bins
@@ -179,14 +185,14 @@ cs_dist_DataExplorer_server <- function(id, csbl_vars) {
     })
 
     output$density_plot <- renderPlot({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         DataExplorer::plot_density(
           scale_x = input$value_scale
         )
     })
 
     output$qq_plot <- renderPlot({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         DataExplorer::plot_qq()
     })
   })

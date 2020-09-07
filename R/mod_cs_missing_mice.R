@@ -87,17 +87,23 @@ cs_missing_mice_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
+    # Focus csbl_vars for analyzing
+    csbl_vars_focus <- reactive({
+      csbl_vars() %>%
+        dplyr::select(-c("id"))
+    })
+
     output$missing_pattern_plot <- renderPlot(
       # width = 800,
       # height = 800,
       {
-        csbl_vars() %>%
+        csbl_vars_focus() %>%
           mice::md.pattern(rotate.names = TRUE)
       }
     )
 
     output$missing_pattern_info <- renderPrint({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         mice::md.pattern(plot = FALSE)
     })
   })

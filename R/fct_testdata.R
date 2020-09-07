@@ -64,7 +64,7 @@ load_tsbl_vars <- function(use_online_data = FALSE) {
     # Turn into tsibble
     tsbl_vars <- tsibble::as_tsibble(ds_factors,
       index = date,
-      key = c("stkcd", "period")
+      key = c("period", "stkcd")
     )
     zstmodelr::close_stock_db(stock_db)
   } else {
@@ -113,11 +113,12 @@ tsbl2csbl <- function(tsbl_vars) {
   assertive::assert_is_inherited_from(tsbl_vars, c("tbl_ts"))
 
   # Convert tsbl_vars to csbl_vars
-  measured_vars <- tsibble::measured_vars(tsbl_vars)
+  index_var <- tsibble::index_var(tsbl_vars)
+  key_vars <- tsibble::key_vars(tsbl_vars)
 
   csbl_vars <- tsbl_vars %>%
     tsibble::as_tibble() %>%
-    dplyr::select({{ measured_vars }})
+    tidyr::unite(col = "id", {{index_var}},{{key_vars}}, remove = TRUE)
 
   return(csbl_vars)
 }

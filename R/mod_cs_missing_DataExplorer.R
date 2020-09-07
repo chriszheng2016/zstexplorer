@@ -72,13 +72,20 @@ cs_missing_DataExplorer_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
-    output$missing_plot <- renderPlot({
+    # Focus csbl_vars for analyzing
+    csbl_vars_focus <- reactive({
       csbl_vars() %>%
+        dplyr::select(-c("id"))
+    })
+
+
+    output$missing_plot <- renderPlot({
+      csbl_vars_focus() %>%
         DataExplorer::plot_missing()
     })
 
     output$missing_table <- renderTable({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         DataExplorer::profile_missing()
     })
   })

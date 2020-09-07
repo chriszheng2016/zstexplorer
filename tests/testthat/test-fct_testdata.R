@@ -58,15 +58,15 @@ test_that("load_csbl_vars, with various arguments", {
   # load_csbl_vars on default arguments  ====
   csbl_vars <- load_csbl_vars()
   expect_s3_class(csbl_vars, c("tbl_df", "data.frame"))
-  expect_fields <- c("indcd", "QR", "CR", "ICR", "CFOR", "TDR","CFCR")
+  expect_fields <- c("id", "indcd", "QR", "CR", "ICR", "CFOR", "TDR","CFCR")
   actual_fields <- names(csbl_vars)
   expect_true(all(expect_fields %in% actual_fields))
 
   # load_tsbl_vars on various arguments  ====
   skip_if_not(db_ready, "skip due to database is not ready")
-  csbl_vars <- load_tsbl_vars(use_online_data = TRUE)
+  csbl_vars <- load_csbl_vars(use_online_data = TRUE)
   expect_s3_class(csbl_vars, c("tbl_df", "data.frame"))
-  expect_fields <- c("indcd", "QR", "CR", "ICR", "CFOR", "TDR","CFCR")
+  expect_fields <- c("id", "indcd", "QR", "CR", "ICR", "CFOR", "TDR","CFCR")
   actual_fields <- names(csbl_vars)
   expect_true(all(expect_fields %in% actual_fields))
 
@@ -78,8 +78,9 @@ test_that("tsbl2csbl, with various arguments", {
   #
   tsbl_vars <- readRDS("data/tsbl_vars.rds")
   csbl_vars <- tsbl2csbl(tsbl_vars)
-  expect_fields <- setdiff(names(tsbl_vars),
-                          c("date", "stkcd", "period"))
+  expect_fields <- c("id", setdiff(names(tsbl_vars),
+                          c("date", "stkcd", "period")))
+
   actual_fields <- names(csbl_vars)
   expect_true(all(expect_fields %in% actual_fields))
 

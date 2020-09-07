@@ -128,7 +128,7 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
     # Debug Control for output
     if (debug) {
       # tableOutput(outputId = ns("debug_output"))
-      dataTableOutput(outputId = ns("debug_output"))
+      DT::dataTableOutput(outputId = ns("debug_output"))
     }
   )
 }
@@ -225,12 +225,11 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 
       switch(date_type,
         "single_period" = {
-
           req(input$report_date > 0)
 
           report_dates <- sort(unique(tsbl_vars$date))
           start_date <- min(report_dates[report_dates >= input$report_date],
-                            na.rm = TRUE
+            na.rm = TRUE
           )
 
           end_date <- start_date
@@ -314,12 +313,22 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
     # Render output for debug
     if (debug) {
       # output$debug_output <- renderTable(head(slice_dataset()))
-      output$debug_output <- renderDataTable(
-        slice_dataset(),
-        options = list(
-          pageLength = 5
+      output$debug_output <- DT::renderDataTable({
+
+        DT::datatable(
+          slice_dataset(),
+          filter = "top",
+          extensions = "Scroller",
+          options = list(
+            pageLength = 5,
+            dom = "ltir",
+            deferRender = TRUE,
+            scrollY = 180,
+            scrollX = TRUE,
+            scroller = TRUE
+          )
         )
-      )
+      })
     }
 
     return(slice_dataset)

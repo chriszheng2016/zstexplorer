@@ -117,6 +117,12 @@ cs_cor_DataExplorer_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
+    # Focus csbl_vars for analyzing
+    csbl_vars_focus <- reactive({
+      csbl_vars() %>%
+        dplyr::select(-c("id"))
+    })
+
     # Update UI when user choose plot tabs
     observeEvent(input$plot_tabs, {
 
@@ -139,7 +145,7 @@ cs_cor_DataExplorer_server <- function(id, csbl_vars) {
       cor_method <- input$cor_method
       cor_use <- input$cor_use
 
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         DataExplorer::plot_correlation(
           type = "continuous",
           cor_args = list(
@@ -154,7 +160,7 @@ cs_cor_DataExplorer_server <- function(id, csbl_vars) {
       cor_method <- input$cor_method
       cor_use <- input$cor_use
 
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         DataExplorer::plot_correlation(
           type = "discrete",
           maxcat = input$max_cats

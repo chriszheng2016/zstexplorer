@@ -88,13 +88,19 @@ cs_missing_visdat_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
+    # Focus csbl_vars for analyzing
+    csbl_vars_focus <- reactive({
+      csbl_vars() %>%
+        dplyr::select(-c("id"))
+    })
+
     # Update UI with dataset and user inputs
     observe({
 
       updateSliderInput(
         session = session, inputId = "show_from",
         min = 1,
-        max = nrow(csbl_vars()),
+        max = nrow(csbl_vars_focus()),
         value = 1
       )
 
@@ -105,7 +111,7 @@ cs_missing_visdat_server <- function(id, csbl_vars) {
         show_from <- input$show_from
         show_to <- show_from + as.numeric(input$show_window_size) - 1
 
-        csbl_vars()%>%
+        csbl_vars_focus()%>%
           dplyr::slice({{show_from}}:{{show_to}}) %>%
           visdat::vis_miss()
       }

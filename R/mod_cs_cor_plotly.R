@@ -3,8 +3,8 @@
 #' @description A shiny module for cs_cor_plotly.
 #'
 #' @details
-#'  The module is an UI for user to display plots of ...
-#'  by [`package_abc`][package_abc::package_abc] package.
+#'  The module is an UI for user to display plots of display correlation
+#'  by [`plotly`][plotly::plotly] package.
 #'
 #' @name cs_cor_plotly
 #'
@@ -216,7 +216,6 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
 
     })
 
-
     # Controls interaction ----
 
     # Update UI with dataset and user inputs
@@ -224,6 +223,7 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
       discrete_vars <- csbl_vars() %>%
         dplyr::select(where(~ !is.numeric(.x))) %>%
         names()
+      discrete_vars <- setdiff(discrete_vars, "id")
 
       continuous_vars <- csbl_vars() %>%
         dplyr::select(where(~ is.numeric(.x))) %>%
@@ -284,6 +284,8 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
 
 
     output$continuous_scatter <- plotly::renderPlotly({
+
+      req(input$continuous_var_x)
       csbl_vars() %>%
         scatter_plotly(
           x_var_name = req(input$continuous_var_x),

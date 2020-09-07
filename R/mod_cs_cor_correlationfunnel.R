@@ -107,30 +107,32 @@ cs_cor_correlationfunnel_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
-    # Clear NAs in csbl_vars
-    csbl_vars_nona <- reactive({
-      csbl_vars_nona <-
+    # Focus csbl_vars for analyzing
+    csbl_vars_focus <- reactive({
+      csbl_vars_focus <-
         csbl_vars() %>%
+        # remove id column
+        dplyr::select(-c("id")) %>%
         # remove column with all NAs
         dplyr::select(where(~ !all(is.na(.x)))) %>%
         # remove row with some NA value
         na.omit()
 
-      if (nrow(csbl_vars_nona) == 0) {
+      if (nrow(csbl_vars_focus) == 0) {
         showNotification(
           "No data appropriate for correlationfunnel due to too many NAs!",
           type = "error"
         )
       }
 
-      return(csbl_vars_nona)
+      return(csbl_vars_focus)
     })
 
     # Binarize csbl_vars
     vars_binarized <- reactive({
-      req(nrow(csbl_vars_nona()) > 0)
+      req(nrow(csbl_vars_focus()) > 0)
       vars_binarized <-
-        csbl_vars_nona() %>%
+        csbl_vars_focus() %>%
         correlationfunnel::binarize(
           n_bins = req(input$continuous_bins),
           thresh_infreq = req(input$discrete_thresh_infreq)
@@ -149,7 +151,7 @@ cs_cor_correlationfunnel_server <- function(id, csbl_vars) {
     observe({
 
       # Target variable input
-      target_vars <- names(csbl_vars_nona())
+      target_vars <- names(csbl_vars_focus())
       updateSelectInput(
         session = session, inputId = "target_var",
         choices = target_vars,

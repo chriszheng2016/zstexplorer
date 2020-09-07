@@ -201,14 +201,20 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(csbl_vars))
 
+    # Focus csbl_vars for analyzing
+    csbl_vars_focus <- reactive({
+      csbl_vars() %>%
+        dplyr::select(-c("id"))
+    })
+
     ## Update UI  ----
 
     # Update UI with dataset and user inputs
     observe({
 
       # Set setting controls for missing points
-      x_vars <- names(csbl_vars())
-      y_vars <- setdiff(names(csbl_vars()), input$x_var)
+      x_vars <- names(csbl_vars_focus())
+      y_vars <- setdiff(names(csbl_vars_focus()), input$x_var)
 
       updateSelectInput(
         session = session, inputId = "x_var",
@@ -247,7 +253,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
       )
 
       # Set control for miss_vars_plot
-      fact_vars <- csbl_vars() %>%
+      fact_vars <- csbl_vars_focus() %>%
         dplyr::select(where(~ !is.numeric(.x))) %>%
         names()
 
@@ -313,14 +319,14 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
 
     ## Upset plot ----
     output$miss_upset_plot <- renderPlot({
-      naniar::gg_miss_upset(csbl_vars(),
-        nsets = naniar::n_var_miss(csbl_vars())
+      naniar::gg_miss_upset(csbl_vars_focus(),
+        nsets = naniar::n_var_miss(csbl_vars_focus())
       )
     })
 
     # csbl_vars with shadow matrix
     csbl_vars_shadow <- reactive({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         naniar::bind_shadow()
     })
 
@@ -340,7 +346,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     output$miss_points_plot <- renderPlot({
       req(input$plotly_miss_points == FALSE)
       req(input$x_var, input$y_var)
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         ggplot(aes(x = .data[[input$x_var]], y = .data[[input$y_var]])) +
         naniar::geom_miss_point()
     })
@@ -349,7 +355,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
       req(input$plotly_miss_points == TRUE)
       req(input$x_var, input$y_var)
 
-      p <- csbl_vars() %>%
+      p <- csbl_vars_focus() %>%
         ggplot(aes(x = .data[[input$x_var]], y = .data[[input$y_var]])) +
         naniar::geom_miss_point()
 
@@ -359,17 +365,17 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
 
     ## Missing vars plot ----
     output$miss_vars_plot <- renderPlot({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         naniar::gg_miss_var(show_pct = TRUE)
     })
 
     output$miss_vars_summary_table <- renderTable({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         naniar::miss_var_summary()
     })
 
     output$miss_vars_byfct_plot <- renderPlot({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         naniar::gg_miss_fct(fct = .data[[req(input$miss_across_fct)]]) +
         theme(axis.text.x = element_text(angle = 90))
     })
@@ -377,13 +383,13 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     ##  Missing cases plot ----
     output$miss_cases_plot <- renderPlot({
       req(input$plot_miss_cases)
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         naniar::gg_miss_case(order_cases = TRUE) +
         labs(x = "Number of Cases")
     })
 
     output$miss_case_table <- renderTable({
-      csbl_vars() %>%
+      csbl_vars_focus() %>%
         naniar::miss_case_table()
     })
   })
