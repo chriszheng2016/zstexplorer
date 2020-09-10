@@ -76,7 +76,6 @@ NULL
 #' @importFrom shiny NS tagList
 load_factors_ui <- function(id) {
   ns <- NS(id)
-
   tagList(
     shinydashboard::box(
       status = "primary",
@@ -203,24 +202,26 @@ load_factors_server <- function(id, factors_info) {
         incProgress(message = "open_stock_db")
 
         # Open stock database
-        stock_db <- zstmodelr::stock_db(
-          zstmodelr::gta_db,
-          get_golem_config("database_dsn")
-        )
-        zstmodelr::open_stock_db(stock_db)
+        # stock_db <- zstmodelr::stock_db(
+        #   zstmodelr::gta_db,
+        #   get_golem_config("database_dsn")
+        # )
+        # zstmodelr::open_stock_db(stock_db)
+        #
+        # incProgress(message = "init_stock_db")
+        #
+        # # Initiate the stock database
+        # invisible(zstmodelr::init_stock_db(stock_db))
 
-        incProgress(message = "init_stock_db")
-
-        # Initiate the stock database
-        invisible(zstmodelr::init_stock_db(stock_db))
-
-        incProgress(message = "get_factor_indicator")
+        incProgress(message = "connect stock_db")
+        stock_db <- stock_db()
 
         # Get factors from database
+        incProgress(message = "get_factor_indicator")
         ds_factors <-
           zstmodelr::get_factors(stock_db, factor_codes = factors_list) %>%
           tidyr::pivot_wider(
-            names_from = "factor_name",
+            names_from = "factor_code",
             values_from = "factor_value"
           )
 
@@ -234,8 +235,6 @@ load_factors_server <- function(id, factors_info) {
             index = date,
             key = c("stkcd", "period")
           )
-
-        zstmodelr::close_stock_db(stock_db)
       })
 
       showNotification("Load factors successfully.")
@@ -247,9 +246,16 @@ load_factors_server <- function(id, factors_info) {
     output$factors_info_table <- DT::renderDataTable(
       DT::datatable(
         factors_info(),
+        filter = "top",
+        extensions = "Scroller",
         options = list(
           columnDefs = list(list(className = "dt-center")),
-          pageLength = 10
+          pageLength = 10,
+          dom = "ltir",
+          deferRender = TRUE,
+          scrollY = 300,
+          scrollX = TRUE,
+          scroller = TRUE
         )
       )
     )
@@ -266,26 +272,15 @@ load_factors_server <- function(id, factors_info) {
         options = list(
           columnDefs = list(list(className = "dt-center")),
           pageLength = 10,
-          dom = "t",
+          dom = "ltir",
           deferRender = TRUE,
-          scrollY = 320,
+          scrollY = 300,
           scrollX = TRUE,
           scroller = TRUE
         )
       ) %>%
         DT::formatRound(columns = numeric_vars, digits = 2)
     })
-
-    #    load_factors(),
-    #   options = list(
-    #     autoWidth = FALSE,
-    #     columnDefs = list(
-    #       list(className = "dt-center"),
-    #       list(width = "20px")
-    #       ),
-    #     pageLength = 10
-    #   )
-    # )
 
     return(load_factors)
   })

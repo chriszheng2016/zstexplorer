@@ -9,7 +9,6 @@
 #'
 #' @param id  An ID string of module to connecting UI function and Server
 #'   function.
-#' @param factors_info  A data frame of factor information for user to choose.
 #'
 #'
 #' @examples
@@ -21,9 +20,7 @@
 #'
 #' # Call control server in App server
 #' server <- function(input, output, session) {
-#'   explore_factor_server("explore_factor_module",
-#'     factors_info = reactive(factors_info)
-#'   )
+#'   explore_factor_server("explore_factor_module")
 #' }
 #'
 #' # Run testing App for integration testing
@@ -45,9 +42,29 @@ explore_factor_ui <- function(id) {
     dashboardPage(
       dashboardHeader(title = "Explore factors"),
       dashboardSidebar(
+        sidebarSearchForm(
+          textId = ns("search_text"),
+          buttonId = ns("search_button"),
+          label = "Enter a code:",
+        ),
+
         sidebarMenu(
+          id = ns("side_menu_tabs"),
           menuItem("Prepare", tabName = "prepare_data", icon = icon("dashboard")),
-          menuItem("Analyze", tabName = "analyze_data", icon = icon("dashboard"))
+          menuItem("Analyze",
+            tabName = "analyze_data", icon = icon("bar-chart-o"),
+            startExpanded = TRUE,
+            menuSubItem("Cross-section Analysis",
+              tabName = "cross_section_analysis"
+            ),
+            menuSubItem("Time-series Analysis",
+              tabName = "time_series_analysis"
+            )
+          ),
+          menuItem("Dictionary",
+            tabName = "data_dictionary",
+            icon = icon("fas fa-book-open")
+          )
         )
       ),
       dashboardBody(
@@ -55,17 +72,20 @@ explore_factor_ui <- function(id) {
           tabItem(
             tabName = "prepare_data",
             tabsetPanel(
-              tabPanel("Load Factors", load_factors_ui(ns("load_factors")))
+              tabPanel("Load data", load_data_ui(ns("load_data_module")))
             )
           ),
           tabItem(
-            tabName = "analyze_data",
-            tabsetPanel(
-              tabPanel("Cross-section Analysis",
-                       cs_analysis_ui(ns("cs_analysis_module"))),
-              tabPanel("Time-series Analysis",
-                       ts_analysis_ui(ns("ts_analysis_module")))
-            )
+            tabName = "cross_section_analysis",
+            cs_analysis_ui(ns("cs_analysis_module"))
+          ),
+          tabItem(
+            tabName = "time_series_analysis",
+            ts_analysis_ui(ns("ts_analysis_module"))
+          ),
+          tabItem(
+            tabName = "data_dictionary",
+            data_dictionary_ui(ns("data_dictionary_module"))
           )
         )
       )
@@ -79,27 +99,49 @@ explore_factor_ui <- function(id) {
 #'
 #' @describeIn explore_factor  Server function of exploring factors.
 
-explore_factor_server <- function(id, factors_info) {
+explore_factor_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Validate parameters
-    assertive::assert_all_are_true(is.reactive(factors_info))
 
-    # Load factors
-    load_factors <- load_factors_server("load_factors",
-      factors_info = factors_info
-    )
+    # UI interactive events ----
+
+    observeEvent(input$search_button, {
+
+      # Match codes to names
+      codes <- stringr::str_split(
+        stringr::str_trim(input$search_text),
+        pattern = "\\s*,\\s*|\\s+",
+        simplify = FALSE
+      )[[1]]
+
+      names <- code2name(codes)
+
+      showModal(modalDialog(
+        title = glue::glue("Matched name for code: {input$search_text}"),
+        glue::glue_collapse(names, sep = ","),
+        easyClose = TRUE
+      ))
+    })
+
+    # UI logic server  ----
+
+    # Load data for analyzing
+    load_vars <- load_data_server("load_data_module")
 
     # Cross-section analysis
     cs_analysis_server("cs_analysis_module",
-                      tsbl_vars = load_factors
+      tsbl_vars = load_vars
     )
 
     # Time-series analysis
     ts_analysis_server("ts_analysis_module",
-                       tsbl_vars = load_factors
+      tsbl_vars = load_vars
     )
+
+    # Data dictionary
+    data_dictionary_server("data_dictionary_module")
   })
 }
 
@@ -111,17 +153,11 @@ explore_factor_server <- function(id, factors_info) {
 #'
 #' @describeIn explore_factor  Testing App of exploring factors.
 explore_factor_app <- function(use_online_data = FALSE) {
-
-  # Prepare data
-  factors_info <- load_factors_info(use_online_data)
-
   ui <- fluidPage(
     explore_factor_ui("explore_factor_module")
   )
   server <- function(input, output, session) {
-    explore_factor_server("explore_factor_module",
-      factors_info = reactive(factors_info)
-    )
+    explore_factor_server("explore_factor_module")
   }
   shinyApp(ui, server)
 }

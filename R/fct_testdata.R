@@ -17,6 +17,7 @@ load_factors_info <- function(use_online_data = FALSE) {
       get_golem_config("database_dsn")
     )
     zstmodelr::open_stock_db(stock_db)
+    zstmodelr::init_stock_db(stock_db)
     factors_info <- zstmodelr::get_factors_info(stock_db, factor_groups = NULL)
     zstmodelr::close_stock_db(stock_db)
   } else {

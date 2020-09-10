@@ -229,7 +229,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
                                 source = "continuous_qq"
       )
       if (!is.null(evt)) {
-        browser()
+
         selection <- between(
           origin_data[[isolate(input$continuous_var)]],
           evt$y[[1]], evt$y[[2]]
