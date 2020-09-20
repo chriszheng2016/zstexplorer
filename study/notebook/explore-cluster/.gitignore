@@ -1,0 +1,6 @@
+output
+*.pdf
+*.html
+*.docx
+explore-cluster_cache
+explore-cluster_files
