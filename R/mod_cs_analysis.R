@@ -172,7 +172,8 @@ cs_analysis_ui <- function(id, debug = FALSE ) {
         navbarMenu(
           "Cluster",
           tabPanel(
-            "DataExplorer::plot_correlation()"
+            "factorextra::funs()",
+            cs_cluster_factoextra_ui(ns("cs_cluster_factoextra_module"))
           )
         )
       )
@@ -184,6 +185,9 @@ cs_analysis_ui <- function(id, debug = FALSE ) {
 #'
 #' @param tsbl_vars A tsibble of vars for cross-sectional analysis.
 #'
+#' @param debug A logic to enable/disable output for debug. Default FALSE
+#'  means to disable output of debug.
+#'
 #' @describeIn cs_analysis  Server function of cs_analysis.
 #' @return * Server function return a data frame of ...
 cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
@@ -194,7 +198,9 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
 
     slice_tsbl_vars <- slice_tsbl_server("slice_tsbl_module",
-      tsbl_vars = tsbl_vars, debug = debug
+      tsbl_vars = tsbl_vars,
+      slice_type = "cross_section",
+      debug = debug
     )
 
     slice_csbl_vars <- reactive({
@@ -375,6 +381,12 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
     # Draw correlation plot by plotly
     cs_cor_plotly_server(
       "cs_cor_plotly_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Cluster output ----
+    cs_cluster_factoextra_server(
+      "cs_cluster_factoextra_module",
       csbl_vars = slice_csbl_vars
     )
 
