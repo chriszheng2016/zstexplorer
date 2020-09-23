@@ -128,63 +128,47 @@ data_dictionary_server <- function(id) {
       }
     }
 
-    observeEvent(input$stock_info_table_cell_clicked,
-      {
-        if (length(input$stock_info_table_cell_clicked) > 0) {
-          user_select_codes(
-            DT_tableId = "stock_info_table",
-            ds_info = stock_info(),
-            id_var = "stkcd"
-          )
-        }
-      },
-      ignoreNULL = TRUE,
-      ignoreInit = TRUE
-    )
+    observeEvent(input$stock_info_table_cell_clicked, ignoreInit = TRUE, {
+      if (length(input$stock_info_table_cell_clicked) > 0) {
+        user_select_codes(
+          DT_tableId = "stock_info_table",
+          ds_info = stock_info(),
+          id_var = "stkcd"
+        )
+      }
+    })
 
-    observeEvent(input$industry_info_table_cell_clicked,
-                 {
-                   if (length(input$industry_info_table_cell_clicked) > 0) {
-                     user_select_codes(
-                       DT_tableId = "industry_info_table",
-                       ds_info = industry_info(),
-                       id_var = "indcd"
-                     )
-                   }
-                 },
-                 ignoreNULL = TRUE,
-                 ignoreInit = TRUE
-    )
+    observeEvent(input$industry_info_table_cell_clicked, ignoreInit = TRUE, {
+      if (length(input$industry_info_table_cell_clicked) > 0) {
+        user_select_codes(
+          DT_tableId = "industry_info_table",
+          ds_info = industry_info(),
+          id_var = "indcd"
+        )
+      }
+    })
 
-    observeEvent(input$factors_info_table_cell_clicked,
-      {
-        if (length(input$factors_info_table_cell_clicked) > 0) {
-          user_select_codes(
-            DT_tableId = "factors_info_table",
-            ds_info = factors_info(),
-            id_var = "factor_code"
-          )
-        }
-      },
-      ignoreNULL = TRUE,
-      ignoreInit = TRUE
-    )
+    observeEvent(input$factors_info_table_cell_clicked, ignoreInit = TRUE, {
+      if (length(input$factors_info_table_cell_clicked) > 0) {
+        user_select_codes(
+          DT_tableId = "factors_info_table",
+          ds_info = factors_info(),
+          id_var = "factor_code"
+        )
+      }
+    })
 
-    observeEvent(input$indicators_info_table_cell_clicked,
-      {
-        if (length(input$indicators_info_table_cell_clicked) > 0) {
-          user_select_codes(
-            DT_tableId = "indicators_info_table",
-            ds_info = indicators_info(),
-            id_var = "ind_code"
-          )
-        }
-      },
-      ignoreNULL = TRUE,
-      ignoreInit = TRUE
-    )
+    observeEvent(input$indicators_info_table_cell_clicked, ignoreInit = TRUE, {
+      if (length(input$indicators_info_table_cell_clicked) > 0) {
+        user_select_codes(
+          DT_tableId = "indicators_info_table",
+          ds_info = indicators_info(),
+          id_var = "ind_code"
+        )
+      }
+    })
 
-    observeEvent(input$clear_codes, {
+    observeEvent(input$clear_codes, ignoreInit = TRUE, {
 
       # Select codes input
       updateTextInput(

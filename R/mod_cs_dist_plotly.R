@@ -152,7 +152,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
     # Map selection from discrete_freqbar
     observeEvent(plotly::event_data("plotly_selected",
       source = "discrete_freqbar"
-    ), {
+    ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_selected",
         source = "discrete_freqbar"
@@ -172,7 +172,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
     # Map selection from continuous_boxplot
     observeEvent(plotly::event_data("plotly_brushed",
       source = "continuous_boxplot"
-    ), {
+    ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_brushed",
         source = "continuous_boxplot"
@@ -189,7 +189,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
     # Map selection from continuous_hist
     observeEvent(plotly::event_data("plotly_brushed",
       source = "continuous_hist"
-    ), {
+    ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_brushed",
         source = "continuous_hist"
@@ -206,7 +206,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
     # Map selection from continuous_density
     observeEvent(plotly::event_data("plotly_brushed",
       source = "continuous_density"
-    ), {
+    ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_brushed",
         source = "continuous_density"
@@ -223,7 +223,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
     # Map selection from continuous_qq
     observeEvent(plotly::event_data("plotly_brushed",
                                     source = "continuous_qq"
-    ), {
+    ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_brushed",
                                 source = "continuous_qq"
@@ -265,7 +265,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
     })
 
     # Clear maping selection of ploty controls
-    observeEvent(input$clear_selection, {
+    observeEvent(input$clear_selection, ignoreInit = TRUE, {
       select_indicator$discrete_var <- rep(
         FALSE,
         length(select_indicator$discrete_var)

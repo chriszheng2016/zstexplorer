@@ -157,7 +157,7 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
     # Map selection from discrete_freqbar
     observeEvent(plotly::event_data("plotly_selected",
       source = "discrete_freqbar"
-    ), {
+    ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_selected",
         source = "discrete_freqbar"
@@ -176,7 +176,7 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
     # Map selection from continuous_scatter
     observeEvent(plotly::event_data("plotly_brushed",
       source = "continuous_scatter"
-    ), {
+    ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_brushed",
         source = "continuous_scatter"
@@ -201,7 +201,7 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
     # Map selection from continuous_combochart
     observeEvent(plotly::event_data("plotly_brushed",
                                     source = "continuous_combochart"
-    ), {
+    ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_brushed",
                                 source = "continuous_combochart"
@@ -253,7 +253,7 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
     })
 
     # Clear maping selection of ploty controls
-    observeEvent(input$clear_selection, {
+    observeEvent(input$clear_selection, ignoreInit = TRUE, {
       select_indicator$discrete_var <- rep(
         FALSE,
         length(select_indicator$discrete_var)

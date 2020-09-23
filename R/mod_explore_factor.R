@@ -107,7 +107,7 @@ explore_factor_server <- function(id) {
 
     # UI interactive events ----
 
-    observeEvent(input$search_button, {
+    observeEvent(input$search_button, ignoreInit = TRUE, {
 
       # Match codes to names
       codes <- stringr::str_split(

@@ -266,7 +266,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     })
 
     # Update UI when user choose plot tabs
-    observeEvent(input$plot_tabs, {
+    observeEvent(input$plot_tabs, ignoreInit = TRUE, {
       switch(input$plot_tabs,
         "Upset plot" = {
           updateTabsetPanel(session,
@@ -302,7 +302,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     })
 
     # Update tabs of missing points plot when user choose whether to apply plotly
-    observeEvent(input$plotly_miss_points, {
+    observeEvent(input$plotly_miss_points, ignoreInit = TRUE, {
       if (input$plotly_miss_points) {
         updateTabsetPanel(session,
           inputId = "missing_points_plot_tabs",

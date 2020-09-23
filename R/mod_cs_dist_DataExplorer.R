@@ -131,7 +131,7 @@ cs_dist_DataExplorer_server <- function(id, csbl_vars) {
     })
 
     # Update UI when user choose plot tabs
-    observeEvent(input$plot_tabs, {
+    observeEvent(input$plot_tabs, ignoreInit = TRUE, {
 
       # Update setting_tabs according to plot type
       if (input$plot_tabs %in% c("Bar Chart(freq)")) {
