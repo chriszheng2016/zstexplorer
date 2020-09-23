@@ -125,6 +125,20 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
       ns = ns
     ),
 
+    h5("Please set filter and click Apply to slice data for analyzing"),
+
+    actionButton(
+      inputId = ns("apply_filter"),
+      label = strong("Apply"),
+      width = "200px"
+    ),
+
+    br(),
+
+    textOutput(
+      outputId = ns("status_text")
+    ),
+
     # Debug Control for output
     if (debug) {
       # tableOutput(outputId = ns("debug_output"))
@@ -135,17 +149,21 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
 
 #' Server Function of slice_tsbl
 #'
+#' @param  slice_type  A character indicator about how to slice data, e.g.,
+#'  "cross_section", "time_series". Default is cross_section.
+#'
 #' @return * Server function return a tsibble sliced by user's filter conditions.
 #'
 #' @describeIn slice_tsbl  Server function of slicing tibble of time series.
 #'
-slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
+slice_tsbl_server <- function(id, tsbl_vars,
+                              slice_type = c("cross_section", "time_series"),
+                              debug = FALSE) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
-
 
     # Update UI with dataset and user inputs
     observe({
@@ -195,6 +213,24 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
         # Set selected with current value to ensure not clear current input
         selected = input$period
       )
+
+      # Set initial state of date_type(only once at startup)
+      if (isolate(input$report_date) == 0) {
+        slice_type <- match.arg(slice_type,
+          choices = c("cross_section", "time_series")
+        )
+        if (slice_type == "cross_section") {
+          updateRadioButtons(
+            session = session, inputId = "date_type",
+            selected = "single_period"
+          )
+        } else {
+          updateRadioButtons(
+            session = session, inputId = "date_type",
+            selected = "multi_period"
+          )
+        }
+      }
 
       updateSliderInput(
         session = session, inputId = "report_date",
@@ -254,13 +290,11 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 
 
     # Filter data according user inputs
-    slice_dataset <- reactive({
+    slice_dataset <- eventReactive(input$apply_filter, {
       tsbl_vars <- tsbl_vars()
       date_var <- tsibble::index_var(tsbl_vars)
       key_vars <- tsibble::key_vars(tsbl_vars)
       focus_vars <- setdiff(names(tsbl_vars), c(date_var, key_vars))
-
-
 
       # Slice dataset in term of user's inputs
 
@@ -310,11 +344,28 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
       return(slice_dataset)
     })
 
+    output$status_text <- renderText({
+
+      current_dataset <- if(input$apply_filter == 0 ){
+        # User never click apply_filter
+        tsbl_vars()
+      } else {
+        # User has clicked apply_filter several times
+        slice_dataset()
+      }
+
+      var_count <- NCOL(current_dataset)
+      case_count <- NROW(current_dataset)
+      status_msg <- glue::glue(
+        "Current dataset: {case_count} cases with {var_count} variables"
+      )
+      status_msg
+    })
+
     # Render output for debug
     if (debug) {
       # output$debug_output <- renderTable(head(slice_dataset()))
       output$debug_output <- DT::renderDataTable({
-
         DT::datatable(
           slice_dataset(),
           filter = "top",
@@ -340,22 +391,31 @@ slice_tsbl_server <- function(id, tsbl_vars, debug = FALSE) {
 #' @param use_online_data A logical to determine whether to use test data from
 #'  database or not. Default FALSE means to use achieved data for tests.
 #'
+#' @param  slice_type  A character indicator about how to slice data, e.g.,
+#'  "cross_section", "time_series". Default is cross_section.
+#'
 #' @param debug A logic to enable debug or not, default is on_debug() which
 #'  returns DEBUG environment variable.
 #'
 #' @describeIn slice_tsbl  Testing App for slicing tibble of time series.
-slice_tsbl_app <- function(use_online_data = FALSE, debug = on_debug()) {
+slice_tsbl_app <- function(use_online_data = FALSE,
+                           slice_type = c("cross_section", "time_series"),
+                           debug = on_debug()) {
 
   # Prepare data
   tsbl_vars <- load_tsbl_vars(use_online_data)
+
+  slice_type <- match.arg(slice_type)
 
   # Launch App
   ui <- fluidPage(
     slice_tsbl_ui("slice_tsbl_module", debug = debug)
   )
+
   server <- function(input, output, session) {
     slice_vars <- slice_tsbl_server("slice_tsbl_module",
       tsbl_vars = reactive(tsbl_vars),
+      slice_type = slice_type,
       debug = debug
     )
   }
