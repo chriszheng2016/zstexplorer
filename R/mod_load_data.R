@@ -207,35 +207,32 @@ load_data_server <- function(id) {
       DT::selectRows(proxy, selected = NULL)
     }
 
-    observeEvent(input$vars_info_table_cell_clicked,
-      {
-        if (length(input$vars_info_table_cell_clicked) > 0) {
-          user_select_codes(
-            DT_tableId = "vars_info_table",
-            ds_info = data_info_in_group(),
-            id_var = id_var()
-          )
-        }
-      },
-      ignoreNULL = TRUE,
-      ignoreInit = TRUE
-    )
+    observeEvent(input$vars_info_table_cell_clicked, ignoreInit = TRUE, {
+
+      if (length(input$vars_info_table_cell_clicked) > 0) {
+        user_select_codes(
+          DT_tableId = "vars_info_table",
+          ds_info = data_info_in_group(),
+          id_var = id_var()
+        )
+      }
+
+    })
 
 
     # Clear selections in info table
-    observeEvent(input$clear_vars, {
+    observeEvent(input$clear_vars, ignoreInit = TRUE, {
       clear_select_codes()
     })
 
     # Change data_type
-    observeEvent(input$data_type, {
+    observeEvent(input$data_type, ignoreInit = TRUE, {
       # Clear selection when changing data_type
       clear_select_codes()
     })
 
     # Load data
-    load_data <- eventReactive(input$load_data, {
-
+    load_data <- eventReactive(input$load_data, ignoreInit = TRUE, {
       vars_list <- stringr::str_split(input$select_vars,
         pattern = "\\s*,\\s*|\\s+"
       )[[1]]
@@ -282,13 +279,13 @@ load_data_server <- function(id) {
         # Turn into tsibble
         tsbl_vars <-
           ds_vars %>%
-          dplyr::select(c("date","period","stkcd", "indcd"), everything()) %>%
+          dplyr::select(c("date", "period", "stkcd", "indcd"), everything()) %>%
           dplyr::filter(!(is.na(.data[["date"]]))
           && (!is.na(.data[["stkcd"]]))
           && (!is.na(.data[["indcd"]]))) %>%
           tsibble::as_tsibble(
             index = date,
-            key = c("stkcd", "period")
+            key = c("period", "stkcd")
           )
       })
 

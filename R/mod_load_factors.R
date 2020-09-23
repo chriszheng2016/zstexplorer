@@ -233,7 +233,7 @@ load_factors_server <- function(id, factors_info) {
           dplyr::filter(!(is.na(date)) & (!is.na(stkcd)) & (!is.na(indcd))) %>%
           tsibble::as_tsibble(
             index = date,
-            key = c("stkcd", "period")
+            key = c("period", "stkcd")
           )
       })
 

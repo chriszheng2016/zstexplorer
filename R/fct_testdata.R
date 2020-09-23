@@ -58,7 +58,7 @@ load_tsbl_vars <- function(use_online_data = FALSE) {
     ds_factors <-
       zstmodelr::get_factors(stock_db, factor_codes = select_factors) %>%
       tidyr::pivot_wider(
-        names_from = "factor_name",
+        names_from = "factor_code",
         values_from = "factor_value"
       )
 
