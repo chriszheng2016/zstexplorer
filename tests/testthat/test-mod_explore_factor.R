@@ -1,7 +1,7 @@
 # Tests for module of explore_factor  ----
-options(testthat.edition_ignore = TRUE)
 
-context("Tests for module of explore_factor")
+
+#context("Tests for module of explore_factor")
 
 dsn <- get_golem_config("database_dsn")
 stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, dsn)
@@ -41,6 +41,9 @@ test_that("explore_factor_app - Module App works", {
 
 
     # explore_factor_app with typical user inputs ====
+
+    # Use to avoid skip message due to empty test, replace it with real tests
+    expect_true(TRUE)
 
     # Check initial UI is OK
     # expect_snapshot_value(app$getAllValues(), style = "serialize")

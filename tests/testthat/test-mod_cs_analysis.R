@@ -1,7 +1,7 @@
 # Tests for module of cs_analysis  ----
-options(testthat.edition_ignore = TRUE)
 
-context("Tests for module of cs_analysis")
+
+#context("Tests for module of cs_analysis")
 
 
 # Set up test environment
@@ -12,6 +12,9 @@ test_that("cs_analysis_server - reactives and output updates", {
     args = list(tsbl_vars = reactive(tsbl_vars)),
     {
       # cs_analysis_server with typical user inputs ====
+
+      # Use to avoid skip message due to empty test, replace it with real tests
+      expect_true(TRUE)
 
       # -- Sample Code for reference --
       # Set input for cs_analysis

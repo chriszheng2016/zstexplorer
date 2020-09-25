@@ -232,7 +232,8 @@ load_data_server <- function(id) {
     })
 
     # Load data
-    load_data <- eventReactive(input$load_data, ignoreInit = TRUE, {
+    load_data <- eventReactive(input$load_data, {
+
       vars_list <- stringr::str_split(input$select_vars,
         pattern = "\\s*,\\s*|\\s+"
       )[[1]]
@@ -244,7 +245,7 @@ load_data_server <- function(id) {
         # Get factors from database
         incProgress(message = "get data..")
         ds_vars <-
-          switch(isolate(input$data_type),
+          switch(req(input$data_type),
             "factor" = {
               zstmodelr::get_factors(stock_db, factor_codes = vars_list) %>%
                 tidyr::pivot_wider(

@@ -1,7 +1,7 @@
 # Tests for module of cs_cor_GGally  ----
-options(testthat.edition_ignore = TRUE)
 
-context("Tests for module of cs_cor_GGally")
+
+#context("Tests for module of cs_cor_GGally")
 
 
 # Set up test environment
@@ -14,6 +14,9 @@ test_that("cs_cor_GGally_server - reactives and output updates", {
     args = list(csbl_vars = reactive(csbl_vars)),
     {
       # cs_cor_GGally_server with typical user inputs ====
+
+      # Use to avoid skip message due to empty test, replace it with real tests
+      expect_true(TRUE)
 
       # -- Sample Code for reference --
       # Set input for cs_cor_GGally

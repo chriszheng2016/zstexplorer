@@ -214,8 +214,8 @@ slice_tsbl_server <- function(id, tsbl_vars,
         selected = input$period
       )
 
-      # Set initial state of date_type(only once at startup)
-      if (isolate(input$report_date) == 0) {
+      # Set initial state of date_type(only once at start-up)
+      if (isTRUE(input$report_date == 0)) {
         slice_type <- match.arg(slice_type,
           choices = c("cross_section", "time_series")
         )
@@ -291,6 +291,7 @@ slice_tsbl_server <- function(id, tsbl_vars,
 
     # Filter data according user inputs
     slice_dataset <- eventReactive(input$apply_filter, {
+
       tsbl_vars <- tsbl_vars()
       date_var <- tsibble::index_var(tsbl_vars)
       key_vars <- tsibble::key_vars(tsbl_vars)
@@ -345,8 +346,7 @@ slice_tsbl_server <- function(id, tsbl_vars,
     })
 
     output$status_text <- renderText({
-
-      current_dataset <- if(input$apply_filter == 0 ){
+      current_dataset <- if (input$apply_filter == 0) {
         # User never click apply_filter
         tsbl_vars()
       } else {

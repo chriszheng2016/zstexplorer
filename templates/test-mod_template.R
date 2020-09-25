@@ -1,7 +1,6 @@
 # Tests for module of {{module_name}}  ----
-options(testthat.edition_ignore = TRUE)
 
-context("Tests for module of {{module_name}}")
+#context("Tests for module of {{module_name}}")
 
 
 # Set up test environment
@@ -11,6 +10,9 @@ test_that("{{module_name}}_server - reactives and output updates", {
     #args = list(factors_info = reactive(factors_info)),
     {
       # {{module_name}}_server with typical user inputs ====
+
+      # Use to avoid skip message due to empty test, replace it with real tests
+      expect_true(TRUE)
 
       # -- Sample Code for reference --
       # Set input for {{module_name}}
@@ -55,6 +57,9 @@ test_that("{{module_name}}_app - Module App works", {
 
 
     # {{module_name}}_app with typical user inputs ====
+
+    # Use to avoid skip message due to empty test, replace it with real tests
+    expect_true(TRUE)
 
     # -- Sample Code for reference --
     # select_factors <- c("CR", "QR")

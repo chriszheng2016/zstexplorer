@@ -1,7 +1,7 @@
 # Tests for module of data_dictionary  ----
-options(testthat.edition_ignore = TRUE)
 
-context("Tests for module of data_dictionary")
+
+#context("Tests for module of data_dictionary")
 
 
 # Set up test environment
@@ -11,6 +11,9 @@ test_that("data_dictionary_server - reactives and output updates", {
     #args = list(factors_info = reactive(factors_info)),
     {
       # data_dictionary_server with typical user inputs ====
+
+      # Use to avoid skip message due to empty test, replace it with real tests
+      expect_true(TRUE)
 
       # -- Sample Code for reference --
       # Set input for data_dictionary
@@ -55,6 +58,9 @@ test_that("data_dictionary_app - Module App works", {
 
 
     # data_dictionary_app with typical user inputs ====
+
+    # Use to avoid skip message due to empty test, replace it with real tests
+    expect_true(TRUE)
 
     # -- Sample Code for reference --
     # select_factors <- c("CR", "QR")

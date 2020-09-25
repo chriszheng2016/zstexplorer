@@ -1,8 +1,16 @@
 # Tests for module of load_data  ----
-options(testthat.edition_ignore = TRUE)
 
-context("Tests for module of load_data")
 
+#context("Tests for module of load_data")
+
+dsn <- get_golem_config("database_dsn")
+stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, dsn)
+suppressMessages(db_ready <- zstmodelr::open_stock_db(stock_db))
+# Skip tests if test dsn is not ready
+skip_if_not(db_ready,
+            message = sprintf("DSN(%s) is not ready, skip all tests for load_factors", dsn)
+)
+suppressMessages(zstmodelr::close_stock_db(stock_db))
 
 # Set up test environment
 
@@ -10,41 +18,45 @@ test_that("load_data_server - reactives and output updates", {
   testServer(load_data_server,
     #args = list(factors_info = reactive(factors_info)),
     {
-      # load_data_server with typical user inputs ====
+      suppressMessages({
+        # load_data_server with typical user inputs ====
 
-      # >> load factors ----
-      # Set input for load_data
-      select_vars <- c("CR", "QR")
-      session$setInputs(
-        data_type = "factor",
-        data_groups = "Financial Risk",
-        select_vars = select_vars,
-        load_data = 1 # Non-null value indicating use click button
-      )
-      # Check load_data()
-      load_data <- load_data()
-      expect_s3_class(load_data, "data.frame")
-      expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_vars)
-      actual_fields <- names(load_data)
-      expect_true(all(actual_fields %in% expect_fields))
-      expect_true(nrow(load_data) >= 0)
+        # >> load factors ----
+        # Set input for load_data
+        select_vars <- c("CR", "QR")
+        session$setInputs(
+          data_type = "factor",
+          data_groups = "Financial Risk",
+          select_vars = select_vars,
+          load_data = 1 # Non-null value indicating use click button
+        )
 
-      # >> load indicators ----
-      # Set input for load_data
-      select_vars <- c("f030101a", "f030201a")
-      session$setInputs(
-        data_type = "indicator",
-        data_groups = "比例结构",
-        select_vars = select_vars,
-        load_data = 1 # Non-null value indicating use click button
-      )
-      # Check load_data()
-      load_data <- load_data()
-      expect_s3_class(load_data, "data.frame")
-      expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_vars)
-      actual_fields <- names(load_data)
-      expect_true(all(actual_fields %in% expect_fields))
-      expect_true(nrow(load_data) >= 0)
+        # Check load_data()
+        load_data <- load_data()
+        expect_s3_class(load_data, "data.frame")
+        expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_vars)
+        actual_fields <- names(load_data)
+        expect_true(all(actual_fields %in% expect_fields))
+        expect_true(nrow(load_data) >= 0)
+
+        # >> load indicators ----
+        # Set input for load_data
+        select_vars <- c("f030101a", "f030201a")
+        session$setInputs(
+          data_type = "indicator",
+          data_groups = "比例结构",
+          select_vars = select_vars,
+          load_data = 1 # Non-null value indicating use click button
+        )
+        # Check load_data()
+        load_data <- load_data()
+        expect_s3_class(load_data, "data.frame")
+        expect_fields <- c(c("date", "period", "stkcd", "indcd"), select_vars)
+        actual_fields <- names(load_data)
+        expect_true(all(actual_fields %in% expect_fields))
+        expect_true(nrow(load_data) >= 0)
+
+      })
 
     }
   )
@@ -70,6 +82,9 @@ test_that("load_data_app - Module App works", {
 
 
     # load_data_app with typical user inputs ====
+
+    # Use to avoid skip message due to empty test, replace it with real tests
+    expect_true(TRUE)
 
     # -- Sample Code for reference --
     # select_factors <- c("CR", "QR")

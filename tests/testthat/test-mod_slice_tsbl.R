@@ -1,7 +1,7 @@
 # Tests for module of slice_tsbl  ----
-options(testthat.edition_ignore = TRUE)
 
-context("Tests for module of slice_tsbl")
+
+# context("Tests for module of slice_tsbl")
 
 # Set up test environment
 
@@ -9,9 +9,13 @@ tsbl_vars <- readRDS("data/tsbl_vars.rds")
 
 test_that("slice_tsbl_server - reactives and output updates", {
   testServer(slice_tsbl_server,
-    args = list(tsbl_vars = reactive(tsbl_vars)),
+    args = list(
+      tsbl_vars = reactive(tsbl_vars),
+      slice_type = "cross_section"
+    ),
     {
       # slice_tsbl_server with typical user inputs ====
+
       # >>date_type = "multi_period" ----
       # Set input for slice_tsbl
       select_indcd <- c("C38")
@@ -29,7 +33,8 @@ test_that("slice_tsbl_server - reactives and output updates", {
         period = select_period,
         date_type = select_date_type,
         start_date = select_start_date,
-        end_date = select_end_date
+        end_date = select_end_date,
+        apply_filter = 1 # Non-null value indicating use click button
       )
 
 
@@ -45,7 +50,7 @@ test_that("slice_tsbl_server - reactives and output updates", {
       expect_true(all(slice_tsbl$stkcd %in% select_stkcd))
       expect_true(all(slice_tsbl$period %in% select_period))
       expect_true(all((slice_tsbl$date >= select_start_date) &
-                        (slice_tsbl$date <= select_end_date)))
+        (slice_tsbl$date <= select_end_date)))
 
 
       # >>date_type = "single_period" ----
@@ -63,7 +68,8 @@ test_that("slice_tsbl_server - reactives and output updates", {
         focus_vars = select_vars,
         period = select_period,
         date_type = select_date_type,
-        report_date = select_report_date
+        report_date = select_report_date,
+        apply_filter = 1 # Non-null value indicating use click button
       )
 
       # Check slice_dataset()
@@ -99,7 +105,7 @@ test_that("slice_tsbl_app - Module App works", {
     suppressWarnings({
       app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 300)
     })
-    # # slice_tsbl_app with typical user inputs ====
+    # slice_tsbl_app with typical user inputs ====
     select_indcd <- c("C38")
     select_stkcd <- c("000651")
     select_period <- c("quarter")
