@@ -165,7 +165,9 @@ slice_tsbl_server <- function(id, tsbl_vars,
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
 
-    # Update UI with dataset and user inputs
+    # Update UI with dataset and user inputs ----
+
+    # Set up initial state of UI controls
     observe({
       tsbl_vars <- tsbl_vars()
       date_var <- tsibble::index_var(tsbl_vars)
@@ -179,23 +181,12 @@ slice_tsbl_server <- function(id, tsbl_vars,
         session = session, inputId = "indcd",
         choices = sort(unique(tsbl_vars$indcd)),
         # Set selected with current value to ensure not clear current input
-        selected = input$indcd
+        # selected = input$indcd
       )
 
-      # Update stkcd choices by input of indcd
-      if (is.null(input$indcd)) {
-        avaiable_stkcds <- sort(unique(tsbl_vars$stkcd))
-      } else {
-        avaiable_stkcds <-
-          tsbl_vars %>%
-          dplyr::filter(.data$indcd %in% input$indcd) %>%
-          dplyr::distinct(.data$stkcd) %>%
-          dplyr::arrange(.data$stkcd) %>%
-          dplyr::pull()
-      }
       updateSelectInput(
         session = session, inputId = "stkcd",
-        choices = avaiable_stkcds
+        choices = sort(unique(tsbl_vars$stkcd)),
         # Don't set selected value to clear current input
         # selected = input$stkcd
       )
@@ -204,18 +195,18 @@ slice_tsbl_server <- function(id, tsbl_vars,
         session = session, inputId = "focus_vars",
         choices = sort(unique(focus_vars)),
         # Set selected with current value to ensure not clear current input
-        selected = input$focus_vars
+        # selected = input$focus_vars
       )
 
       updateSelectInput(
         session = session, inputId = "period",
         choices = sort(unique(tsbl_vars$period)),
         # Set selected with current value to ensure not clear current input
-        selected = input$period
+        # selected = input$period
       )
 
       # Set initial state of date_type(only once at start-up)
-      if (isTRUE(input$report_date == 0)) {
+      if (isolate(isTRUE(input$report_date == 0))) {
         slice_type <- match.arg(slice_type,
           choices = c("cross_section", "time_series")
         )
@@ -249,6 +240,27 @@ slice_tsbl_server <- function(id, tsbl_vars,
         session = session, inputId = "end_date",
         choices = sort(unique(tsbl_vars$date)),
         selected = max(unique(tsbl_vars$date), na.rm = TRUE)
+      )
+    })
+
+    # Update stkcd choices by input of indcd
+    observeEvent(input$indcd, ignoreNULL = FALSE, {
+
+      tsbl_vars <- tsbl_vars()
+      if (is.null(input$indcd)) {
+        avaiable_stkcds <- sort(unique(tsbl_vars$stkcd))
+      } else {
+        avaiable_stkcds <-
+          tsbl_vars %>%
+          dplyr::filter(.data$indcd %in% input$indcd) %>%
+          dplyr::distinct(.data$stkcd) %>%
+          dplyr::arrange(.data$stkcd) %>%
+          dplyr::pull()
+      }
+
+      updateSelectInput(
+        session = session, inputId = "stkcd",
+        choices = avaiable_stkcds
       )
     })
 
@@ -291,7 +303,6 @@ slice_tsbl_server <- function(id, tsbl_vars,
 
     # Filter data according user inputs
     slice_dataset <- eventReactive(input$apply_filter, {
-
       tsbl_vars <- tsbl_vars()
       date_var <- tsibble::index_var(tsbl_vars)
       key_vars <- tsibble::key_vars(tsbl_vars)
