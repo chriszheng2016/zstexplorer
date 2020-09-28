@@ -51,11 +51,17 @@ cs_cor_plotly_ui <- function(id) {
           label = strong("Discrete var:"),
           choices = ""
         ),
-        selectInput(
+        # selectInput(
+        #   inputId = ns("discrete_var_levels"),
+        #   label = strong("Top discrete levels to display:"),
+        #   choices = as.character(1:10),
+        #   selected = "5"
+        # ),
+        sliderInput(
           inputId = ns("discrete_var_levels"),
           label = strong("Top discrete levels to display:"),
-          choices = as.character(1:10),
-          selected = "5"
+          min = 1, max = 10, step = 1,
+          value = 5
         ),
         selectInput(
           inputId = ns("continuous_var_x"),
@@ -67,6 +73,13 @@ cs_cor_plotly_ui <- function(id) {
           inputId = ns("continuous_var_y"),
           label = strong("Continuous var_y:"),
           choices = ""
+        ),
+
+        selectInput(
+          inputId = ns("geom_type"),
+          label = strong("Geom type:"),
+          choices = c("boxplot", "bar_mean", "bar_median"),
+          selected = "bar_median"
         ),
 
         selectInput(
@@ -195,16 +208,15 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
         new_selection <- (selection_x & selection_y)
         select_indicator$continuous_var <- new_selection
       }
-
     })
 
     # Map selection from continuous_combochart
     observeEvent(plotly::event_data("plotly_brushed",
-                                    source = "continuous_combochart"
+      source = "continuous_combochart"
     ), ignoreInit = TRUE, {
       origin_data <- csbl_vars()
       evt <- plotly::event_data("plotly_brushed",
-                                source = "continuous_combochart"
+        source = "continuous_combochart"
       )
       if (!is.null(evt)) {
         selection <- between(
@@ -213,7 +225,6 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
         )
         select_indicator$continuous_var <- selection
       }
-
     })
 
     # Controls interaction ----
@@ -250,6 +261,13 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
         # Set selected with current value to ensure not clear current input
         selected = input$continuous_var_y
       )
+
+      # Set max value of discrete_var_levels
+      levels <- length(unique(csbl_vars()[[req(input$discrete_var)]]))
+      updateSliderInput(
+        session = session, inputId = "discrete_var_levels",
+        max = levels
+      )
     })
 
     # Clear maping selection of ploty controls
@@ -284,7 +302,6 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
 
 
     output$continuous_scatter <- plotly::renderPlotly({
-
       req(input$continuous_var_x)
       csbl_vars() %>%
         scatter_plotly(
@@ -302,13 +319,13 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
     })
 
     output$continuous_combochart <- plotly::renderPlotly({
-
       csbl_vars() %>%
-        combochat_plotly(
+        combochart_plotly(
           continuous_var_name = req(input$continuous_var_x),
           discrete_var_name = req(input$discrete_var),
           ds_vars_compare = select_data(),
           top_levels = as.numeric(input$discrete_var_levels),
+          geom_type = input$geom_type,
           plot_method = input$plot_method,
           source_id = "continuous_combochart"
         ) %>%
@@ -331,7 +348,7 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
         options = list(
           columnDefs = list(list(className = "dt-center")),
           pageLength = 5,
-          dom = 'ltir',
+          dom = "ltir",
           deferRender = TRUE,
           scrollY = 180,
           scrollX = TRUE,

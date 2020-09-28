@@ -3,7 +3,7 @@
 export("%>%")
 export(add_shiny_module)
 export(boxplot_plotly)
-export(combochat_plotly)
+export(combochart_plotly)
 export(density_plotly)
 export(freqbar_plotly)
 export(gg_scale_compare)
