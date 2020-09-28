@@ -3,8 +3,8 @@
 #' @description A shiny module for cs_cluster_factoextra.
 #'
 #' @details
-#'  The module is an UI for user to display plots of ...
-#'  by [`factoextra`][factoextra::factoextra] package.
+#'  The module is an UI for user to display plots of clusters
+#'  by [`factoextra`][factoextra] package.
 #'
 #' @name cs_cluster_factoextra
 #'
