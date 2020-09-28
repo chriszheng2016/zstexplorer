@@ -789,7 +789,6 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
     output$nbclust_indices_plot <- renderPlot({
       metric <- req(input$dist_metric)
       method <- req(input$nbclust_method)
-      browser()
       factoextra::fviz_nbclust(nbclust_res()) +
          labs(subtitle = glue::glue("metric:{metric}, method:{method}"))
     })
