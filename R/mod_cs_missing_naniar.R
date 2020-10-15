@@ -76,10 +76,6 @@ cs_missing_naniar_ui <- function(id) {
               inputId = ns("y_var"),
               label = strong("Y variable:"),
               choices = ""
-            ),
-            checkboxInput(ns("plotly_miss_points"),
-              label = "Plotly Plot",
-              value = FALSE
             )
           ),
           tabPanelBody(
@@ -116,29 +112,8 @@ cs_missing_naniar_ui <- function(id) {
           ),
           tabPanel(
             "Missing points",
+            plotOutput(ns("miss_points_plot"))
 
-            tabsetPanel(
-              id = ns("missing_points_plot_tabs"),
-              type = "hidden",
-              tabPanelBody(
-                value = "origin_plot",
-                plotOutput(ns("miss_points_plot"))
-              ),
-              tabPanelBody(
-                value = "plotly_plot",
-                plotly::plotlyOutput(ns("miss_points_plotly"))
-              )
-            )
-
-
-            # conditionalPanel(
-            #   condition = "input$plotly_miss_points == 'FALSE'",
-            #   plotOutput(ns("miss_points_plot"))
-            # ),
-            # conditionalPanel(
-            #   condition = "input$plotly_miss_points == 'TRUE'",
-            #   plotly::plotlyOutput(ns("miss_points_plotly"))
-            # )
           ),
           tabPanel(
             "Missing vars",
@@ -301,21 +276,6 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
       )
     })
 
-    # Update tabs of missing points plot when user choose whether to apply plotly
-    observeEvent(input$plotly_miss_points, ignoreInit = TRUE, {
-      if (input$plotly_miss_points) {
-        updateTabsetPanel(session,
-          inputId = "missing_points_plot_tabs",
-          selected = "plotly_plot"
-        )
-      } else {
-        updateTabsetPanel(session,
-          inputId = "missing_points_plot_tabs",
-          selected = "origin_plot"
-        )
-      }
-    })
-
 
     ## Upset plot ----
     output$miss_upset_plot <- renderPlot({
@@ -344,22 +304,12 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     ## Missing points plot ----
 
     output$miss_points_plot <- renderPlot({
-      req(input$plotly_miss_points == FALSE)
+
       req(input$x_var, input$y_var)
       csbl_vars_focus() %>%
         ggplot(aes(x = .data[[input$x_var]], y = .data[[input$y_var]])) +
         naniar::geom_miss_point()
-    })
 
-    output$miss_points_plotly <- plotly::renderPlotly({
-      req(input$plotly_miss_points == TRUE)
-      req(input$x_var, input$y_var)
-
-      p <- csbl_vars_focus() %>%
-        ggplot(aes(x = .data[[input$x_var]], y = .data[[input$y_var]])) +
-        naniar::geom_miss_point()
-
-      plotly::ggplotly(p, dynamicTicks = TRUE)
     })
 
 
