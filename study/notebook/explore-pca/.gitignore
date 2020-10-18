@@ -1,0 +1,6 @@
+output
+*.pdf
+*.html
+*.docx
+explore-pca_cache
+explore-pca_files

@@ -1,0 +1,1208 @@
+---
+title: "Explore pca in stock data"
+documentclass: ctexart
+output:
+  html_notebook: 
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+      padding-left: yes
+    df_print: paged
+    theme: cerulean
+    highlight: pygments
+    code_folding: hide
+  html_document:
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    df_print: paged
+    theme: cerulean
+    highlight: pygments
+    code_folding: hide
+params:
+  indcd_group:
+    label: 'Indcd Group:'
+    input: text
+    value: 'C37, C38, C39'
+  cs_date:
+    label: 'Year:'
+    input: text
+    value: '2018-12-31'
+---
+
+
+```{css, echo=FALSE}
+
+/*Setting for scrollable code/text*/ 
+
+pre {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 400px;
+}
+
+/*Setting for TOC and outlook*/
+
+div.main-container {
+  max-width: 100% !important;
+}
+
+.tocify {
+  max-width: 20% !important;
+}
+
+.toc-content {
+  padding-left: 5px !important;
+}
+```
+
+```{r setup, include=FALSE}
+
+
+# General packages
+library(tidyverse)
+library(gridExtra)
+library(DT)
+library(plotly)
+library(glue)
+
+# Special packages
+library(FactoMineR)
+library(factoextra)
+library(FactoInvestigate)
+
+# My packages
+devtools::load_all()
+
+# Set global options for knitr
+knitr::opts_chunk$set(
+  fig.align = "center",
+  fig.show = "hold",
+  message = FALSE,
+  warning = FALSE,
+  collapse = TRUE,
+  results = "hold",
+  comment = "#>",
+  out.width = "80%",
+  tidy = "styler"
+)
+```
+# Prepare data
+
+Parameters for loading data:
+
+**Industry Group:** *`r knitr::combine_words(params$indcd_group)`*
+
+**Date of Cross-sectional data:** *`r cs_date`*
+
+```{r, class.source = 'fold-show'}
+indcd_group <- stringr::str_split(params$indcd_group, pattern = ",")
+indcd_group <- stringr::str_trim(unlist(indcd_group))
+cs_date <- stringr::str_trim(params$cs_date)
+
+csbl_vars <- load_csbl_vars()
+
+df_pca_raw <-
+  csbl_vars %>%
+  dplyr::filter(indcd %in% indcd_group) %>%
+  tidyr::separate(id, into = c("date", "period", "stkcd"), sep = "_") %>%
+  dplyr::filter(grepl(cs_date, date)) %>%
+  dplyr::select(-c("date", "period")) %>%
+  # Use median for numeric field of multiple period series of stock
+  # Use mode numbers for non-numeric filed of multiple period series of stock
+  dplyr::group_by(stkcd) %>%
+  dplyr::summarise(
+    indcd = names(which.max(table(indcd))),
+    across(where(is.numeric), median),
+    .groups = "drop"
+  ) %>%
+  # Scale data
+  dplyr::mutate(across(where(is.numeric), scale)) %>%
+  tibble::column_to_rownames(var = "stkcd")
+
+
+```
+
+
+
+# Handle Missing Value
+
+```{r}
+df_pca <-
+  df_pca_raw %>%
+  na.omit()
+```
+
+## Pattern of missing value
+```{r}
+
+VIM::aggr(df_pca_raw, numbers = TRUE, prop = TRUE)
+
+```
+
+## Impute missing value
+
+
+### Estimate ncp for imputation
+
+```{r, }
+
+estimate_ncp_PCA <- missMDA::estim_ncpPCA(df_pca_raw[, -1], method.cv = "gcv")
+plot(estimate_ncp_PCA$criterion ~ names(estimate_ncp_PCA$criterion),
+  xlab = "number of dimensions"
+)
+```
+
+Estimated ncp for impute missing is **`r estimate_ncp_PCA$ncp `**
+
+
+### Imputed missing values
+
+```{r}
+
+impute_res <- missMDA::imputePCA(df_pca_raw[, -1], ncp = estimate_ncp_PCA$ncp)
+
+df_pca <- impute_res$completeObs %>%
+  tibble::as_tibble(rownames = "id") %>%
+  dplyr::bind_cols(indcd = df_pca_raw$indcd) %>%
+  dplyr::select(indcd, everything()) %>%
+  tibble::column_to_rownames(var = "id")
+```
+
+
+
+
+# Compute PCA
+
+```{r results = "markup", class.source = 'fold-show'}
+# Compute Q-mode PCA with prcomp() by using SVD
+prcomp_res <- prcomp(df_pca[, -1], scale. = TRUE)
+summary(prcomp_res)
+
+# Compute R-mode PCA with princomp by using eigen value on correlation or covariance matrix
+princomp_res <- princomp(df_pca[, -1], cor = TRUE)
+summary(princomp_res)
+
+# Compute PCA with PCA
+pca_res <- FactoMineR::PCA(df_pca, quali.sup = 1, graph = FALSE)
+summary(pca_res)
+```
+
+# Study of the outliers
+
+## Result of outlies detection
+
+```{r, results = "asis"}
+
+outliers_res_string <- capture.output({
+  invisible(
+    outliers_res <- FactoInvestigate::outliers(pca_res)
+  )
+})
+
+outliers_res_string <- paste(outliers_res_string, collapse = "\n")
+
+# Remove code in results
+outliers_res_string <- stringr::str_remove_all(
+  outliers_res_string,
+  pattern = "```[\\w\\W]*```"
+)
+
+# Remove Figure caption in results
+outliers_res_string <- stringr::str_remove_all(
+  outliers_res_string,
+  pattern = "\\*\\*Figure[\\w\\W]*\\\\*\\*"
+)
+
+cat(outliers_res_string, "\n")
+
+```
+
+
+# Inertia distribution
+
+The eigenvalues measure the amount of variation retained by each principal component. Eigenvalues are large for the first PCs and small for the subsequent PCs. That is, the first PCs corresponds to the directions with the maximum amount of variation in the data set.
+
+Eigenvalues can be used to determine the number of principal components to
+retain after PCA:
+
+* An eigenvalue > 1 indicates that PCs account for more variance than
+accounted by one of the original variables in standardized data. This
+is commonly used as a cutoff point for which PCs are retained. This
+holds true only when the data are standardized.
+
+* You can also limit the number of component to that number that
+accounts for a certain fraction of the total variance. For example, if
+you are satisfied with 70% of the total variance explained then use the
+number of components to achieve that.
+
+## Decomposition of total inertia {.tabset }
+
+
+
+### Plots {.unnumbered}
+```{r fig.align = "default", fig.show= 'hold', out.width= "30%" }
+factoextra::fviz_eig(prcomp_res, addlabels = TRUE) +
+  labs(subtitle = "compute by prcomp()")
+
+factoextra::fviz_eig(princomp_res, addlabels = TRUE) +
+  labs(subtitle = "compute by princomp()")
+
+factoextra::fviz_eig(pca_res, addlabels = TRUE) +
+  labs(subtitle = "compute by PCA()")
+```
+
+
+
+### Values {.unnumbered}
+
+```{r}
+eig_res <- factoextra::get_eig(pca_res)
+eig_res
+
+```
+
+
+## Analysis of inertia distribution
+
+
+Analysis of the inertia distribution among each axis, the amount and the significativity.
+
+```{r , cache = TRUE, results = "asis"}
+
+inerital_res_string <- capture.output({
+  invisible(
+    best_ncp <- FactoInvestigate::inertiaDistrib(pca_res, q = 0.95, time = "10s")
+  )
+})
+
+inerital_res_string <- paste(inerital_res_string, collapse = "\n")
+
+# Remove code in results
+inerital_res_string <- stringr::str_remove_all(
+  inerital_res_string,
+  pattern = "```[\\w\\W]*```"
+)
+
+# Remove Figure caption in results
+inerital_res_string <- stringr::str_remove_all(
+  inerital_res_string,
+  pattern = "\\*\\*Figure[\\w\\W]*\\\\*\\*"
+)
+
+cat(inerital_res_string, "\n")
+```
+
+
+# Graph of variables
+
+```{r}
+var <- factoextra::get_pca_var(pca_res)
+var
+```
+
+
+## Correlation circle
+
+The correlation between a variable and a principal component (PC) is used as
+the coordinates of the variable on the PC.
+
+The plot is also known as variable correlation plots. It shows the
+relationships between all variables. It can be interpreted as follow:
+
+* Positively correlated variables are grouped together.
+
+* Negatively correlated variables are positioned on opposite sides of the
+plot origin (opposed quadrants).
+
+* The distance between variables and the origin measures the quality of
+the variables on the factor map. Variables that are away from the origin
+are well represented on the factor map.
+
+```{r}
+factoextra::fviz_pca_var(pca_res, col.var = "black", repel = TRUE)
+```
+
+## Quality of representation
+
+The quality of representation of the variables on factor map is called cos2
+(square cosine, squared coordinates).
+
+* The cos2 values are used to estimate the quality of the representation
+
+  * A high cos2 indicates a good representation of the variable on the
+principal component. In this case the variable is positioned close to
+the circumference of the correlation circle.
+
+  * A low cos2 indicates that the variable is not perfectly represented by
+the PCs. In this case the variable is close to the center of the circle.
+
+* The closer a variable is to the circle of correlations, the better its
+representation on the factor map (and the more important it is to
+interpret these components)
+
+* Variables that are closed to the center of the plot are less important
+for the first components.
+
+```{r}
+
+# Find vars of top n cos2
+top_cos2_var <- var$cos2 %>%
+  tibble::as_tibble(rownames = "id") %>%
+  dplyr::slice_max(order_by = Dim.1 + Dim.2 + Dim.3 + Dim.4, n = 10) %>%
+  dplyr::arrange(desc(across(starts_with("Dim")))) %>%
+  tibble::column_to_rownames(var = "id") %>%
+  as.matrix()
+
+corrplot::corrplot(top_cos2_var, is.corr = FALSE)
+
+
+# Cos2 of variables to PC1 and PC2
+factoextra::fviz_cos2(pca_res, choice = "var", axes = 1:2, top = 10)
+
+# Cos2 of variables to PC3 and PC4
+factoextra::fviz_cos2(pca_res, choice = "var", axes = 3:4, top = 10)
+
+# Visualize cos2 of variables on plane of PC1 and PC2
+factoextra::fviz_pca_var(
+  pca_res,
+  axes = 1:2,
+  col.var = "blue",
+  alpha.var = "cos2",
+  repel = TRUE,
+  title = "Variables on Dim-1-2 of PCA"
+)
+
+# Visualize cos2 of variables on plane of PC1 and PC2
+fviz_pca_var(
+  pca_res,
+  axes = 3:4,
+  col.var = "blue",
+  alpha.var = "cos2",
+  linesize = "cos2",
+  repel = TRUE,
+  title = "Variables on Dim-3-4 of PCA"
+)
+```
+
+
+## Contributions to PCs
+
+The contributions of variables in accounting for the variability in a given
+principal component are expressed in percentage.
+
+* Variables that are correlated with PC1 (i.e., Dim.1) and PC2 (i.e.,
+Dim.2) are the most important in explaining the variability in the data
+set.
+
+* Variables that do not correlated with any PC or correlated with the last
+dimensions are variables with low contribution and might be removed to
+
+```{r}
+# Find vars of top n contributions
+top_contrib_var <- var$contrib %>%
+  tibble::as_tibble(rownames = "id") %>%
+  dplyr::slice_max(order_by = Dim.1 + Dim.2 + Dim.3 + Dim.4, n = 10) %>%
+  dplyr::arrange(desc(across(starts_with("Dim")))) %>%
+  tibble::column_to_rownames(var = "id") %>%
+  as.matrix()
+
+corrplot::corrplot(top_contrib_var,
+  is.corr = FALSE,
+  title = "Top 10 variables of contribuions"
+)
+
+
+# Contributions of variables to PC1 and PC2
+fviz_contrib(pca_res, choice = "var", axes = 1:2, top = 10)
+
+# Contributions of variables to PC3 and PC4
+fviz_contrib(pca_res, choice = "var", axes = 3:4, top = 10)
+
+fviz_pca_var(pca_res,
+  col.var = "contrib",
+  axes = 1:2,
+  gradient.cols = ggsci::pal_gsea()(12),
+  title = "Variables on Dim-1-2 of PCA"
+)
+
+fviz_pca_var(pca_res,
+  col.var = "contrib",
+  axes = 3:4,
+  gradient.cols = ggsci::pal_gsea()(12),
+  title = "Variables on Dim-3-4 of PCA"
+)
+```
+
+
+
+# Graph of individuals
+
+```{r}
+ind <- factoextra::get_pca_ind(pca_res)
+ind
+```
+
+## Quality of representation
+
+```{r}
+
+# Find individuals of top n cos2
+top_cos2_ind <- ind$cos2 %>%
+  tibble::as_tibble(rownames = "id") %>%
+  dplyr::slice_max(order_by = Dim.1 + Dim.2 + Dim.3 + Dim.4, n = 10) %>%
+  dplyr::arrange(desc(across(starts_with("Dim")))) %>%
+  tibble::column_to_rownames(var = "id") %>%
+  as.matrix()
+
+corrplot::corrplot(top_cos2_ind, is.corr = FALSE)
+
+# Cos2 of variables to PC1 and PC2
+factoextra::fviz_cos2(pca_res, choice = "ind", axes = 1:2) +
+  theme(axis.text.x = element_text(angle = -90))
+
+# Cos2 of variables to PC3 and PC4
+factoextra::fviz_cos2(pca_res, choice = "ind", axes = 3:4) +
+  theme(axis.text.x = element_text(angle = -90))
+
+# Visualize cos2 of variables on plane of PC1 and PC2
+factoextra::fviz_pca_ind(
+  pca_res,
+  axes = 1:2,
+  geom = "point",
+  col.ind = "red",
+  alpha.ind = "cos2",
+  title = "Individuals on Dim-1-2 of PCA"
+)
+
+# Visualize cos2 of variables on plane of PC3 and PC4
+fviz_pca_ind(
+  pca_res,
+  axes = 3:4,
+  geom = "point",
+  col.ind = "red",
+  alpha.ind = "cos2",
+  title = "Individuals on Dim-3-4 of PCA"
+)
+```
+
+
+## Contributions to PCs
+
+```{r}
+
+# Find individuals of top n contributions
+top_contrib_ind <- ind$contrib %>%
+  tibble::as_tibble(rownames = "id") %>%
+  dplyr::slice_max(order_by = Dim.1 + Dim.2 + Dim.3 + Dim.4, n = 10) %>%
+  dplyr::arrange(desc(across(starts_with("Dim")))) %>%
+  tibble::column_to_rownames(var = "id") %>%
+  as.matrix()
+corrplot::corrplot(top_contrib_ind, is.corr = FALSE)
+
+# Contributions of individuals to PC1 and PC2
+factoextra::fviz_contrib(pca_res, choice = "ind", axes = 1:2) +
+  theme(axis.text.x = element_text(angle = -90))
+
+# Contributions of individuals to PC3 and PC4
+factoextra::fviz_contrib(pca_res, choice = "ind", axes = 3:4) +
+  theme(axis.text.x = element_text(angle = -90))
+
+factoextra::fviz_pca_ind(pca_res,
+  axes = 1:2,
+  geom = "point",
+  pointsize = "contrib",
+  col.ind = "red",
+  title = "Individuals on Dim-1-2 of PCA"
+)
+
+factoextra::fviz_pca_ind(pca_res,
+  axes = 3:4,
+  geom = "point",
+  pointsize = "contrib",
+  col.ind = "red",
+  title = "Individuals on Dim-3-4 of PCA"
+)
+```
+
+
+# Description of the plane 1:2
+
+## Description by varables
+
+Identify the most significantly associated variables with a given principal component.
+
+```{r}
+
+dim_desc <- FactoMineR::dimdesc(pca_res, axes = c(1, 2), proba = 0.5)
+
+knitr::kable(dim_desc$Dim.1$quanti,
+  caption = "Dim.1 description by the quantitative variable"
+)
+
+knitr::kable(dim_desc$Dim.2$quanti,
+  caption = "Dim.1 description by the quantitative variable"
+)
+```
+
+
+
+### Variables factor map {.tabset .tabset-fade .tabset-pills}
+
+
+```{r}
+# Find vars shown best on the plate
+focus_vars <- FactoInvestigate::selection(
+  pca_res,
+  margin = 2, # computes on the active variables
+  selec = "cos2"
+)
+
+if(length(focus_vars$drawn) == 0) {
+  focus_vars <- FactoInvestigate::selection(
+    pca_res,
+    margin = 2, # computes on the active variables
+    selec = "cos2 10"
+  )
+}
+
+```
+
+
+#### Plot by FactoMineR {.unnumbered}
+
+```{r}
+p <- FactoMineR::plot.PCA(pca_res,
+  choix = "var",
+  habillage = "contrib",
+  select = focus_vars$drawn,
+  cex = 0.9
+)
+
+p <- p + labs(
+  title = "Varables factor map(PCA)",
+  subtitle = focus_vars$what.drawn
+)
+
+p
+```
+
+#### Plot by factoextra  {.unnumbered}
+
+```{r}
+p <- factoextra::fviz_pca_var(pca_res,
+  repel = TRUE,
+  col.var = "contrib",
+  alpha.var = "cos2",
+  cex = 0.5,
+  gradient.cols = ggsci::pal_gsea()(12),
+  label.select = focus_vars$drawn,
+)
+
+p <- p + labs(
+  title = "Varables factor map(PCA)",
+  subtitle = focus_vars$what.drawn
+)
+
+p
+```
+
+### Qualitative factor map {.tabset .tabset-fade .tabset-pills}
+
+```{r}
+
+if (!is.null(dim_desc$Dim.1$category)) {
+  knitr::kable(dim_desc$Dim.1$category,
+    caption = "Dim.1 description by the qualitative variable"
+  )
+}
+
+if (!is.null(dim_desc$Dim.2$category)) {
+  knitr::kable(dim_desc$Dim.2$category,
+    caption = "Dim.2 description by the qualitative variable"
+  )
+}
+```
+
+
+```{r}
+
+# Find factors shown best on the plate
+focus_factors <- FactoInvestigate::selection(
+  pca_res,
+  margin = 3, # computes on the supplementary variables
+  selec = "cos2"
+)
+```
+
+
+#### Plot by FactoMineR {.unnumbered}
+
+```{r}
+p <- FactoMineR::plot.PCA(pca_res,
+  axes = 1:2,
+  choix = "ind",
+  select = focus_factors$drawn,
+  invisible = c("ind", "ind.sup")
+)
+
+p <- p + labs(
+  title = "Qualitative factor map(PCA)",
+  subtitle = focus_factors$what.drawn
+)
+
+p
+```
+
+#### Plot by factoextra {.unnumbered}
+
+```{r}
+p <- factoextra::fviz_pca_ind(
+  pca_res,
+  invisible = c("ind", "ind.sup")
+)
+p <- factoextra::fviz_add(p,
+  pca_res$quali.sup$coord[focus_factors$drawn, ],
+  color = "red"
+)
+
+xlims <- range(pca_res$quali.sup$coord[focus_factors$drawn, ][, "Dim.1"]) * 1.5
+ylims <- range(pca_res$quali.sup$coord[focus_factors$drawn, ][, "Dim.2"]) * 1.5
+
+p <- p + labs(
+  title = "Qualitative factor map(PCA)",
+  subtitle = focus_factors$what.drawn
+) + xlim(xlims) + ylim(ylims)
+
+p
+```
+
+
+## Description by individuals
+### Individuals factor map {.tabset .tabset-fade .tabset-pills}
+
+```{r}
+# Find individuals with higher contributions to the plane
+focus_inds <- FactoInvestigate::selection(
+  pca_res,
+  margin = 1, # computes on the individuals
+  selec = "contrib"
+)
+
+if(length(focus_inds$drawn) == 0) {
+  focus_inds <- FactoInvestigate::selection(
+  pca_res,
+  margin = 1, # computes on the individuals
+  selec = "contrib 10"
+)
+  
+}
+
+```
+
+#### Plot by FactoMineR {.unnumbered}
+
+```{r}
+# Plot individuals by FactoMineR::plot.PCA
+
+# FactoMineR::plot.PCA(pca_res,
+#          invisible = c('ind.sup'),
+#          select = 'contrib  5',
+#          select = focus_inds$drawn,
+#          habillage = 1,
+#          label =c('ind','quali'))
+
+p <- FactoMineR::plotellipses(pca_res,
+  invisible = c("ind.sup"),
+  # select = 'contrib  5',
+  select = focus_inds$drawn,
+  habillage = 1,
+  label = c("ind", "quali")
+)
+
+p <- p + labs(
+  title = "Individuals factor map (PCA)",
+  subtitle = focus_inds$what.drawn
+)
+
+p
+```
+
+#### Plot by factoextra {.unnumbered}
+
+```{r }
+# Plot individuals by factoextra::fviz_pca_ind
+
+# Use contrib for size, Cos2 for alpha
+p <- factoextra::fviz_pca_ind(
+  pca_res,
+  repel = FALSE,
+  col.ind = "black",
+  fill.ind = df_pca$indcd,
+  alpha.ind = "cos2",
+  pointshape = 21,
+  pointsize = "contrib",
+  labelsize = 3,
+  addEllipses = TRUE,
+  ellipse.type = "confidence",
+  label.select = focus_inds$drawn,
+  legend.title = list(
+    color = "Indcd",
+    fill = "Indcd"
+  ),
+  palette = "aaas"
+)
+p <- factoextra::fviz_add(p,
+  pca_res$quali.sup$coord,
+  color =  ggsci::pal_aaas()(nrow(pca_res$quali.sup$coord))
+)
+
+p <- p + labs(
+  title = "Individuals factor map(PCA)",
+  subtitle = focus_inds$what.drawn
+)
+
+p
+```
+
+
+## Description by variables and individuals jontly
+
+### Joint factors map
+
+```{r}
+
+p <- factoextra::fviz_pca_biplot(
+  pca_res,
+  repel = TRUE,
+
+  # setting for individuals
+  col.ind = "black",
+  fill.ind = df_pca$indcd,
+  alpha.ind = "cos2",
+  pointshape = 21,
+  pointsize = "contrib",
+  labelsize = 3,
+  addEllipses = TRUE,
+  ellipse.type = "confidence",
+  #select.ind = list(name = focus_inds$drawn),
+  
+  palette = "aaas",
+
+  # setting for vars
+  col.var = "contrib",
+  alpha.var = "cos2",
+  gradient.cols = ggsci::pal_gsea()(12),
+  #select.var = list(name = focus_vars$drawn),
+
+  label.select = c(focus_inds$drawn, focus_vars$drawn),
+  legend.title = list(
+    fill = "indcd",
+    color = "Contrib"
+  )
+)
+
+p <- factoextra::fviz_add(p,
+  pca_res$quali.sup$coord,
+  color = ggsci::pal_aaas()(nrow(pca_res$quali.sup$coord))
+)
+
+p <- p + labs(
+  title = "Biplot map(PCA)",
+  subtitle = glue::glue("{focus_vars$what.drawn}\n{focus_inds$what.drawn}")
+)
+
+p
+```
+
+### Joint factors description
+
+
+```{r, results = "asis"}
+
+# dim_desc_res <- 
+#   
+#   FactoInvestigate::description(pca_res, dim = c(1, 2))
+# 
+# cat(dim_desc_res, "\n")
+
+dim_desc_res_string <- capture.output({
+  invisible(
+    FactoInvestigate::description(pca_res, dim = c(1, 2))
+  )
+})
+
+dim_desc_res_string <- paste(dim_desc_res_string, collapse = "\n")
+
+# Remove code in results
+dim_desc_res_string <- stringr::str_remove_all(
+  dim_desc_res_string,
+  pattern = "```[\\w\\W]*```"
+)
+
+# Remove Figure caption in results
+dim_desc_res_string <- stringr::str_remove_all(
+  dim_desc_res_string,
+  pattern = "\\*\\*Figure[\\w\\W]*\\\\*\\*"
+)
+
+cat(dim_desc_res_string, "\n")
+
+```
+
+
+# Classification
+
+
+## Find clusters by HCPC
+
+The HCPC (Hierarchical Clustering on Principal Components) approach
+allows us to combine the three standard methods used in multivariate data
+analyses:
+
+1. Principal component methods (PCA, CA, MCA, FAMD, MFA),
+2. Hierarchical clustering and
+3. Partitioning clustering, particularly the k-means method.
+
+The algorithm of the HCPC method, as implemented in the FactoMineR
+package, can be summarized as follow:
+
+1. Compute principal component methods: PCA, (M)CA or MFA
+depending on the types of variables in the data set and the structure of
+the data set. At this step, you can choose the number of dimensions to be
+retained in the output by specifying the argument ncp. The default value
+is 5.
+
+2. Compute hierarchical clustering: Hierarchical clustering is performed
+using the Ward's criterion on the selected principal components. Ward
+criterion is used in the hierarchical clustering because it is based on the
+multidimensional variance like principal component analysis.
+
+3. Choose the number of clusters based on the hierarchical tree: An initial
+partitioning is performed by cutting the hierarchical tree.
+
+4. Perform K-means clustering to improve the initial partition obtained
+from hierarchical clustering. The final partitioning solution, obtained
+after consolidation with k-means, can be (slightly) different from the one
+obtained with the hierarchical clustering.
+
+
+```{r, echo = FALSE}
+hcpc_res <- HCPC(pca_res, nb.clust = -1, graph = FALSE)
+
+cluster_result_hcpc <- hcpc_res$data.clust %>%
+    tibble::rownames_to_column(var = "stkcd") %>%
+    dplyr::mutate(
+        indcd = as.character(indcd),
+        indname = zstexplorer:::code2name(indcd),
+        stkname = zstexplorer:::code2name(stkcd),
+        cluster = as.numeric(clust)
+    ) %>%
+    dplyr::select(stkcd, stkname, indcd, indname, cluster)
+
+DT::datatable(cluster_result_hcpc,
+  caption = "Clustering Results of HCPC",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+
+```
+Found ```r hcpc_res$call$t$nb.clust ``` clusters.
+ 
+ 
+## Cluster Description {.tabset .tabset-fade .tabset-pills}
+
+### Individuals in clusters {.unnumbered}
+```{r}
+
+colnames <- names(hcpc_res$data.clust)
+colnames <- c("id", colnames)
+
+data_clust <- hcpc_res$data.clust %>%
+  tibble::as_tibble(rownames = "id")
+
+
+data_clust_sample <- data_clust %>%
+  dplyr::group_by(clust) %>%
+  dplyr::slice_sample(n = 3)
+
+data_clust_focus <- data_clust %>%
+  dplyr::filter(id %in% focus_inds$drawn) %>%
+  dplyr::arrange(clust)
+
+knitr::kable(data_clust_sample, caption = "Some individuals in clusters")
+```
+
+### Desc by the variables {.unnumbered}   
+
+```{r, class.source = 'fold-show'}
+hcpc_res$desc.var
+```
+### Desc by the dimensions{.unnumbered}
+```{r, class.source = 'fold-show'}
+hcpc_res$desc.axes
+```
+
+### Desc by the individuals {.unnumbered}
+```{r, class.source = 'fold-show'}
+hcpc_res$desc.ind
+
+```
+
+
+
+
+
+
+
+## Qualitative factor map {.tabset .tabset-fade .tabset-pills}
+
+```{r}
+
+# Representative individuals of each cluster
+rep_inds <- purrr::map(hcpc_res$desc.ind$para, ~ names(.x))
+rep_inds <- purrr::reduce(rep_inds, .f = c)
+
+
+data_clust_rep_inds <- data_clust %>%
+  dplyr::filter(id %in% rep_inds) %>%
+  dplyr::arrange(clust)
+
+knitr::kable(data_clust_rep_inds, caption = "Representive individuals of clusters")
+
+```
+
+
+### Plot by FactoMineR {.unnumbered}
+
+```{r}
+
+FactoMineR::plot.HCPC(
+  hcpc_res,
+  choice = "tree",
+  draw.tree = FALSE,
+  select = rep_inds,
+  title = "Tree - Hierarchical Clustering"
+)
+
+FactoMineR::plot.HCPC(
+  hcpc_res,
+  choice = "bar",
+  draw.tree = FALSE,
+  select = rep_inds,
+  title = "Bar - Hierarchical Clustering"
+)
+
+FactoMineR::plot.HCPC(
+  hcpc_res,
+  choice = "map",
+  draw.tree = FALSE,
+  select = rep_inds,
+  title = "Map - clustering on the factor map"
+)
+
+FactoMineR::plot.HCPC(
+  hcpc_res,
+  choice = "3D.map",
+  draw.tree = FALSE,
+  select = rep_inds,
+  title = "3D.map - Hierarchical clustering on the factor map"
+)
+```
+
+### Plot by factoextra {.unnumbered}
+
+```{r}
+
+# Dendrogram by hierarchical clustering
+factoextra::fviz_dend(hcpc_res,
+  cex = 0.7, # Label size
+  palette = "aaas", # Color palette see ?ggpubr::ggpar
+  rect = TRUE, rect_fill = TRUE, # Add rectangle around groups
+  rect_border = "aaas", # Rectangle color
+  labels_track_height = 0.8, # Augment the room for labels
+  title = "Dengrogram of individuals clusters by HCPC"
+)
+
+# Cluster by hierarchical clustering
+factoextra::fviz_cluster(hcpc_res,
+  repel = TRUE, # Avoid label overlapping
+  geom = c("point", "text"),
+  label.select = rep_inds,
+  labelsize = 10,
+  palette = "aaas", # Color palette see ?ggpubr::ggpar
+  ggtheme = theme_minimal(),
+  main = "Map of individuals clusters by HCPC"
+)
+```
+
+## Classifcation description
+
+```{r, results = "asis"}
+
+class_res_string <- capture.output({
+  invisible(
+    class_res <- FactoInvestigate::classif(pca_res, graph = FALSE)
+  )
+})
+
+class_res_string <- paste(class_res_string, collapse = "\n")
+
+# Remove code in results
+class_res_string <- stringr::str_remove_all(
+  class_res_string,
+  pattern = "```[\\w\\W]*```"
+)
+
+# Remove Figure caption in results
+class_res_string <- stringr::str_remove_all(
+  class_res_string,
+  pattern = "\\*\\*Figure[\\w\\W]*\\.\\*\\*"
+)
+
+cat(class_res_string, "\n")
+```
+
+## Cluster mapping to industry and stocks
+
+```{r}
+
+cluster_mapping_hcpc <- cluster_result_hcpc %>%
+  dplyr::nest_by(cluster) %>%
+  dplyr::mutate(
+    indcds = list(sort(unique(data$indcd))),
+    indnames = list(sort(unique(data$indname))),
+    stkcds = list(sort(unique(data$stkcd))),
+    stknames = list(sort(unique(data$stkname)))
+  ) %>%
+  dplyr::select(-c("data", "indcds", "stkcds"))
+
+DT::datatable(cluster_mapping_hcpc,
+  caption = "Mapping between clusters and industry/stocks",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 10,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+
+```
+
+
+
+## Appendix {-}
+
+### A.1 Indcd reference {-}
+
+```{r, cache = TRUE}
+  stock_db <- zstexplorer::stock_db()
+  industry_info <- zstmodelr::get_industry_info(stock_db)
+  
+  DT::datatable(industry_info,
+  caption = "Information about indcd",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+  
+```
+
+### A.2 Stkcd reference {-}
+
+```{r, cache = TRUE}
+  stock_db <- zstexplorer::stock_db()
+  stock_info <- zstmodelr::get_stock_info(stock_db)
+  
+  DT::datatable(stock_info,
+  caption = "Information about stkcd",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+  
+```
+
+### A.3 Factor reference {-}
+
+```{r, cache = TRUE}
+  stock_db <- zstexplorer::stock_db()
+  factors_info <- zstmodelr::get_factors_info(stock_db)
+
+  DT::datatable(factors_info,
+  caption = "Information about factors",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+```
+
+### A.4 Indicator reference {-}
+
+```{r, cache = TRUE}
+  stock_db <- zstexplorer::stock_db()
+  indicators_info <- zstmodelr::get_indicators_info(stock_db)
+  
+    DT::datatable(indicators_info,
+  caption = "Information about indicators",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+```
