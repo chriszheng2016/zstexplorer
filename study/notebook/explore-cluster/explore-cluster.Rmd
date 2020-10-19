@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Explore cluster in stock data"
 documentclass: ctexart
 output:
   html_notebook: 
@@ -7,9 +7,21 @@ output:
     number_sections: yes
     toc: yes
     toc_depth: 4
-  html_document:
-    toc: yes
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
     df_print: paged
+    code_folding: show
+  html_document:
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    df_print: paged
+    code_folding: show
 params:
   indcd_group:
     label: 'Indcd Group:'
@@ -21,35 +33,54 @@ params:
     value: '2019-12-31'
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+```{css, echo=FALSE}
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+/*Setting for scrollable code/text*/ 
 
+pre {
+  max-height: 400px;
+  overflow-y: auto;
+}
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+pre[class] {
+  max-height: 400px;
+}
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+/*Setting for TOC and outlook*/
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+div.main-container {
+  max-width: 100% !important;
+}
 
-# Prepare data
+.tocify {
+  max-width: 20% !important;
+}
+
+.toc-content {
+  padding-left: 5px !important;
+}
+```
+
 ```{r setup, include=FALSE}
-devtools::load_all()
 
+# General packages
+library(tidyverse)
 library(gridExtra)
 library(DT)
 library(plotly)
 library(glue)
 
+# Special packages
 library(cluster)
 library(factoextra)
 library(fpc)
-library(tidyverse)
 library(clustertend)
 library(NbClust)
 library(clValid)
 library(pvclust)
 
+# My packages
+devtools::load_all()
 
 # Set global options for knitr
 knitr::opts_chunk$set(
@@ -64,6 +95,14 @@ knitr::opts_chunk$set(
   tidy = "styler"
 )
 ```
+
+# Prepare data
+
+Parameters for loading data:
+
+**Industry Group:** *`r knitr::combine_words(params$indcd_group)`*
+
+**Date of Cross-sectional data:** *`r cs_date`*
 
 ```{r}
 indcd_group <- stringr::str_split(params$indcd_group, pattern = ",")
@@ -1137,6 +1176,95 @@ DT::datatable(pick_pv_clusters,
     dom = "ltir",
     deferRender = TRUE,
     scrollY = 360,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+```
+## Appendix {-}
+
+### A.1 Indcd reference {-}
+
+```{r, cache = TRUE, class.source = 'fold-hide'}
+stock_db <- zstexplorer::stock_db()
+industry_info <- zstmodelr::get_industry_info(stock_db)
+
+DT::datatable(industry_info,
+  caption = "Information about indcd",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+```
+
+### A.2 Stkcd reference {-}
+
+```{r, cache = TRUE, class.source = 'fold-hide'}
+stock_db <- zstexplorer::stock_db()
+stock_info <- zstmodelr::get_stock_info(stock_db)
+
+DT::datatable(stock_info,
+  caption = "Information about stkcd",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+```
+
+### A.3 Factor reference {-}
+
+```{r, cache = TRUE, class.source = 'fold-hide'}
+stock_db <- zstexplorer::stock_db()
+factors_info <- zstmodelr::get_factors_info(stock_db)
+
+DT::datatable(factors_info,
+  caption = "Information about factors",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
+    scrollX = TRUE,
+    scroller = TRUE
+  )
+)
+```
+
+### A.4 Indicator reference {-}
+
+```{r, cache = TRUE, class.source = 'fold-hide'}
+stock_db <- zstexplorer::stock_db()
+indicators_info <- zstmodelr::get_indicators_info(stock_db)
+
+DT::datatable(indicators_info,
+  caption = "Information about indicators",
+  filter = "top",
+  extensions = "Scroller",
+  options = list(
+    columnDefs = list(list(className = "dt-center")),
+    pageLength = 5,
+    dom = "ltir",
+    deferRender = TRUE,
+    scrollY = 180,
     scrollX = TRUE,
     scroller = TRUE
   )
