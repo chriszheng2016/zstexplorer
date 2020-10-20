@@ -38,7 +38,7 @@ NULL
 #'
 #' @describeIn cs_analysis  UI function of cs_analysis.
 #' @importFrom shiny NS tagList
-cs_analysis_ui <- function(id, debug = FALSE ) {
+cs_analysis_ui <- function(id, debug = FALSE) {
   ns <- NS(id)
   tagList(
     # Side panel for input
@@ -121,6 +121,10 @@ cs_analysis_ui <- function(id, debug = FALSE ) {
           tabPanel(
             "naniar::funs()",
             cs_missing_naniar_ui(ns("cs_missing_naniar_module"))
+          ),
+          tabPanel(
+            "vim::funs()",
+            cs_missing_vim_ui(ns("cs_missing_vim_module"))
           )
         ),
         navbarMenu(
@@ -163,16 +167,15 @@ cs_analysis_ui <- function(id, debug = FALSE ) {
             cs_cor_plotly_ui(ns("cs_cor_plotly_module"))
           )
         ),
+
         navbarMenu(
-          "PCA",
+          "MDA",
           tabPanel(
-            "DataExplorer::plot_correlation()"
-          )
-        ),
-        navbarMenu(
-          "Cluster",
+            "PCA:FactoMineR",
+            cs_PCA_FactoMineR_ui(ns("cs_PCA_FactoMineR_module"))
+          ),
           tabPanel(
-            "factorextra::funs()",
+            "Cluster:factoextra",
             cs_cluster_factoextra_ui(ns("cs_cluster_factoextra_module"))
           )
         )
@@ -338,6 +341,11 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
       csbl_vars = slice_csbl_vars
     )
 
+    # Draw missing data pattern by vim
+    cs_missing_vim_server("cs_missing_vim_module",
+      csbl_vars = slice_csbl_vars
+    )
+
     # Distribution output ----
 
     # Draw distribution plots by DataExplorer
@@ -384,12 +392,19 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
       csbl_vars = slice_csbl_vars
     )
 
-    # Cluster output ----
+    # MDA output ----
+
+    # PCA analysis
+    cs_PCA_FactoMineR_server(
+      "cs_PCA_FactoMineR_module",
+      csbl_vars = slice_csbl_vars
+    )
+
+    # Cluster analysis
     cs_cluster_factoextra_server(
       "cs_cluster_factoextra_module",
       csbl_vars = slice_csbl_vars
     )
-
   })
 }
 
@@ -402,7 +417,7 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
 #'  returns DEBUG environment variable.
 #'
 #' @describeIn cs_analysis  Testing App of cs_analysis.
-cs_analysis_app <- function(use_online_data = FALSE,  debug = on_debug()) {
+cs_analysis_app <- function(use_online_data = FALSE, debug = on_debug()) {
 
   # Prepare data
   tsbl_vars <- load_tsbl_vars(use_online_data)
