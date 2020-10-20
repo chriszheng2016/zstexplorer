@@ -95,12 +95,12 @@ data_dictionary_server <- function(id) {
 
     stock_info <- reactive({
       stock_db <- stock_db()
-      factors_info <- zstmodelr::get_stock_info(stock_db)
+      stock_info <- zstmodelr::get_stock_info(stock_db)
     })
 
     industry_info <- reactive({
       stock_db <- stock_db()
-      factors_info <- zstmodelr::get_industry_info(stock_db)
+      industry_info <- zstmodelr::get_industry_info(stock_db)
     })
 
     factors_info <- reactive({
