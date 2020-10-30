@@ -169,7 +169,7 @@ cs_analysis_ui <- function(id, debug = FALSE) {
         ),
 
         navbarMenu(
-          "MDA",
+          "Multivariate",
           tabPanel(
             "PCA:FactoMineR",
             cs_PCA_FactoMineR_ui(ns("cs_PCA_FactoMineR_module"))
