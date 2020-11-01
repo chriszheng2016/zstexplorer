@@ -534,7 +534,8 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
         tibble::rownames_to_column(var = "stkcd") %>%
         dplyr::mutate(
           indname = zstexplorer:::code2name(indcd),
-          stkname = zstexplorer:::code2name(stkcd)
+          stkname = zstexplorer:::code2name(stkcd),
+          cluster = as.factor(cluster)
         ) %>%
         dplyr::select(stkcd, stkname, indcd, indname, cluster)
 
@@ -579,12 +580,15 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
     fviz_dend_plot <- reactive({
 
       # Abort dendrograms for too much cases.
-      data_length <- nrow(df_cluster())
-      if (req(input$hc_dend_type) %in% c("circular")
-      & data_length > 300) {
-        msg <- glue::glue("Too many data({data_length} cases) would cause cashing on circular dengrograms.
-                          Please use fewer data.")
-        rlang::abort(msg)
+      if (input$hc_dend_type %in% c("circular")) {
+        data_length <- nrow(df_cluster())
+        msg <- glue::glue(
+          "Too many data({data_length} cases) would cause cashing on circular dengrograms.
+           Please use fewer data."
+        )
+        validate(
+          need(data_length < 300, message = msg)
+        )
       }
 
       # Plot dendrogram for hc results
@@ -827,8 +831,11 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
       DT::datatable(mapping_to_clusters,
         filter = "top",
         extensions = "Scroller",
+        rownames = FALSE,
         options = list(
-          columnDefs = list(list(className = "dt-center")),
+          columnDefs = list(
+            list(className = "dt-left", targets = "_all")
+          ),
           pageLength = 10,
           dom = "ltir",
           deferRender = TRUE,
@@ -854,8 +861,11 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
       DT::datatable(cluster_mapping_from,
         filter = "top",
         extensions = "Scroller",
+        rownames = FALSE,
         options = list(
-          columnDefs = list(list(className = "dt-center")),
+          columnDefs = list(
+            list(className = "dt-left", targets = "_all")
+          ),
           pageLength = 5,
           dom = "ltir",
           deferRender = TRUE,
