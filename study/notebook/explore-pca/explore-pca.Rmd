@@ -103,7 +103,7 @@ Parameters for loading data:
 
 **Industry Group:** *`r knitr::combine_words(params$indcd_group)`*
 
-**Date of Cross-sectional data:** *`r cs_date`*
+**Date of Cross-sectional data:** *`r params$cs_date`*
 
 ```{r, class.source = 'fold-show'}
 indcd_group <- stringr::str_split(params$indcd_group, pattern = ",")
@@ -157,7 +157,10 @@ VIM::aggr(df_pca_raw, numbers = TRUE, prop = TRUE)
 
 ```{r, }
 
-estimate_ncp_PCA <- missMDA::estim_ncpPCA(df_pca_raw[, -1], method.cv = "gcv")
+estimate_ncp_PCA <- missMDA::estim_ncpPCA(df_pca_raw,
+  method.cv = "gcv",
+  quali.sup = 1
+)
 plot(estimate_ncp_PCA$criterion ~ names(estimate_ncp_PCA$criterion),
   xlab = "number of dimensions"
 )
@@ -170,13 +173,12 @@ Estimated ncp for impute missing is **`r estimate_ncp_PCA$ncp `**
 
 ```{r}
 
-impute_res <- missMDA::imputePCA(df_pca_raw[, -1], ncp = estimate_ncp_PCA$ncp)
+impute_res <- missMDA::imputePCA(df_pca_raw,
+  ncp = estimate_ncp_PCA$ncp,
+  quali.sup = 1
+)
 
-df_pca <- impute_res$completeObs %>%
-  tibble::as_tibble(rownames = "id") %>%
-  dplyr::bind_cols(indcd = df_pca_raw$indcd) %>%
-  dplyr::select(indcd, everything()) %>%
-  tibble::column_to_rownames(var = "id")
+df_pca <- impute_res$completeObs
 ```
 
 
@@ -315,7 +317,9 @@ var
 ## Correlation circle
 
 The correlation between a variable and a principal component (PC) is used as
-the coordinates of the variable on the PC.
+the coordinates of the variable on the PC. The representation of variables
+differs from the plot of the observations: The observations are represented by
+their projections, but the variables are represented by their correlations
 
 The plot is also known as variable correlation plots. It shows the
 relationships between all variables. It can be interpreted as follow:
@@ -406,7 +410,8 @@ Dim.2) are the most important in explaining the variability in the data
 set.
 
 * Variables that do not correlated with any PC or correlated with the last
-dimensions are variables with low contribution and might be removed to
+dimensions are variables with low contribution and might be removed to simplify
+the overall analysis.
 
 ```{r}
 # Find vars of top n contributions
@@ -432,14 +437,16 @@ fviz_contrib(pca_res, choice = "var", axes = 3:4, top = 10)
 fviz_pca_var(pca_res,
   col.var = "contrib",
   axes = 1:2,
-  gradient.cols = ggsci::pal_gsea()(12),
+  # gradient.cols = ggsci::pal_gsea()(12),
+  gradient.cols = colorRampPalette(c("blue", "red"), alpha = TRUE)(12),
   title = "Variables on Dim-1-2 of PCA"
 )
 
 fviz_pca_var(pca_res,
   col.var = "contrib",
   axes = 3:4,
-  gradient.cols = ggsci::pal_gsea()(12),
+  # gradient.cols = ggsci::pal_gsea()(12),
+  gradient.cols = colorRampPalette(c("blue", "red"), alpha = TRUE)(12),
   title = "Variables on Dim-3-4 of PCA"
 )
 ```
@@ -568,14 +575,13 @@ focus_vars <- FactoInvestigate::selection(
   selec = "cos2"
 )
 
-if(length(focus_vars$drawn) == 0) {
+if (length(focus_vars$drawn) == 0) {
   focus_vars <- FactoInvestigate::selection(
     pca_res,
     margin = 2, # computes on the active variables
     selec = "cos2 10"
   )
 }
-
 ```
 
 
@@ -605,7 +611,8 @@ p <- factoextra::fviz_pca_var(pca_res,
   col.var = "contrib",
   alpha.var = "cos2",
   cex = 0.5,
-  gradient.cols = ggsci::pal_gsea()(12),
+  # gradient.cols = ggsci::pal_gsea()(12),
+  gradient.cols = colorRampPalette(c("blue", "red"), alpha = TRUE)(12),
   label.select = focus_vars$drawn,
 )
 
@@ -699,15 +706,13 @@ focus_inds <- FactoInvestigate::selection(
   selec = "contrib"
 )
 
-if(length(focus_inds$drawn) == 0) {
+if (length(focus_inds$drawn) == 0) {
   focus_inds <- FactoInvestigate::selection(
-  pca_res,
-  margin = 1, # computes on the individuals
-  selec = "contrib 10"
-)
-  
+    pca_res,
+    margin = 1, # computes on the individuals
+    selec = "contrib 10"
+  )
 }
-
 ```
 
 #### Plot by FactoMineR {.unnumbered}
@@ -784,27 +789,31 @@ p
 
 p <- factoextra::fviz_pca_biplot(
   pca_res,
-  repel = TRUE,
+  axes = c(1,2),
 
-  # setting for individuals
+  # Setting for individuals
+  habillage = "none",
   col.ind = "black",
   fill.ind = df_pca$indcd,
   alpha.ind = "cos2",
   pointshape = 21,
   pointsize = "contrib",
-  labelsize = 3,
   addEllipses = TRUE,
   ellipse.type = "confidence",
-  #select.ind = list(name = focus_inds$drawn),
-  
+  # select.ind = list(name = focus_inds$drawn),
   palette = "aaas",
 
-  # setting for vars
+  # Setting for vars
   col.var = "contrib",
   alpha.var = "cos2",
-  gradient.cols = ggsci::pal_gsea()(12),
-  #select.var = list(name = focus_vars$drawn),
+  # gradient.cols = ggsci::pal_gsea()(12),
+  gradient.cols = colorRampPalette(c("blue", "red"), alpha = TRUE)(12),
+  # select.var = list(name = focus_vars$drawn),
 
+  
+  # Common setting
+  repel = TRUE,
+  labelsize = 3,
   label.select = c(focus_inds$drawn, focus_vars$drawn),
   legend.title = list(
     fill = "indcd",
@@ -830,10 +839,10 @@ p
 
 ```{r, results = "asis"}
 
-# dim_desc_res <- 
-#   
+# dim_desc_res <-
+#
 #   FactoInvestigate::description(pca_res, dim = c(1, 2))
-# 
+#
 # cat(dim_desc_res, "\n")
 
 dim_desc_res_string <- capture.output({
@@ -857,7 +866,6 @@ dim_desc_res_string <- stringr::str_remove_all(
 )
 
 cat(dim_desc_res_string, "\n")
-
 ```
 
 
@@ -898,24 +906,27 @@ obtained with the hierarchical clustering.
 
 
 ```{r, echo = FALSE}
-hcpc_res <- HCPC(pca_res, nb.clust = -1, graph = FALSE)
+hcpc_res <- FactoMineR::HCPC(pca_res, nb.clust = -1, graph = FALSE)
 
 cluster_result_hcpc <- hcpc_res$data.clust %>%
-    tibble::rownames_to_column(var = "stkcd") %>%
-    dplyr::mutate(
-        indcd = as.character(indcd),
-        indname = zstexplorer:::code2name(indcd),
-        stkname = zstexplorer:::code2name(stkcd),
-        cluster = as.numeric(clust)
-    ) %>%
-    dplyr::select(stkcd, stkname, indcd, indname, cluster)
+  tibble::rownames_to_column(var = "stkcd") %>%
+  dplyr::mutate(
+    indcd = as.character(indcd),
+    indname = zstexplorer:::code2name(indcd),
+    stkname = zstexplorer:::code2name(stkcd),
+    cluster = as.factor(clust)
+  ) %>%
+  dplyr::select(stkcd, stkname, indcd, indname, cluster)
 
 DT::datatable(cluster_result_hcpc,
   caption = "Clustering Results of HCPC",
   filter = "top",
   extensions = "Scroller",
+   rownames = FALSE,
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -924,14 +935,13 @@ DT::datatable(cluster_result_hcpc,
     scroller = TRUE
   )
 )
-
 ```
 Found ```r hcpc_res$call$t$nb.clust ``` clusters.
  
  
 ## Cluster Description {.tabset .tabset-fade .tabset-pills}
 
-### Individuals in clusters {.unnumbered}
+### Some individuals in clusters {.unnumbered}
 ```{r}
 
 colnames <- names(hcpc_res$data.clust)
@@ -974,7 +984,7 @@ hcpc_res$desc.ind
 
 
 
-## Qualitative factor map {.tabset .tabset-fade .tabset-pills}
+## Classifcation map {.tabset .tabset-fade .tabset-pills}
 
 ```{r}
 
@@ -998,33 +1008,32 @@ knitr::kable(data_clust_rep_inds, caption = "Representive individuals of cluster
 
 FactoMineR::plot.HCPC(
   hcpc_res,
+  axes = c(1, 2),
   choice = "tree",
-  draw.tree = FALSE,
-  select = rep_inds,
   title = "Tree - Hierarchical Clustering"
 )
 
 FactoMineR::plot.HCPC(
   hcpc_res,
+  axes = c(1, 2),
   choice = "bar",
-  draw.tree = FALSE,
-  select = rep_inds,
   title = "Bar - Hierarchical Clustering"
 )
 
 FactoMineR::plot.HCPC(
   hcpc_res,
+  axes = c(1, 2),
   choice = "map",
-  draw.tree = FALSE,
+  draw.tree = TRUE,
   select = rep_inds,
   title = "Map - clustering on the factor map"
 )
 
 FactoMineR::plot.HCPC(
   hcpc_res,
+  axes = c(1, 2),
   choice = "3D.map",
-  draw.tree = FALSE,
-  select = rep_inds,
+  centers.plot = TRUE,
   title = "3D.map - Hierarchical clustering on the factor map"
 )
 ```
@@ -1100,8 +1109,11 @@ DT::datatable(cluster_mapping_hcpc,
   caption = "Mapping between clusters and industry/stocks",
   filter = "top",
   extensions = "Scroller",
+  rownames = FALSE,
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 10,
     dom = "ltir",
     deferRender = TRUE,
@@ -1110,7 +1122,6 @@ DT::datatable(cluster_mapping_hcpc,
     scroller = TRUE
   )
 )
-
 ```
 
 
@@ -1120,15 +1131,17 @@ DT::datatable(cluster_mapping_hcpc,
 ### A.1 Indcd reference {-}
 
 ```{r, cache = TRUE}
-  stock_db <- zstexplorer::stock_db()
-  industry_info <- zstmodelr::get_industry_info(stock_db)
-  
-  DT::datatable(industry_info,
+stock_db <- zstexplorer::stock_db()
+industry_info <- zstmodelr::get_industry_info(stock_db)
+
+DT::datatable(industry_info,
   caption = "Information about indcd",
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -1137,21 +1150,22 @@ DT::datatable(cluster_mapping_hcpc,
     scroller = TRUE
   )
 )
-  
 ```
 
 ### A.2 Stkcd reference {-}
 
 ```{r, cache = TRUE}
-  stock_db <- zstexplorer::stock_db()
-  stock_info <- zstmodelr::get_stock_info(stock_db)
-  
-  DT::datatable(stock_info,
+stock_db <- zstexplorer::stock_db()
+stock_info <- zstmodelr::get_stock_info(stock_db)
+
+DT::datatable(stock_info,
   caption = "Information about stkcd",
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -1160,21 +1174,22 @@ DT::datatable(cluster_mapping_hcpc,
     scroller = TRUE
   )
 )
-  
 ```
 
 ### A.3 Factor reference {-}
 
 ```{r, cache = TRUE}
-  stock_db <- zstexplorer::stock_db()
-  factors_info <- zstmodelr::get_factors_info(stock_db)
+stock_db <- zstexplorer::stock_db()
+factors_info <- zstmodelr::get_factors_info(stock_db)
 
-  DT::datatable(factors_info,
+DT::datatable(factors_info,
   caption = "Information about factors",
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -1188,15 +1203,17 @@ DT::datatable(cluster_mapping_hcpc,
 ### A.4 Indicator reference {-}
 
 ```{r, cache = TRUE}
-  stock_db <- zstexplorer::stock_db()
-  indicators_info <- zstmodelr::get_indicators_info(stock_db)
-  
-    DT::datatable(indicators_info,
+stock_db <- zstexplorer::stock_db()
+indicators_info <- zstmodelr::get_indicators_info(stock_db)
+
+DT::datatable(indicators_info,
   caption = "Information about indicators",
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
