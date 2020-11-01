@@ -102,7 +102,7 @@ Parameters for loading data:
 
 **Industry Group:** *`r knitr::combine_words(params$indcd_group)`*
 
-**Date of Cross-sectional data:** *`r cs_date`*
+**Date of Cross-sectional data:** *`r params$cs_date`*
 
 ```{r}
 indcd_group <- stringr::str_split(params$indcd_group, pattern = ",")
@@ -334,7 +334,8 @@ cluster_result_km <- cluster_result_km %>%
   tibble::rownames_to_column(var = "stkcd") %>%
   dplyr::mutate(
     indname = zstexplorer:::code2name(indcd),
-    stkname = zstexplorer:::code2name(stkcd)
+    stkname = zstexplorer:::code2name(stkcd),
+    cluster = as.factor(cluster)
   ) %>%
   dplyr::select(stkcd, stkname, indcd, indname, cluster)
 
@@ -343,7 +344,9 @@ DT::datatable(cluster_result_km,
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -379,8 +382,11 @@ cluster_mapping_km <- cluster_result_km %>%
 DT::datatable(cluster_mapping_km,
   filter = "top",
   extensions = "Scroller",
+  rownames = FALSE,
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 10,
     dom = "ltir",
     deferRender = TRUE,
@@ -429,7 +435,8 @@ cluster_result_pam <- cluster_result_pam %>%
   tibble::rownames_to_column(var = "stkcd") %>%
   dplyr::mutate(
     indname = zstexplorer:::code2name(indcd),
-    stkname = zstexplorer:::code2name(stkcd)
+    stkname = zstexplorer:::code2name(stkcd),
+    cluster = as.factor(cluster)
   ) %>%
   dplyr::select(stkcd, stkname, indcd, indname, cluster)
 
@@ -438,7 +445,9 @@ DT::datatable(cluster_result_pam,
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -488,8 +497,11 @@ cluster_mapping_pam <- cluster_result_pam %>%
 DT::datatable(cluster_mapping_pam,
   filter = "top",
   extensions = "Scroller",
+  rownames = FALSE,
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 10,
     dom = "ltir",
     deferRender = TRUE,
@@ -579,7 +591,8 @@ cluster_result_clara <- cluster_result_clara %>%
   tibble::rownames_to_column(var = "stkcd") %>%
   dplyr::mutate(
     indname = zstexplorer:::code2name(indcd),
-    stkname = zstexplorer:::code2name(stkcd)
+    stkname = zstexplorer:::code2name(stkcd),
+    cluster = as.factor(cluster)
   ) %>%
   dplyr::select(stkcd, stkname, indcd, indname, cluster)
 
@@ -588,7 +601,9 @@ DT::datatable(cluster_result_clara,
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -624,8 +639,11 @@ cluster_mapping_clara <- cluster_result_clara %>%
 DT::datatable(cluster_mapping_clara,
   filter = "top",
   extensions = "Scroller",
+  rownames = FALSE,
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 10,
     dom = "ltir",
     deferRender = TRUE,
@@ -661,7 +679,8 @@ cluster_result_hc <- cluster_result_hc %>%
   tibble::rownames_to_column(var = "stkcd") %>%
   dplyr::mutate(
     indname = zstexplorer:::code2name(indcd),
-    stkname = zstexplorer:::code2name(stkcd)
+    stkname = zstexplorer:::code2name(stkcd),
+    cluster = as.factor(cluster)
   ) %>%
   dplyr::select(stkcd, stkname, indcd, indname, cluster)
 
@@ -670,7 +689,9 @@ DT::datatable(cluster_result_hc,
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -710,8 +731,11 @@ cluster_mapping_hc <- cluster_result_hc %>%
 DT::datatable(cluster_mapping_hc,
   filter = "top",
   extensions = "Scroller",
+  rownames = FALSE,
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 10,
     dom = "ltir",
     deferRender = TRUE,
@@ -786,7 +810,8 @@ cluster_result_agnes <- cluster_result_agnes %>%
   tibble::rownames_to_column(var = "stkcd") %>%
   dplyr::mutate(
     indname = zstexplorer:::code2name(indcd),
-    stkname = zstexplorer:::code2name(stkcd)
+    stkname = zstexplorer:::code2name(stkcd),
+    cluster = as.factor(cluster)
   ) %>%
   dplyr::select(stkcd, stkname, indcd, indname, cluster)
 
@@ -795,7 +820,9 @@ DT::datatable(cluster_result_agnes,
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -846,8 +873,11 @@ cluster_mapping_agnes <- cluster_result_agnes %>%
 DT::datatable(cluster_mapping_agnes,
   filter = "top",
   extensions = "Scroller",
+  rownames = FALSE,
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 10,
     dom = "ltir",
     deferRender = TRUE,
@@ -916,7 +946,8 @@ cluster_result_diana <- cluster_result_diana %>%
   tibble::rownames_to_column(var = "stkcd") %>%
   dplyr::mutate(
     indname = zstexplorer:::code2name(indcd),
-    stkname = zstexplorer:::code2name(stkcd)
+    stkname = zstexplorer:::code2name(stkcd),
+    cluster = as.factor(cluster)
   ) %>%
   dplyr::select(stkcd, stkname, indcd, indname, cluster)
 
@@ -925,7 +956,9 @@ DT::datatable(cluster_result_diana,
   filter = "top",
   extensions = "Scroller",
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 5,
     dom = "ltir",
     deferRender = TRUE,
@@ -976,8 +1009,11 @@ cluster_mapping_diana <- cluster_result_diana %>%
 DT::datatable(cluster_mapping_diana,
   filter = "top",
   extensions = "Scroller",
+  rownames = FALSE,
   options = list(
-    columnDefs = list(list(className = "dt-center")),
+    columnDefs = list(
+      list(className = "dt-left", targets = "_all")
+    ),
     pageLength = 10,
     dom = "ltir",
     deferRender = TRUE,
