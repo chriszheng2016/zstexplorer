@@ -91,7 +91,7 @@ cs_cor_GGally_ui <- function(id) {
             actionButton(
               inputId = ns("refresh_plot"),
               label = strong("Refresh Plot"),
-              width = '100%'
+              width = "100%"
             )
           ),
           column(
@@ -99,7 +99,7 @@ cs_cor_GGally_ui <- function(id) {
             actionButton(
               inputId = ns("reset_default"),
               label = strong("Reset Default"),
-              width = '100%'
+              width = "100%"
             )
           )
         ),
@@ -303,65 +303,73 @@ cs_cor_GGally_server <- function(id, csbl_vars) {
     })
 
 
-    output$ggscatmat_plot <- renderPlot(
-      {
-        req(input$refresh_plot)
+    output$ggscatmat_plot <- renderPlot({
 
-        csbl_vars_focus() %>%
-          dplyr::select(where(~ is.numeric(.x))) %>%
-          GGally::ggscatmat(
-            alpha = 0.3,
-            corMethod = input$cor_method
-          )
-      # },
-      # cacheKeyExpr = {
-      #   list(input$refresh_plot)
-      }
-    )
+      # Notice: how use actionBution to initiate plotting.
+      # 1. req() only make sure not execute when UI initialize
+      # 2. you should isolate() to isolate other inputs to make sure
+      #    plot only depend on clicking of refresh_plot.
 
-    output$ggpairs_plot <- renderPlot(
-      {
-        req(input$refresh_plot)
+      req(input$refresh_plot)
 
-        focus_vars <- switch(input$vars_type,
-          "continuous" = {
-            csbl_vars_focus() %>%
-              dplyr::select(where(~ is.numeric(.x)))
-          },
-          "discrete" = {
-            csbl_vars_focus() %>%
-              dplyr::select(where(~ !is.numeric(.x)))
-          },
-          "all" = {
-            csbl_vars_focus()
-          }
+      csbl_vars_focus() %>%
+        dplyr::select(where(~ is.numeric(.x))) %>%
+        GGally::ggscatmat(
+          alpha = 0.3,
+          corMethod = isolate(input$cor_method)
         )
-
-        focus_vars %>%
-
-          GGally::ggpairs(
-            upper = list(
-              continuous = input$upper_continuous,
-              combo = input$upper_combo,
-              discrete = input$upper_discrete
-            ),
-            lower = list(
-              continuous = input$lower_continuous,
-              combo = input$lower_combo,
-              discrete = input$lower_discrete
-            ),
-            diag = list(
-              continuous = input$diag_continuous,
-              discrete = input$diag_discrete
-            ),
-            cardinality_threshold = input$cardinality_threshold,
-            progress = FALSE
-          )
       # },
       # cacheKeyExpr = {
       #   list(input$refresh_plot)
-      }
-    )
+    })
+
+    output$ggpairs_plot <- renderPlot({
+
+      # Notice: how use actionBution to initiate plotting.
+      # 1. req() only make sure not execute when UI initialize
+      # 2. you should isolate() to isolate other inputs to make sure
+      #    plot only depend on clicking of refresh_plot.
+
+      req(input$refresh_plot)
+
+      focus_vars <- switch(isolate(input$vars_type),
+        "continuous" = {
+          csbl_vars_focus() %>%
+            dplyr::select(where(~ is.numeric(.x)))
+        },
+        "discrete" = {
+          csbl_vars_focus() %>%
+            dplyr::select(where(~ !is.numeric(.x)))
+        },
+        "all" = {
+          csbl_vars_focus()
+        }
+      )
+
+      focus_vars %>%
+
+        GGally::ggpairs(
+          upper = list(
+            continuous = isolate(input$upper_continuous),
+            combo = isolate(input$upper_combo),
+            discrete = isolate(input$upper_discrete)
+          ),
+          lower = list(
+            continuous = isolate(input$lower_continuous),
+            combo = isolate(input$lower_combo),
+            discrete = isolate(input$lower_discrete)
+          ),
+          diag = list(
+            continuous = isolate(input$diag_continuous),
+            discrete = isolate(input$diag_discrete)
+          ),
+          cardinality_threshold = isolate(input$cardinality_threshold),
+          progress = FALSE
+        )
+      # },
+      # cacheKeyExpr = {
+      #   list(input$refresh_plot)
+    })
   })
 }
 
