@@ -1,0 +1,7 @@
+output
+*.pdf
+*.html
+*.docx
+*_cache
+*_files
+trelliscope

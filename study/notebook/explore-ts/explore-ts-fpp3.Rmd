@@ -1,0 +1,855 @@
+---
+title: "Explore timeseries in stock data"
+documentclass: ctexart
+output:
+  html_document:
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+    df_print: paged
+    theme: cerulean
+    highlight: pygments
+    code_folding: hide
+  html_notebook:
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+      padding-left: yes
+    df_print: paged
+    theme: cerulean
+    highlight: pygments
+    code_folding: hide
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
+params:
+  start_date:
+    label: 'Start Date:'
+    input: date
+    format: yyyy-mm-dd
+    value: '2001-01-01'
+  end_date:
+    label: 'End Date:'
+    input: date
+    format: yyyy-mm-dd
+    value: !expr Sys.Date()
+  focus_stocks:
+    label: Stock codes
+    input: select
+    multiple: yes
+    choices:
+    - 格力电器
+    - 美的集团
+    - 宇通客车
+    - 江铃汽车
+    - 三一重工
+    - 中联重科
+    value:
+    - 格力电器
+    - 美的集团
+    - 宇通客车
+    - 江铃汽车
+    - 三一重工
+    - 中联重科
+---
+
+
+```{css, echo=FALSE}
+
+/*Setting for scrollable code/text*/ 
+
+pre {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 400px;
+}
+
+/*Setting for TOC and outlook*/
+
+div.main-container {
+  max-width: 100% !important;
+}
+
+.tocify {
+  max-width: 20% !important;
+}
+
+.toc-content {
+  padding-left: 5px !important;
+}
+```
+
+```{r setup, include=FALSE}
+
+
+# General packages
+library(tidyverse)
+library(gridExtra)
+library(DT)
+library(plotly)
+library(trelliscopejs)
+library(glue)
+
+# Special packages
+
+# Time series manipulation
+library(tsibble)
+# Forecasting functions
+library(fable)
+# Time series graphics and statistics
+library(feasts)
+
+# My packages
+devtools::load_all()
+
+# Set global options for knitr
+knitr::opts_chunk$set(
+  fig.align = "center",
+  fig.show = "hold",
+  message = FALSE,
+  warning = FALSE,
+  collapse = TRUE,
+  results = "hold",
+  comment = "#>",
+  out.width = "80%",
+  tidy = "styler"
+)
+```
+
+# Prepare data
+
+**Focus stocks:** `r knitr::combine_words(params$focus_stocks)`
+
+**Start date :** `r format(params$start_date)`
+
+**End date :** `r format(params$end_date)`
+
+
+```{r, class.source = 'fold-show'}
+
+focus_stkcds <- zstexplorer::name2code(params$focus_stocks)
+tsbl_vars <- load_tsbl_vars(use_online_data = TRUE)
+
+# Build time series of focused stocks
+tsbl_focus_stock_raw <- tsbl_vars %>%
+  tsibble::filter_index(format(params$start_date) ~ format(params$end_date)) %>%
+  dplyr::filter(stkcd %in% focus_stkcds) %>%
+  dplyr::mutate(
+    date = tsibble::yearquarter(date),
+    stkname = zstexplorer::code2name(stkcd)
+  ) %>%
+  dplyr::select(
+    c("date", "stkcd", "stkname", "indcd"),
+    tidyselect::everything(), -c("period")
+  ) %>%
+  tsibble::update_tsibble(key = "stkcd")
+
+# Build time series of focused industry
+tsbl_vars_industry_median <- tsbl_vars %>%
+  dplyr::group_by(indcd) %>%
+  dplyr::summarise(
+    dplyr::across(where(is.numeric), ~ median(., na.rm = TRUE))
+  )
+
+tsbl_vars_industry_mean <- tsbl_vars %>%
+  dplyr::group_by(indcd) %>%
+  dplyr::summarise(
+    dplyr::across(where(is.numeric), ~ mean(., na.rm = TRUE))
+  )
+
+tsbl_vars_industry <- tsbl_vars_industry_median
+focus_industries <- unique(tsbl_focus_stock_raw$indcd)
+
+tsbl_focus_industry_raw <- tsbl_vars_industry %>%
+  tsibble::filter_index(format(params$start_date) ~ format(params$end_date)) %>%
+  dplyr::filter(.data$indcd %in% focus_industries) %>%
+  dplyr::mutate(
+    date = tsibble::yearquarter(date),
+    indname = zstexplorer::code2name(indcd)
+  ) %>%
+  dplyr::select(
+    c("date", "indcd", "indname"), tidyselect::everything()
+  ) %>%
+  tsibble::update_tsibble(key = "indcd")
+```
+
+## Handle gaps {.tabset .tabset-fade .tabset-pills}
+
+```{r}
+
+full_gap <- FALSE
+
+```
+
+
+### Has gaps {.unnumbered}
+
+```{r}
+
+# Has gaps for focused stocks
+tsbl_focus_stock_has_gaps <- tsibble::has_gaps(
+  tsbl_focus_stock_raw,
+  .full = !!full_gap
+)
+
+knitr::kable(tsbl_focus_stock_has_gaps,
+  format = "html",
+  caption = "Gaps(Implict Missingnes)in focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+
+# Has gaps for focused industries
+tsbl_focus_industry_has_gaps <- tsibble::has_gaps(
+  tsbl_focus_industry_raw,
+  .full = !!full_gap
+)
+
+knitr::kable(tsbl_focus_industry_has_gaps,
+  format = "html",
+  caption = "Gaps(Implict Missingnes)in Focused industries"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+### Scan gaps {.unnumbered}
+
+```{r}
+
+# Scan gaps for focused stocks
+tsbl_focus_stock_scan_gaps <- tsibble::scan_gaps(
+  tsbl_focus_stock_raw,
+  .full = !!full_gap
+)
+
+knitr::kable(tsbl_focus_stock_scan_gaps,
+  format = "html",
+  caption = "Gaps(Implict Missingnes)in focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+
+# Scan gaps for focused industries
+tsbl_focus_industry_scan_gaps <- tsibble::scan_gaps(
+  tsbl_focus_industry_raw,
+  .full = !!full_gap
+)
+
+knitr::kable(tsbl_focus_industry_scan_gaps,
+  format = "html",
+  caption = "Gaps(Implict Missingnes)in focused industries"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+### Count gaps {.unnumbered}
+
+```{r}
+
+# Count gaps for focused stocks
+tsbl_focus_stock_count_gaps <- tsibble::count_gaps(
+  tsbl_focus_stock_raw,
+  .full = !!full_gap
+)
+
+knitr::kable(tsbl_focus_stock_count_gaps,
+  format = "html",
+  caption = "Gaps(Implict Missingnes)in focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+
+# Count gaps for focused industries
+tsbl_focus_industry_count_gaps <- tsibble::count_gaps(
+  tsbl_focus_industry_raw,
+  .full = !!full_gap
+)
+
+knitr::kable(tsbl_focus_industry_count_gaps,
+  format = "html",
+  caption = "Gaps(Implict Missingnes)in focused industries"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+
+### Plot gaps {.unnumbered}
+
+```{r fig.cap="Gaps(Implict Missingnes)in Data"}
+
+# Plot gaps for focused stocks
+tsbl_focus_stock_gaps <- tsibble::count_gaps(
+  tsbl_focus_stock_raw,
+  .full = !!full_gap
+)
+
+ggplot(tsbl_focus_stock_gaps, aes(x = stkcd, colour = stkcd)) +
+  geom_linerange(aes(ymin = .from, ymax = .to)) +
+  geom_point(aes(y = .from)) +
+  geom_point(aes(y = .to)) +
+  coord_flip() +
+  theme(legend.position = "bottom") +
+  labs(title = "Gaps(Implict Missingnes)in focused stocks")
+
+# Plot gaps for focused industries
+tsbl_focus_industry_gaps <- tsibble::count_gaps(
+  tsbl_focus_industry_raw,
+  .full = !!full_gap
+)
+
+ggplot(tsbl_focus_industry_gaps, aes(x = indcd, colour = indcd)) +
+  geom_linerange(aes(ymin = .from, ymax = .to)) +
+  geom_point(aes(y = .from)) +
+  geom_point(aes(y = .to)) +
+  coord_flip() +
+  theme(legend.position = "bottom") +
+  labs(title = "Gaps(Implict Missingnes)in focused industries")
+```
+
+## Handel Missing  {.tabset .tabset-fade .tabset-pills}
+
+### Missing before processing {.unnumbered}
+
+```{r}
+
+tsbl_focus_stock_raw %>%
+  tibble::as_tibble() %>%
+  visdat::vis_dat() +
+  ggplot2::labs(title = "Missing values in data", subtitle = "Focused stocks")
+
+tsbl_focus_industry_raw %>%
+  tibble::as_tibble() %>%
+  visdat::vis_dat() +
+  ggplot2::labs(title = "Missing values in data", subtitle = "Focused industry")
+```
+
+### Missing after turning gaps into NAs {.unnumbered}
+
+```{r}
+
+# Fill gaps with NAs for focused stocks
+tsbl_focus_stock <- tsbl_focus_stock_raw %>%
+  tsibble::group_by_key() %>%
+  tsibble::fill_gaps(.full = !!full_gap) %>%
+  dplyr::mutate(stkname = zstexplorer::code2name(stkcd))
+
+
+tsbl_focus_stock %>%
+  tibble::as_tibble() %>%
+  visdat::vis_dat() +
+  ggplot2::labs(title = "Missing values in data", subtitle = "Focused stocks")
+
+# Fill gaps with NAs for focused industries
+tsbl_focus_industry <- tsbl_focus_industry_raw %>%
+  tsibble::group_by_key() %>%
+  tsibble::fill_gaps(.full = !!full_gap) %>%
+  dplyr::mutate(indname = zstexplorer::code2name(indcd))
+
+tsbl_focus_industry %>%
+  tibble::as_tibble() %>%
+  visdat::vis_dat() +
+  ggplot2::labs(title = "Missing values in data", subtitle = "Focused industries")
+```
+
+
+### Missing after imputing NAs {.unnumbered}
+
+```{r}
+
+# Fill NA with previous values for focused stocks
+tsbl_focus_stock <- tsbl_focus_stock %>%
+  tidyr::fill(tidyselect::everything(), .direction = "down") %>%
+  dplyr::ungroup() %>%
+  tsibble::as_tsibble(key = c(stkcd, indcd))
+
+tsbl_focus_stock %>%
+  tibble::as_tibble() %>%
+  visdat::vis_dat() +
+  ggplot2::labs(title = "Missing values in data", subtitle = "Focused stocks")
+
+# Fill NA with previous values for focused industries
+tsbl_focus_industry <- tsbl_focus_industry %>%
+  tidyr::fill(tidyselect::everything(), .direction = "down") %>%
+  dplyr::ungroup() %>%
+  tsibble::as_tsibble(key = c(indcd))
+
+tsbl_focus_industry %>%
+  tibble::as_tibble() %>%
+  visdat::vis_dat() +
+  ggplot2::labs(title = "Missing values in data", subtitle = "Focused industries")
+```
+
+
+# Time series graphics
+
+
+```{r}
+
+# Combine variables of focused stock and focused industry into
+# various format of tsibble for latter using.
+
+# Long format of tsbl_focus
+long_tsbl_focus_stock <- tsbl_focus_stock %>%
+  tidyr::pivot_longer(
+    cols = -c("date", "stkcd", "stkname", "indcd"),
+    names_to = "variable", values_to = "value"
+  )
+
+long_tsbl_focus_industry <- tsbl_focus_industry %>%
+  tidyr::pivot_longer(
+    cols = -c("date", "indcd", "indname"),
+    names_to = "variable", values_to = "value"
+  )
+
+long_tsbl_focus <- long_tsbl_focus_stock %>%
+  dplyr::left_join(
+    long_tsbl_focus_industry,
+    by = c("date", "indcd", "variable"),
+    suffix = c("_stock", "_industry")
+  ) %>%
+  dplyr::select(c(
+    date, stkcd, stkname, indcd, indname,
+    variable, value_stock, value_industry
+  )) %>%
+  tsibble::as_tsibble(key = c(stkcd, indcd, variable))
+
+
+# Nested format of tsbl_focus
+nest_tsbl_focus_stock <- long_tsbl_focus_stock %>%
+  tidyr::nest(tsbl_variable = c("date", "value")) %>%
+  dplyr::ungroup()
+
+nest_tsbl_focus_industry <- long_tsbl_focus_industry %>%
+  tidyr::nest(tsbl_variable = c("date", "value")) %>%
+  dplyr::ungroup()
+
+nest_tsbl_focus <- nest_tsbl_focus_stock %>%
+  dplyr::left_join(nest_tsbl_focus_industry,
+    by = c("indcd", "variable"),
+    suffix = c("_stock", "_industry")
+  )
+
+nest_tsbl_focus <- nest_tsbl_focus %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(
+    tsbl_variable =
+      list(dplyr::left_join(
+        tsbl_variable_stock,
+        tsbl_variable_industry,
+        by = c("date"),
+        suffix = c("_stock", "_industry")
+      ))
+  ) %>%
+  dplyr::select(
+    c("stkcd", "stkname", "indcd", "indname", "variable", "tsbl_variable"),
+    -c("tsbl_variable_stock", "tsbl_variable_industry")
+  ) %>%
+  dplyr::ungroup()
+```
+
+
+## Time series Plots {.tabset .tabset-fade .tabset-pills}
+
+
+### Trellis plot {.unnumbered}
+
+```{r}
+
+timeseries_plot <- function(tsbl_variable, value_variable, reference_variable) {
+  tsbl_variable %>%
+    fabletools::autoplot(.vars = .data[[value_variable]]) +
+    fabletools::autolayer(tsbl_variable,
+      .data[[reference_variable]],
+      color = "blue", linetype = "longdash"
+    ) 
+}
+
+# Plot time sereies of focused stocks
+nest_tsbl_focus_timeseries <- nest_tsbl_focus %>%
+  dplyr::mutate(
+    panel_plot = trelliscopejs::map_plot(
+      tsbl_variable,
+      timeseries_plot,
+      value_variable = "value_stock",
+      reference_variable = "value_industry"
+    )
+  )
+
+nest_tsbl_focus_timeseries %>%
+  dplyr::select(variable, indcd, stkcd, panel_plot) %>%
+  trelliscopejs::trelliscope(
+    name = "time_series_stocks", panel_col = "panel_plot",
+    nrow = 2, ncol = 3,
+    self_contained = TRUE,
+    path = "trelliscope/timeseries/stocks"
+  )
+
+
+
+```
+
+```{r}
+
+# Notice: can't put following code into previous chunck, 
+# because it will cause error in trelliscope plot for unknown reasons
+
+# Plot time series of focused industries
+nest_tsbl_focus_industry_timeseries <- nest_tsbl_focus_industry %>%
+  dplyr::mutate(
+    panel_plot = trelliscopejs::map_plot(
+      tsbl_variable,
+      timeseries_plot,
+      value_variable = "value",
+      reference_variable = "value"
+    )
+  )
+
+nest_tsbl_focus_industry_timeseries %>%
+  dplyr::select(variable, indcd, panel_plot) %>%
+  trelliscopejs::trelliscope(
+    name = "time_series_industries", panel_col = "panel_plot",
+    nrow = 2, ncol = 3,
+    self_contained = TRUE,
+    path = "trelliscope/timeseries/industries"
+  )
+
+```
+
+
+### Facet plot {.unnumbered}
+
+
+```{r}
+
+long_tsbl_focus %>%
+  autoplot(value_stock, aes(color = stkname)) +
+  autolayer(long_tsbl_focus, value_industry, linetype = "longdash") +
+  tsibble::scale_x_yearquarter() +
+  labs(y = "value") +
+  facet_grid(variable ~ indcd + stkcd + stkname, scales = "free") +
+  theme(legend.position = "none")
+
+
+long_tsbl_focus %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = value_stock, color = stkname)) +
+  geom_line(aes(y = value_industry), linetype = "longdash") +
+  tsibble::scale_x_yearquarter() +
+  labs(y = "value") +
+  facet_grid(variable ~ indcd + indname, scales = "free") +
+  theme_light()
+```
+
+
+## Seasonal plots {.tabset .tabset-fade .tabset-pills}
+
+### Trellis plots {.unnumbered}
+```{r}
+
+gg_season_plot <- function(tsbl_variable, variable) {
+  tsbl_variable %>%
+    feasts::gg_season(y = .data[[variable]])
+}
+
+# Plot gg_season for focused stocks
+nest_tsbl_focus_stock_season <- nest_tsbl_focus_stock %>%
+  dplyr::mutate(
+    panel_plot = trelliscopejs::map_plot(
+      .data$tsbl_variable,
+      gg_season_plot,
+      variable = "value"
+    )
+  )
+
+nest_tsbl_focus_stock_season %>%
+  dplyr::select(c("variable", "indcd", "stkcd", "panel_plot")) %>%
+  trelliscopejs::trelliscope(
+    name = "gg_season_stocks", panel_col = "panel_plot",
+    nrow = 2, ncol = 3,
+    self_contained = TRUE,
+    path = "trelliscope/gg_season/stocks"
+  )
+
+# Plot gg_season for focused industries
+nest_tsbl_focus_industry_season <- nest_tsbl_focus_industry %>%
+  dplyr::mutate(
+    panel_plot = trelliscopejs::map_plot(
+      .data$tsbl_variable,
+      gg_season_plot,
+      variable = "value"
+    )
+  )
+
+nest_tsbl_focus_industry_season %>%
+  dplyr::select(c("variable", "indcd", "panel_plot")) %>%
+  trelliscopejs::trelliscope(
+    name = "gg_season_industries", panel_col = "panel_plot",
+    nrow = 2, ncol = 3,
+    self_contained = TRUE,
+    path = "trelliscope/gg_season/industries"
+  )
+
+```
+
+### Facet plot {.unnumbered}
+
+```{r}
+
+long_tsbl_focus_stock %>%
+  feasts::gg_season(value) +
+  facet_grid(variable ~ indcd + stkcd + stkname, scales = "free_y")
+
+long_tsbl_focus_industry %>%
+  feasts::gg_season(value) +
+  facet_grid(variable ~ indcd + indname, scales = "free_y")
+
+
+```
+
+## Seasonal subseries plots {.tabset .tabset-fade .tabset-pills}
+
+
+### Trellis plots {.unnumbered}
+
+```{r}
+
+gg_subseries_plot <- function(tsbl_variable, variable) {
+  tsbl_variable %>%
+    feasts::gg_subseries(y = .data[[variable]])
+}
+
+# Plot gg_subseries for focused stocks
+nest_tsbl_focus_stock_subseries <- nest_tsbl_focus_stock %>%
+  dplyr::mutate(
+    panel_plot = trelliscopejs::map_plot(
+      tsbl_variable,
+      gg_subseries_plot,
+      variable = "value"
+    )
+  )
+
+nest_tsbl_focus_stock_subseries %>%
+  dplyr::select(c("variable", "indcd", "stkcd", "panel_plot")) %>%
+  trelliscopejs::trelliscope(
+    name = "gg_subseries_stocks", panel_col = "panel_plot",
+    nrow = 2, ncol = 3,
+    self_contained = TRUE,
+    path = "trelliscope/gg_subseries/stocks"
+  )
+
+# Plot gg_subseries for focused industries
+nest_tsbl_focus_industry_subseries <- nest_tsbl_focus_industry %>%
+  dplyr::mutate(
+    panel_plot = trelliscopejs::map_plot(
+      tsbl_variable,
+      gg_subseries_plot,
+      variable = "value"
+    )
+  )
+
+nest_tsbl_focus_industry_subseries %>%
+  dplyr::select(c("variable", "indcd", "panel_plot")) %>%
+  trelliscopejs::trelliscope(
+    name = "gg_subseries_industries", panel_col = "panel_plot",
+    nrow = 2, ncol = 3,
+    self_contained = TRUE,
+    path = "trelliscope/gg_subseries/industries"
+  )
+
+```
+
+### Facet plots {.unnumbered}
+
+```{r}
+
+long_tsbl_focus_stock %>%
+  feasts::gg_subseries(value) +
+  facet_grid(variable ~ indcd + stkcd + stkname, scales = "free_y")
+
+long_tsbl_focus_industry %>%
+  feasts::gg_subseries(value) +
+  facet_grid(variable ~ indcd + indname, scales = "free_y")
+
+```
+
+# Time Series Decomposition
+
+## STL decomposition
+
+### Components plot
+```{r}
+
+decomp_plot <- function(decomp_model) {
+  if (!fabletools::is_null_model(decomp_model[["model"]])) {
+    decomp_model %>%
+      components() %>%
+      autoplot()
+  } else {
+    NULL
+  }
+}
+
+# Plot decomp_plot for focused stocks
+nest_tsbl_focus_stock_stl <- nest_tsbl_focus_stock %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(decomp_model = list(
+    fabletools::model(tsbl_variable, model = feasts::STL(value))
+  )) %>%
+  dplyr::ungroup()
+
+
+nest_tsbl_focus_stock_stl <- nest_tsbl_focus_stock_stl %>%
+  dplyr::mutate(
+    decomp_plot = trelliscopejs::map_plot(
+      decomp_model,
+      decomp_plot
+    )
+  )
+
+nest_tsbl_focus_stock_stl %>%
+  dplyr::select(variable, indcd, stkcd, decomp_plot) %>%
+  trelliscopejs::trelliscope(
+    name = "decomp_plot_of_stocks", panel_col = "decomp_plot",
+    nrow = 1, ncol = 2,
+    self_contained = TRUE,
+    path = "trelliscope/decomp/stl/components/stocks"
+  )
+
+# Plot decomp_plot for focused industries
+nest_tsbl_focus_industry_stl <- nest_tsbl_focus_industry %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(decomp_model = list(
+    fabletools::model(tsbl_variable, model = feasts::STL(value))
+  )) %>%
+  dplyr::ungroup()
+
+
+nest_tsbl_focus_industry_stl <- nest_tsbl_focus_industry_stl %>%
+  dplyr::mutate(
+    decomp_plot = trelliscopejs::map_plot(
+      decomp_model,
+      decomp_plot
+    )
+  )
+
+nest_tsbl_focus_industry_stl %>%
+  dplyr::select(variable, indcd, decomp_plot) %>%
+  trelliscopejs::trelliscope(
+    name = "decomp_plot_industries", panel_col = "decomp_plot",
+    nrow = 1, ncol = 2,
+    self_contained = TRUE,
+    path = "trelliscope/decomp/stl/components/industries"
+  )
+```
+
+### Season adjust plot
+
+```{r}
+
+season_adjust_plot <- function(stl_model) {
+  if (!fabletools::is_null_model(stl_model[["model"]])) {
+    stl_model %>%
+      components() %>%
+      ggplot(aes(x = .data$date)) +
+      geom_line(aes(y = .data$value), color = "gray") +
+      geom_line(aes(y = .data$season_adjust), color = "red") +
+      theme(legend.position = "bottom")
+  } else {
+    NULL
+  }
+}
+
+# Plot season_adjust_plot for focused stocks
+nest_tsbl_focus_stock_stl <- nest_tsbl_focus_stock_stl %>%
+  dplyr::mutate(
+    season_adjust_plot = trelliscopejs::map_plot(
+      decomp_model,
+      season_adjust_plot
+    )
+  )
+
+nest_tsbl_focus_stock_stl %>%
+  dplyr::select(variable, indcd, stkcd, season_adjust_plot) %>%
+  trelliscopejs::trelliscope(
+    name = "season_adjust_plot_stock", panel_col = "season_adjust_plot",
+    nrow = 1, ncol = 2,
+    self_contained = TRUE,
+    path = "trelliscope/decomp/stl/season_adjust/stocks"
+  )
+
+# Plot season_adjust_plot for focused industries
+nest_tsbl_focus_industry_stl <- nest_tsbl_focus_industry_stl %>%
+  dplyr::mutate(
+    season_adjust_plot = trelliscopejs::map_plot(
+      decomp_model,
+      season_adjust_plot
+    )
+  )
+
+nest_tsbl_focus_industry_stl %>%
+  dplyr::select(variable, indcd, season_adjust_plot) %>%
+  trelliscopejs::trelliscope(
+    name = "season_adjust_plot_industries", panel_col = "season_adjust_plot",
+    nrow = 1, ncol = 2,
+    self_contained = TRUE,
+    path = "trelliscope/decomp/stl/season_adjust/industries"
+  )
+
+
+```
+
+
+# Time series features
+
+## Simple statistics
+
+```{r}
+
+# simple_stats <- function(tsbl_variable) {
+#   tsbl_variable %>%
+#     fabletools::features(
+#       .var = .data$value,
+#       features = list(
+#         mean = ~ mean(., na.rm = TRUE),
+#         median = ~ median(., na.rm = TRUE),
+#         sd = ~ sd(., na.rm = TRUE),
+#         Q = ~ quantile(., na.rm = TRUE)
+#       )
+#     )
+# }
+# 
+# simple_stats_plot <- function(tsbl_variable) {
+#   tsbl_variable
+# }
+# 
+# nest_tsbl_focus_simple_stats <- nest_tsbl_focus %>%
+#   dplyr::rowwise() %>%
+#   dplyr::mutate(simple_stats = list(
+#     simple_stats(tsbl_variable)
+#   )) %>%
+#   dplyr::ungroup()
+# 
+# tsbl_focus %>%
+#   tidyr::pivot_longer(
+#     cols = -c("date", "stkcd", "stkname", "indcd"),
+#     names_to = "variable", values_to = "value"
+#   ) %>%
+#   ggplot(aes(x = stkname, y = value)) +
+#   geom_boxplot() +
+#   coord_flip() +
+#   facet_grid(indcd ~ variable, scales = "free_y")
+```
+
+## ACF features
+
+## STL features
+
+## Other features
