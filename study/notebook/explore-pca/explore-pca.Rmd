@@ -2,7 +2,7 @@
 title: "Explore pca in stock data"
 documentclass: ctexart
 output:
-  html_notebook: 
+  html_notebook:
     fig_caption: yes
     number_sections: yes
     toc: yes
@@ -20,8 +20,8 @@ output:
     number_sections: yes
     toc: yes
     toc_float:
-      collapsed: false
-      smooth_scroll: false
+      collapsed: no
+      smooth_scroll: no
     df_print: paged
     theme: cerulean
     highlight: pygments
@@ -29,11 +29,20 @@ output:
 params:
   indcd_group:
     label: 'Indcd Group:'
-    input: text
-    value: 'C37, C38, C39'
+    input: select
+    multiple: yes
+    choices:
+    - C37
+    - C38
+    - C39
+    value:
+    - C37
+    - C38
+    - C39
   cs_date:
     label: 'Year:'
-    input: text
+    input: date
+    format: yyyy-mm-dd
     value: '2018-12-31'
 ---
 

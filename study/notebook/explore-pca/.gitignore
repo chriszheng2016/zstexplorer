@@ -2,5 +2,5 @@ output
 *.pdf
 *.html
 *.docx
-explore-pca_cache
-explore-pca_files
+*_cache
+*_files
