@@ -49,6 +49,9 @@ stock_db <- function() {
 #' @param codes A character or vector of codes to match.
 #'  a code could be a regular expression for matching in non-exact way.
 #'
+#' @param exact_match	 A logic to determine use exact matching or not.
+#' Default FALSE means to non-exact matching
+#'
 #' @return  A character or vector of matched names.
 #'
 #' @examples
@@ -66,7 +69,7 @@ stock_db <- function() {
 #' }
 #'
 #' @noRd
-code2name <- function(codes) {
+code2name <- function(codes, exact_match = FALSE) {
   suppressMessages({
     # Fetch factors information from database
     stock_db <- stock_db()
@@ -78,7 +81,7 @@ code2name <- function(codes) {
     while ((!success) && (index <= length(type_list))) {
       # Match code to name
       names <- zstmodelr::code2name(stock_db, code = codes,
-                                    exact_match = FALSE, type = type_list[index])
+                                    exact_match = exact_match, type = type_list[index])
       success <- !all(is.na(names))
       index <- index + 1
     }
@@ -95,6 +98,10 @@ code2name <- function(codes) {
 #'
 #' @param names A character or vector of names to match.
 #' a name could be a regular expression for matching in non-exact way.
+#'
+#' @param exact_match	 A logic to determine use exact matching or not.
+#' Default FALSE means to use non-exact matching
+#'
 #' @return  A character or vector of matched names.
 #' @examples
 #' \dontrun{
@@ -110,7 +117,7 @@ code2name <- function(codes) {
 #'
 #' }
 #' @noRd
-name2code <- function(names) {
+name2code <- function(names, exact_match = FALSE) {
   suppressMessages({
     # Fetch factors information from database
     stock_db <- stock_db()
@@ -122,7 +129,7 @@ name2code <- function(names) {
     while ((!success) && (index <= length(type_list))) {
       # Match name to code
       codes <- zstmodelr::name2code(stock_db, name = names,
-                                    exact_match = FALSE, type = type_list[index])
+                                    exact_match = exact_match, type = type_list[index])
       success <- !all(is.na(codes))
       index <- index + 1
     }
