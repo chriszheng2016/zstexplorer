@@ -105,7 +105,6 @@ div.main-container {
 
 ```{r setup, include=FALSE}
 
-
 # General packages
 library(tidyverse)
 library(gridExtra)
@@ -115,6 +114,7 @@ library(trelliscopejs)
 library(glue)
 library(formattable)
 library(gganimate)
+library(future)
 
 # Special packages
 
@@ -127,6 +127,12 @@ library(feasts)
 
 # My packages
 devtools::load_all()
+
+# Set up future plan for parallel process
+if(require("future", quietly = TRUE)) {
+  old_future_plan <- future::plan()
+  future::plan(future::multisession)
+}
 
 # Set global options for knitr
 knitr::opts_chunk$set(
@@ -1663,12 +1669,12 @@ knitr::kable(long_tsbl_focus_stock_simple_forecast_skillscore_accuracy,
 ## Time series cross-validation
 ```{r}
 
-stretch_long_tsbl_focus_stock <- long_tsbl_focus_stock_train %>%
+stretch_long_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
   tsibble::stretch_tsibble(.init = 4, .step = 1) %>%
   dplyr::filter(.data$.id != max(.data$.id))
 
 long_tsbl_focus_stock_simple_cv_fit <-
-  stretch_long_tsbl_focus_stock %>%
+  stretch_long_tsbl_focus_stock_train%>%
   fabletools::model(
     Mean = fable::MEAN(value),
     Naive = fable::NAIVE(value),
@@ -2044,39 +2050,38 @@ knitr::kable(long_tsbl_focus_stock_ets_forecast_skillscore_accuracy,
 
 ```{r}
 
-strench_long_tsbl_focus_stock <- long_tsbl_focus_stock %>%
+stretch_long_tsbl_focus_stock <- long_tsbl_focus_stock %>%
   tsibble::stretch_tsibble(.init = 4, .step = 1) %>%
   dplyr::filter(.data$.id != max(.data$.id))
 
 long_tsbl_focus_stock_ets_cv_fit <-
   stretch_long_tsbl_focus_stock %>%
   fabletools::model(
-    Mean = fable::NAIVE(value)
+    ETS_Auto = fable::ETS(value)
   )
 
 long_tsbl_focus_stock_ets_cv_forecast <-
   long_tsbl_focus_stock_ets_cv_fit %>%
   fabletools::forecast(h = 1)
 
-
-# long_tsbl_focus_stock_ets_cv_forecast %>%
-#     dplyr::filter(.id == 4) %>%
-#     autoplot(strench_long_tsbl_focus_stock, level = NULL, show_gap = FALSE) +
-#     autolayer(strench_long_tsbl_focus_stock, value, color = "gray", linetype = "dotted") +
-#     facet_grid(stkcd ~ variable, scale = "free")
-# 
-# long_tsbl_focus_stock_ets_cv_forecast %>%
-#     #dplyr::filter(stkcd == "000157", variable == "QR") %>%
-#     ggplot(aes(x = date, y = .mean)) +
-#     geom_line()+
-#     facet_grid(stkcd ~ variable, scale = "free") +
-#     gganimate::transition_reveal(.id)
+long_tsbl_focus_stock_ets_cv_forecast <- 
+  long_tsbl_focus_stock_ets_cv_forecast %>%
+  dplyr::mutate(interval = distributional::hilo(.data$value))
 
 long_tsbl_focus_stock_ets_cv_forecast %>%
-    autoplot(strench_long_tsbl_focus_stock, level = NULL,
-             show_gap = TRUE) +
-    autolayer(strench_long_tsbl_focus_stock, value, color = "black") +
-    facet_grid(stkcd ~ variable, scale = "free")
+    ggplot(aes(x = date)) +
+    geom_line(aes(y = .mean), color = "blue", linetype = "longdash")+
+    geom_point(aes(y = .mean), color = "blue")+
+    geom_line(data = stretch_long_tsbl_focus_stock, 
+              aes(y = value, group = .id), color = "black") +
+    facet_grid(stkcd ~ variable, scale = "free") +
+    gganimate::transition_reveal(as.Date(date))
+
+# long_tsbl_focus_stock_ets_cv_forecast %>%
+#   autoplot(stretch_long_tsbl_focus_stock, level = NULL,
+#            show_gap = TRUE) +
+#   autolayer(stretch_long_tsbl_focus_stock, value, color = "black") +
+#   facet_grid(stkcd ~ variable, scale = "free")
 
 ```
 
@@ -2328,6 +2333,8 @@ long_tsbl_focus_stock_arima_fit <- long_tsbl_focus_stock_train %>%
   )
 ```
 
+### Model summary {.tabset .tabset-fade .tabset-pills}
+
 #### Model specification {.unnumbered}
 
 ```{r}
@@ -2519,13 +2526,32 @@ knitr::kable(long_tsbl_focus_stock_arima_forecast_skillscore_accuracy,
 ```{r}
 
 
-long_tsbl_focus_stock_arima_forecast <- long_tsbl_focus_stock_arima_fit %>%
-  forecast(h = test_periods)
+stretch_long_tsbl_focus_stock <- long_tsbl_focus_stock %>%
+  tsibble::stretch_tsibble(.init = 4, .step = 1) %>%
+  dplyr::filter(.data$.id != max(.data$.id))
 
-long_tsbl_focus_stock_arima_forecast %>%
-  autoplot(long_tsbl_focus_stock_train) +
-  autolayer(long_tsbl_focus_stock_test, value, color = "black") +
-  facet_grid(stkcd ~ variable, scale = "free")
+long_tsbl_focus_stock_arima_cv_fit <-
+  stretch_long_tsbl_focus_stock %>%
+  fabletools::model(
+   ARIMA_Auto = fable::ARIMA(value)
+  )
+
+long_tsbl_focus_stock_arima_cv_forecast <-
+  long_tsbl_focus_stock_arima_cv_fit %>%
+  fabletools::forecast(h = 1)
+
+long_tsbl_focus_stock_arima_cv_forecast <- 
+  long_tsbl_focus_stock_arima_cv_forecast %>%
+  dplyr::mutate(interval = distributional::hilo(.data$value))
+
+long_tsbl_focus_stock_arima_cv_forecast %>%
+    ggplot(aes(x = date)) +
+    geom_line(aes(y = .mean), color = "blue", linetype = "longdash")+
+    geom_point(aes(y = .mean), color = "blue")+
+    geom_line(data = stretch_long_tsbl_focus_stock, 
+              aes(y = value, group = .id), color = "black") +
+    facet_grid(stkcd ~ variable, scale = "free") +
+    gganimate::transition_reveal(as.Date(date))
 
 ```
 
@@ -2551,7 +2577,7 @@ long_tsbl_focus_stock_test <- long_tsbl_focus_stock %>%
   tsibble::filter_index(format(test_start_date) ~ .)
 
 
-stretch_long_tsbl_focus_stock <- long_tsbl_focus_stock_train %>%
+stretch_long_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
   tsibble::stretch_tsibble(.init = 4, .step = 1) %>%
   dplyr::filter(.data$.id != max(.data$.id))
 
@@ -2561,11 +2587,11 @@ test_models <- list(
   Mean = fable::MEAN(value),
   Naive = fable::NAIVE(value),
   Seasonal_naive = fable::SNAIVE(value),
-  Drift = fable::RW(value ~ drift()) # ,
+  Drift = fable::RW(value ~ drift()),
 
   # Advanced models to compare
-  # ETS_Auto = fable::ETS(value, ic = "aicc"),
-  # ARIMA_Auto = fable::ARIMA(value, ic = "aicc")
+  ETS_Auto = fable::ETS(value, ic = "aicc"),
+  ARIMA_Auto = fable::ARIMA(value, ic = "aicc")
 )
 ```
 
@@ -2576,7 +2602,7 @@ test_models <- list(
 future::plan("multicore")
 
 long_tsbl_focus_stock_model_cv_fit <-
-  stretch_long_tsbl_focus_stock %>%
+  stretch_long_tsbl_focus_stock_train %>%
   fabletools::model(
     !!!test_models
   )
@@ -2609,7 +2635,7 @@ long_tsbl_focus_stock_model_cv_point_accuracy %>%
   formattable::formattable(
     list(
       ~highlight_formatter,
-      RMSE = formattable::color_tile("white", "lightblue")
+      RMSE = formattable::color_tile("lightblue", "white")
     )
   ) %>%
   formattable::as.datatable(
@@ -2667,7 +2693,7 @@ long_tsbl_focus_stock_model_point_accuracy %>%
   formattable::formattable(
     list(
       ~highlight_formatter,
-      RMSE = formattable::color_tile("white", "lightblue")
+      RMSE = formattable::color_tile("lightblue", "white")
     )
   ) %>%
   formattable::as.datatable(
@@ -2688,3 +2714,14 @@ long_tsbl_focus_stock_model_point_accuracy %>%
     )
   )
 ```
+
+
+```{r cleanup, include=FALSE}
+
+# Restore future plan
+if (!is.null(old_future_plan)) {
+  future::future(old_future_plan)
+}
+
+```
+
