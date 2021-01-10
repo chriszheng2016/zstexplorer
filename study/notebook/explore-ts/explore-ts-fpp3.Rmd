@@ -125,11 +125,14 @@ library(fable)
 # Time series graphics and statistics
 library(feasts)
 
+# Prophet modeling interface for fable
+library(fable.prophet)
+
 # My packages
 devtools::load_all()
 
 # Set up future plan for parallel process
-if(require("future", quietly = TRUE)) {
+if (require("future", quietly = TRUE)) {
   old_future_plan <- future::plan()
   future::plan(future::multisession)
 }
@@ -1674,7 +1677,7 @@ stretch_long_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
   dplyr::filter(.data$.id != max(.data$.id))
 
 long_tsbl_focus_stock_simple_cv_fit <-
-  stretch_long_tsbl_focus_stock_train%>%
+  stretch_long_tsbl_focus_stock_train %>%
   fabletools::model(
     Mean = fable::MEAN(value),
     Naive = fable::NAIVE(value),
@@ -1876,7 +1879,7 @@ component_plot <- function(fit_model) {
   }
 }
 
-long_tsbl_focus_stock_ETS_fit_component <-
+long_tsbl_focus_stock_ets_fit_component <-
   long_tsbl_focus_stock_ets_fit %>%
   tidyr::pivot_longer(-c("stkcd", "indcd", "variable"),
     names_to = "model", values_to = "fit_model"
@@ -1888,7 +1891,7 @@ long_tsbl_focus_stock_ETS_fit_component <-
     )
   )
 
-long_tsbl_focus_stock_ETS_fit_component %>%
+long_tsbl_focus_stock_ets_fit_component %>%
   dplyr::select(variable, indcd, stkcd, model, panel_plot) %>%
   trelliscopejs::trelliscope(
     name = "component_plot_of_stocks", panel_col = "panel_plot",
@@ -2064,25 +2067,26 @@ long_tsbl_focus_stock_ets_cv_forecast <-
   long_tsbl_focus_stock_ets_cv_fit %>%
   fabletools::forecast(h = 1)
 
-long_tsbl_focus_stock_ets_cv_forecast <- 
+long_tsbl_focus_stock_ets_cv_forecast <-
   long_tsbl_focus_stock_ets_cv_forecast %>%
   dplyr::mutate(interval = distributional::hilo(.data$value))
 
 long_tsbl_focus_stock_ets_cv_forecast %>%
-    ggplot(aes(x = date)) +
-    geom_line(aes(y = .mean), color = "blue", linetype = "longdash")+
-    geom_point(aes(y = .mean), color = "blue")+
-    geom_line(data = stretch_long_tsbl_focus_stock, 
-              aes(y = value, group = .id), color = "black") +
-    facet_grid(stkcd ~ variable, scale = "free") +
-    gganimate::transition_reveal(as.Date(date))
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = .mean), color = "blue", linetype = "longdash") +
+  geom_point(aes(y = .mean), color = "blue") +
+  geom_line(
+    data = stretch_long_tsbl_focus_stock,
+    aes(y = value, group = .id), color = "black"
+  ) +
+  facet_grid(stkcd ~ variable, scale = "free") +
+  gganimate::transition_reveal(as.Date(date))
 
 # long_tsbl_focus_stock_ets_cv_forecast %>%
 #   autoplot(stretch_long_tsbl_focus_stock, level = NULL,
 #            show_gap = TRUE) +
 #   autolayer(stretch_long_tsbl_focus_stock, value, color = "black") +
 #   facet_grid(stkcd ~ variable, scale = "free")
-
 ```
 
 
@@ -2122,26 +2126,27 @@ nest_tsbl_focus_stock_test <- long_tsbl_focus_stock_test %>%
 ```{r}
 
 # Safe version of difference tsibble
-difference_tsbl <- function(tsbl_variable, 
+difference_tsbl <- function(tsbl_variable,
                             value_field = "value",
                             result_field = "diff",
-                            season_diff = FALSE, 
+                            season_diff = FALSE,
                             differences = 1) {
   date_field <- tsibble::index(tsbl_variable)
-  
-  if(season_diff) {
+
+  if (season_diff) {
     frequency <- tsibble::guess_frequency(tsbl_variable[[date_field]])
   } else {
     frequency <- 1
   }
-  
+
   if (differences > 0) {
     tsbl_variable %>%
-      dplyr::mutate({{result_field}} := tsibble::difference(.data[[value_field]],
-                  lag = frequency, differences = differences))
+      dplyr::mutate({{ result_field }} := tsibble::difference(.data[[value_field]],
+        lag = frequency, differences = differences
+      ))
   } else {
     tsbl_variable %>%
-      dplyr::mutate({{result_field}} := .data[[value_field]])
+      dplyr::mutate({{ result_field }} := .data[[value_field]])
   }
 }
 
@@ -2159,15 +2164,17 @@ nest_tsbl_focus_stock_train_diff <-
   dplyr::mutate(
     tsbl_variable =
       list(
-        difference_tsbl(.data$tsbl_variable, value_field = "value",
-                        result_field = "sdiff", season_diff = TRUE,
-                        differences = .data$nsdiffs)
+        difference_tsbl(.data$tsbl_variable,
+          value_field = "value",
+          result_field = "sdiff", season_diff = TRUE,
+          differences = .data$nsdiffs
+        )
       )
   ) %>%
   dplyr::ungroup()
 
 
-# Secondly, try to conduct one-step differencing 
+# Secondly, try to conduct one-step differencing
 tbl_focus_stock_train_nsdiff <-
   long_tsbl_focus_stock_train %>%
   fabletools::features(.data$value, list(feasts::unitroot_ndiffs))
@@ -2181,9 +2188,11 @@ nest_tsbl_focus_stock_train_diff <-
   dplyr::mutate(
     tsbl_variable =
       list(
-        difference_tsbl(.data$tsbl_variable, value_field = "sdiff",
-                        result_field = "diff", season_diff = FALSE,
-                        differences = .data$ndiffs)
+        difference_tsbl(.data$tsbl_variable,
+          value_field = "sdiff",
+          result_field = "diff", season_diff = FALSE,
+          differences = .data$ndiffs
+        )
       )
   ) %>%
   dplyr::ungroup()
@@ -2195,8 +2204,7 @@ nest_tsbl_focus_stock_train_diff %>%
     format = "html",
     caption = "Differences for stationary time sereis of focused stocks"
   ) %>%
-    kableExtra::kable_styling(latex_options = "striped")
-
+  kableExtra::kable_styling(latex_options = "striped")
 ```
 
 
@@ -2401,7 +2409,7 @@ long_tsbl_focus_stock_arima_res_test <-
 
 knitr::kable(long_tsbl_focus_stock_arima_res_test,
   format = "html",
-  caption = "portmanteau test for ets forecast of focused stocks"
+  caption = "portmanteau test for arima forecast of focused stocks"
 ) %>%
   kableExtra::kable_styling(latex_options = "striped")
 ```
@@ -2533,27 +2541,590 @@ stretch_long_tsbl_focus_stock <- long_tsbl_focus_stock %>%
 long_tsbl_focus_stock_arima_cv_fit <-
   stretch_long_tsbl_focus_stock %>%
   fabletools::model(
-   ARIMA_Auto = fable::ARIMA(value)
+    ARIMA_Auto = fable::ARIMA(value)
   )
 
 long_tsbl_focus_stock_arima_cv_forecast <-
   long_tsbl_focus_stock_arima_cv_fit %>%
   fabletools::forecast(h = 1)
 
-long_tsbl_focus_stock_arima_cv_forecast <- 
+long_tsbl_focus_stock_arima_cv_forecast <-
   long_tsbl_focus_stock_arima_cv_forecast %>%
   dplyr::mutate(interval = distributional::hilo(.data$value))
 
 long_tsbl_focus_stock_arima_cv_forecast %>%
-    ggplot(aes(x = date)) +
-    geom_line(aes(y = .mean), color = "blue", linetype = "longdash")+
-    geom_point(aes(y = .mean), color = "blue")+
-    geom_line(data = stretch_long_tsbl_focus_stock, 
-              aes(y = value, group = .id), color = "black") +
-    facet_grid(stkcd ~ variable, scale = "free") +
-    gganimate::transition_reveal(as.Date(date))
-
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = .mean), color = "blue", linetype = "longdash") +
+  geom_point(aes(y = .mean), color = "blue") +
+  geom_line(
+    data = stretch_long_tsbl_focus_stock,
+    aes(y = value, group = .id), color = "black"
+  ) +
+  facet_grid(stkcd ~ variable, scale = "free") +
+  gganimate::transition_reveal(as.Date(date))
 ```
+
+
+# Prophet model
+
+## Data preparation
+
+```{r}
+
+# Build train/test data dataset
+test_periods <- 4
+date_field <- tsibble::index_var(long_tsbl_focus_stock)
+test_end_date <- max(dplyr::pull(long_tsbl_focus_stock[, date_field]))
+test_start_date <- test_end_date - test_periods + 1
+train_end_date <- test_start_date - 1
+
+long_tsbl_focus_stock_train <- long_tsbl_focus_stock %>%
+  tsibble::group_by_key() %>%
+  tsibble::filter_index(. ~ format(train_end_date))
+
+long_tsbl_focus_stock_test <- long_tsbl_focus_stock %>%
+  tsibble::group_by_key() %>%
+  tsibble::filter_index(format(test_start_date) ~ .)
+
+nest_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
+  tidyr::nest(tsbl_variable = c("date", "value")) %>%
+  dplyr::ungroup()
+
+nest_tsbl_focus_stock_test <- long_tsbl_focus_stock_test %>%
+  tidyr::nest(tsbl_variable = c("date", "value")) %>%
+  dplyr::ungroup()
+```
+
+## Fiting model on training data
+
+```{r}
+
+# Fit with prophet model
+long_tsbl_focus_stock_prophet_fit <- long_tsbl_focus_stock_train %>%
+  fabletools::model(
+    Prophet_Auto = fable.prophet::prophet(value)
+  )
+```
+
+### Model summary {.tabset .tabset-fade .tabset-pills}
+
+#### Model specification {.unnumbered}
+
+```{r}
+tbl_focus_stock_prophet_fit_model_spec <-
+  long_tsbl_focus_stock_prophet_fit %>%
+  tidyr::pivot_longer(-c("stkcd", "indcd", "variable"),
+    names_to = ".model", values_to = "fit_model"
+  ) %>%
+  dplyr::mutate(spec = purrr::map(fit_model, model_sum)) %>%
+  dplyr::select(-c("fit_model")) %>%
+  tidyr::unnest(.data$spec)
+
+tbl_focus_stock_prophet_fit_model_spec %>%
+  formattable::formattable()
+```
+
+#### Coefficient estimates  {.unnumbered}
+```{r}
+fabletools::tidy(long_tsbl_focus_stock_prophet_fit) %>%
+  formattable::formattable(list(estimate = x ~ digits(x, digits = 2)))
+```
+
+#### Benchmarks  {.unnumbered}
+```{r}
+
+fabletools::glance(long_tsbl_focus_stock_prophet_fit) %>%
+  formattable::formattable(list(
+    formattable::area(col = sigma) ~ purrr::partial(
+      formattable::digits,
+      digits = 2
+    )
+  ))
+```
+
+### Components Plots
+```{r}
+
+# Plot components of prophet model
+component_plot <- function(fit_model) {
+  if (!fabletools::is_null_model(fit_model)) {
+    fit_model %>%
+      fabletools::components() %>%
+      fabletools::autoplot()
+  } else {
+    NULL
+  }
+}
+
+long_tsbl_focus_stock_prophet_fit_component <-
+  long_tsbl_focus_stock_prophet_fit %>%
+  tidyr::pivot_longer(-c("stkcd", "indcd", "variable"),
+    names_to = "model", values_to = "fit_model"
+  ) %>%
+  dplyr::mutate(
+    panel_plot = trelliscopejs::map_plot(
+      fit_model,
+      .f = component_plot
+    )
+  )
+
+long_tsbl_focus_stock_prophet_fit_component %>%
+  dplyr::select(variable, indcd, stkcd, model, panel_plot) %>%
+  trelliscopejs::trelliscope(
+    name = "component_plot_of_stocks", panel_col = "panel_plot",
+    nrow = 1, ncol = 2,
+    self_contained = TRUE,
+    path = "trelliscope/forecast/prophet/components/stocks"
+  )
+```
+
+
+### Residual diagnostics
+
+```{r, fig.show = "hide"}
+
+long_tsbl_focus_stock_prophet_res_plot <- long_tsbl_focus_stock_prophet_fit %>%
+  tidyr::pivot_longer(-c("stkcd", "indcd", "variable"),
+    names_to = "model", values_to = "fit_model"
+  ) %>%
+  dplyr::mutate(panel_plot = trelliscopejs::map_plot(
+    fit_model,
+    .f = gg_tsresiduals_plot
+  ))
+
+long_tsbl_focus_stock_prophet_res_plot %>%
+  tibble::as_tibble() %>%
+  dplyr::select(c("variable", "indcd", "stkcd", "model", "panel_plot")) %>%
+  trelliscopejs::trelliscope(
+    name = "residuals_stocks", panel_col = "panel_plot",
+    nrow = 1, ncol = 2,
+    self_contained = TRUE,
+    path = "trelliscope/forecast/prophet/residuals"
+  )
+
+# Conduct Portmanteau test for residuals of fit models
+long_tsbl_focus_stock_prophet_res_test <-
+  long_tsbl_focus_stock_prophet_fit %>%
+  fabletools::augment() %>%
+  fabletools::features(.resid, ljung_box, lag = 10, dof = 0)
+
+knitr::kable(long_tsbl_focus_stock_prophet_res_test,
+  format = "html",
+  caption = "portmanteau test for prophet forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+## Evaluate model on testing data
+```{r}
+
+# Forecast in test_periods
+long_tsbl_focus_stock_prophet_forecast <- long_tsbl_focus_stock_prophet_fit %>%
+  fabletools::forecast(h = test_periods)
+```
+
+### Point forecast accuracy 
+
+```{r}
+
+long_tsbl_focus_stock_prophet_point_accuracy <-
+  long_tsbl_focus_stock_prophet_forecast %>%
+  fabletools::accuracy(long_tsbl_focus_stock) %>%
+  dplyr::left_join(tbl_focus_stock_prophet_fit_model_spec,
+    by = c(".model", "stkcd", "indcd", "variable")
+  ) %>%
+  dplyr::select(
+    stkcd, indcd, variable, .model, spec, .type,
+    tidyselect::everything()
+  ) %>%
+  dplyr::arrange(variable, stkcd, .model)
+
+knitr::kable(long_tsbl_focus_stock_prophet_point_accuracy,
+  format = "html",
+  caption = "Point accuracy of prophet forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
+
+#### Interval accuracy {.unnumbered}
+
+```{r}
+
+# Compute interval accuracy
+long_tsbl_focus_stock_prophet_interval_accuracy <-
+  long_tsbl_focus_stock_prophet_forecast %>%
+  fabletools::accuracy(long_tsbl_focus_stock,
+    measures = fabletools::interval_accuracy_measures
+  ) %>%
+  dplyr::left_join(tbl_focus_stock_prophet_fit_model_spec,
+    by = c(".model", "stkcd", "indcd", "variable")
+  ) %>%
+  dplyr::select(
+    stkcd, indcd, variable, .model, spec, .type,
+    tidyselect::everything()
+  ) %>%
+  dplyr::arrange(variable, stkcd, .model)
+
+knitr::kable(long_tsbl_focus_stock_prophet_interval_accuracy,
+  format = "html",
+  caption = "Interval accuracy of arima forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+
+#### distributional accuracy {.unnumbered}
+
+```{r}
+
+# Compute distributional accuracy
+long_tsbl_focus_stock_prophet_distribution_accuracy <-
+  long_tsbl_focus_stock_prophet_forecast %>%
+  fabletools::accuracy(long_tsbl_focus_stock,
+    measures = fabletools::distribution_accuracy_measures
+  ) %>%
+  dplyr::left_join(tbl_focus_stock_prophet_fit_model_spec,
+    by = c(".model", "stkcd", "indcd", "variable")
+  ) %>%
+  dplyr::select(
+    stkcd, indcd, variable, .model, spec, .type,
+    tidyselect::everything()
+  ) %>%
+  dplyr::arrange(variable, stkcd, .model)
+
+knitr::kable(long_tsbl_focus_stock_prophet_distribution_accuracy,
+  format = "html",
+  caption = "distributional accuracy of prophet forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+#### Scale-free comparision using skill scores {.unnumbered}
+
+```{r}
+
+# Compute skill scores for scale-free comparison
+long_tsbl_focus_stock_prophet_forecast_skillscore_accuracy <-
+  long_tsbl_focus_stock_prophet_forecast %>%
+  fabletools::accuracy(long_tsbl_focus_stock,
+    measures = list(skill_rmse = fabletools::skill_score(RMSE))
+  ) %>%
+  dplyr::left_join(tbl_focus_stock_prophet_fit_model_spec,
+    by = c(".model", "stkcd", "indcd", "variable")
+  ) %>%
+  dplyr::select(
+    stkcd, indcd, variable, .model, spec, .type,
+    tidyselect::everything()
+  ) %>%
+  dplyr::arrange(variable, stkcd, .model)
+
+knitr::kable(long_tsbl_focus_stock_prophet_forecast_skillscore_accuracy,
+  format = "html",
+  caption = "Skill scores for scale-free comparision of prophet forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+
+## Rolling forecasting with models
+
+```{r}
+
+
+stretch_long_tsbl_focus_stock <- long_tsbl_focus_stock %>%
+  tsibble::stretch_tsibble(.init = 4, .step = 1) %>%
+  dplyr::filter(.data$.id != max(.data$.id))
+
+long_tsbl_focus_stock_prophet_cv_fit <-
+  stretch_long_tsbl_focus_stock %>%
+  fabletools::model(
+    Prophet_Auto = fable.prophet::prophet(value)
+  )
+
+long_tsbl_focus_stock_prophet_cv_forecast <-
+  long_tsbl_focus_stock_prophet_cv_fit %>%
+  fabletools::forecast(h = 1)
+
+long_tsbl_focus_stock_prophet_cv_forecast <-
+  long_tsbl_focus_stock_prophet_cv_forecast %>%
+  dplyr::mutate(interval = distributional::hilo(.data$value))
+
+long_tsbl_focus_stock_prophet_cv_forecast %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = .mean), color = "blue", linetype = "longdash") +
+  geom_point(aes(y = .mean), color = "blue") +
+  geom_line(
+    data = stretch_long_tsbl_focus_stock,
+    aes(y = value, group = .id), color = "black"
+  ) +
+  facet_grid(stkcd ~ variable, scale = "free") +
+  gganimate::transition_reveal(as.Date(date))
+```
+
+
+# Neural network model
+
+## Data preparation
+
+```{r}
+
+# Build train/test data dataset
+test_periods <- 4
+date_field <- tsibble::index_var(long_tsbl_focus_stock)
+test_end_date <- max(dplyr::pull(long_tsbl_focus_stock[, date_field]))
+test_start_date <- test_end_date - test_periods + 1
+train_end_date <- test_start_date - 1
+
+long_tsbl_focus_stock_train <- long_tsbl_focus_stock %>%
+  tsibble::group_by_key() %>%
+  tsibble::filter_index(. ~ format(train_end_date))
+
+long_tsbl_focus_stock_test <- long_tsbl_focus_stock %>%
+  tsibble::group_by_key() %>%
+  tsibble::filter_index(format(test_start_date) ~ .)
+
+nest_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
+  tidyr::nest(tsbl_variable = c("date", "value")) %>%
+  dplyr::ungroup()
+
+nest_tsbl_focus_stock_test <- long_tsbl_focus_stock_test %>%
+  tidyr::nest(tsbl_variable = c("date", "value")) %>%
+  dplyr::ungroup()
+```
+
+## Fiting model on training data
+
+```{r}
+
+# Fit with NNETAR model
+long_tsbl_focus_stock_nnetar_fit <- long_tsbl_focus_stock_train %>%
+  fabletools::model(
+    NNETAR_Auto = fable::NNETAR(value)
+  )
+```
+
+### Model summary {.tabset .tabset-fade .tabset-pills}
+
+#### Model specification {.unnumbered}
+
+```{r}
+tbl_focus_stock_nnetar_fit_model_spec <-
+  long_tsbl_focus_stock_nnetar_fit %>%
+  tidyr::pivot_longer(-c("stkcd", "indcd", "variable"),
+    names_to = ".model", values_to = "fit_model"
+  ) %>%
+  dplyr::mutate(spec = purrr::map(fit_model, model_sum)) %>%
+  dplyr::select(-c("fit_model")) %>%
+  tidyr::unnest(.data$spec)
+
+tbl_focus_stock_nnetar_fit_model_spec %>%
+  formattable::formattable()
+```
+
+#### Coefficient estimates  {.unnumbered}
+```{r}
+fabletools::tidy(long_tsbl_focus_stock_nnetar_fit) %>%
+  formattable::formattable(list(estimate = x ~ digits(x, digits = 2)))
+```
+
+#### Benchmarks  {.unnumbered}
+```{r}
+
+fabletools::glance(long_tsbl_focus_stock_nnetar_fit) %>%
+  formattable::formattable(list(
+    formattable::area(col = sigma2) ~ purrr::partial(
+      formattable::digits,
+      digits = 2
+    )
+  ))
+```
+
+### Residual diagnostics
+
+```{r, fig.show = "hide"}
+
+long_tsbl_focus_stock_nnetar_res_plot <- long_tsbl_focus_stock_nnetar_fit %>%
+  tidyr::pivot_longer(-c("stkcd", "indcd", "variable"),
+    names_to = "model", values_to = "fit_model"
+  ) %>%
+  dplyr::mutate(panel_plot = trelliscopejs::map_plot(
+    fit_model,
+    .f = gg_tsresiduals_plot
+  ))
+
+long_tsbl_focus_stock_nnetar_res_plot %>%
+  tibble::as_tibble() %>%
+  dplyr::select(c("variable", "indcd", "stkcd", "model", "panel_plot")) %>%
+  trelliscopejs::trelliscope(
+    name = "residuals_stocks", panel_col = "panel_plot",
+    nrow = 1, ncol = 2,
+    self_contained = TRUE,
+    path = "trelliscope/forecast/nnetar/residuals"
+  )
+
+# Conduct Portmanteau test for residuals of fit models
+long_tsbl_focus_stock_nnetar_res_test <-
+  long_tsbl_focus_stock_nnetar_fit %>%
+  fabletools::augment() %>%
+  fabletools::features(.resid, ljung_box, lag = 10, dof = 0)
+
+knitr::kable(long_tsbl_focus_stock_nnetar_res_test,
+  format = "html",
+  caption = "portmanteau test for nnetar forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+## Evaluate model on testing data
+```{r}
+
+# Forecast in test_periods
+long_tsbl_focus_stock_nnetar_forecast <- long_tsbl_focus_stock_nnetar_fit %>%
+  fabletools::forecast(h = test_periods)
+```
+
+### Point forecast accuracy 
+
+```{r}
+
+long_tsbl_focus_stock_nnetar_point_accuracy <-
+  long_tsbl_focus_stock_nnetar_forecast %>%
+  fabletools::accuracy(long_tsbl_focus_stock) %>%
+  dplyr::left_join(tbl_focus_stock_nnetar_fit_model_spec,
+    by = c(".model", "stkcd", "indcd", "variable")
+  ) %>%
+  dplyr::select(
+    stkcd, indcd, variable, .model, spec, .type,
+    tidyselect::everything()
+  ) %>%
+  dplyr::arrange(variable, stkcd, .model)
+
+knitr::kable(long_tsbl_focus_stock_nnetar_point_accuracy,
+  format = "html",
+  caption = "Point accuracy of nnetar forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
+
+#### Interval accuracy {.unnumbered}
+
+```{r}
+
+# Compute interval accuracy
+long_tsbl_focus_stock_nnetar_interval_accuracy <-
+  long_tsbl_focus_stock_nnetar_forecast %>%
+  fabletools::accuracy(long_tsbl_focus_stock,
+    measures = fabletools::interval_accuracy_measures
+  ) %>%
+  dplyr::left_join(tbl_focus_stock_nnetar_fit_model_spec,
+    by = c(".model", "stkcd", "indcd", "variable")
+  ) %>%
+  dplyr::select(
+    stkcd, indcd, variable, .model, spec, .type,
+    tidyselect::everything()
+  ) %>%
+  dplyr::arrange(variable, stkcd, .model)
+
+knitr::kable(long_tsbl_focus_stock_nnetar_interval_accuracy,
+  format = "html",
+  caption = "Interval accuracy of nnetar forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+
+#### distributional accuracy {.unnumbered}
+
+```{r}
+
+# Compute distributional accuracy
+long_tsbl_focus_stock_nnetar_distribution_accuracy <-
+  long_tsbl_focus_stock_nnetar_forecast %>%
+  fabletools::accuracy(long_tsbl_focus_stock,
+    measures = fabletools::distribution_accuracy_measures
+  ) %>%
+  dplyr::left_join(tbl_focus_stock_nnetar_fit_model_spec,
+    by = c(".model", "stkcd", "indcd", "variable")
+  ) %>%
+  dplyr::select(
+    stkcd, indcd, variable, .model, spec, .type,
+    tidyselect::everything()
+  ) %>%
+  dplyr::arrange(variable, stkcd, .model)
+
+knitr::kable(long_tsbl_focus_stock_nnetar_distribution_accuracy,
+  format = "html",
+  caption = "distributional accuracy of nnetar forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+#### Scale-free comparision using skill scores {.unnumbered}
+
+```{r}
+
+# Compute skill scores for scale-free comparison
+long_tsbl_focus_stock_nnetar_forecast_skillscore_accuracy <-
+  long_tsbl_focus_stock_nnetar_forecast %>%
+  fabletools::accuracy(long_tsbl_focus_stock,
+    measures = list(skill_rmse = fabletools::skill_score(RMSE))
+  ) %>%
+  dplyr::left_join(tbl_focus_stock_nnetar_fit_model_spec,
+    by = c(".model", "stkcd", "indcd", "variable")
+  ) %>%
+  dplyr::select(
+    stkcd, indcd, variable, .model, spec, .type,
+    tidyselect::everything()
+  ) %>%
+  dplyr::arrange(variable, stkcd, .model)
+
+knitr::kable(long_tsbl_focus_stock_nnetar_forecast_skillscore_accuracy,
+  format = "html",
+  caption = "Skill scores for scale-free comparision of nnetar forecast of focused stocks"
+) %>%
+  kableExtra::kable_styling(latex_options = "striped")
+```
+
+
+## Rolling forecasting with models
+
+```{r}
+
+
+stretch_long_tsbl_focus_stock <- long_tsbl_focus_stock %>%
+  tsibble::stretch_tsibble(.init = 4, .step = 1) %>%
+  dplyr::filter(.data$.id != max(.data$.id))
+
+long_tsbl_focus_stock_nnetar_cv_fit <-
+  stretch_long_tsbl_focus_stock %>%
+  fabletools::model(
+    NNETAR_Auto = fable::NNETAR(value)
+  )
+
+long_tsbl_focus_stock_nnetar_cv_forecast <-
+  long_tsbl_focus_stock_nnetar_cv_fit %>%
+  fabletools::forecast(h = 1)
+
+long_tsbl_focus_stock_nnetar_cv_forecast <-
+  long_tsbl_focus_stock_nnetar_cv_forecast %>%
+  dplyr::mutate(interval = distributional::hilo(.data$value))
+
+long_tsbl_focus_stock_nnetar_cv_forecast %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = .mean), color = "blue", linetype = "longdash") +
+  geom_point(aes(y = .mean), color = "blue") +
+  geom_line(
+    data = stretch_long_tsbl_focus_stock,
+    aes(y = value, group = .id), color = "black"
+  ) +
+  facet_grid(stkcd ~ variable, scale = "free") +
+  gganimate::transition_reveal(as.Date(date))
+```
+
 
 # Assessment of models
 
@@ -2591,7 +3162,10 @@ test_models <- list(
 
   # Advanced models to compare
   ETS_Auto = fable::ETS(value, ic = "aicc"),
-  ARIMA_Auto = fable::ARIMA(value, ic = "aicc")
+  ARIMA_Auto = fable::ARIMA(value, ic = "aicc"),
+  Prophet_Auto = fable.prophet::prophet(value),
+  NNETAR_Auto = fable::NNETAR(value)
+  
 )
 ```
 
@@ -2724,4 +3298,5 @@ if (!is.null(old_future_plan)) {
 }
 
 ```
+
 
