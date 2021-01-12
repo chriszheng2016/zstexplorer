@@ -6,7 +6,10 @@
 #' ---
 
 
-focus_stocks <- c("格力电器", "美的集团")
+focus_stocks <- c("格力电器", "美的集团", "宇通客车",
+                  "江铃汽车", "三一重工", "中联重科")
+focus_vars <- c("QR")
+
 start_date <- "2001-01-01"
 end_date <- Sys.Date()
 
@@ -14,11 +17,12 @@ end_date <- Sys.Date()
 zstmodelr::build_report("explore-ts-fpp3.Rmd",
   report_params = list(
     focus_stocks = focus_stocks,
+    focus_vars = focus_vars,
     start_date = start_date,
     end_date = end_date
   ),
   output_sn = glue::glue(
-    "{stringr::str_c(focus_stocks,collapse = '_')}-{start_date}-{end_date}"
+    "{stringr::str_c(focus_vars,collapse = '-')}_{stringr::str_c(focus_stocks,collapse = '-')}_{start_date}_{end_date}"
   ),
   quiet = FALSE
 )

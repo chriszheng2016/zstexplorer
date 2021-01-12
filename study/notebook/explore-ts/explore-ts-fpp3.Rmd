@@ -156,6 +156,7 @@ knitr::opts_chunk$set(
 ## Load data for focused stocks
 
 ```{r load_data }
+
 focus_stknames <- params$focus_stocks
 focus_stkcds <- zstexplorer::name2code(params$focus_stocks)
 focus_var_codes <- params$focus_vars
@@ -184,14 +185,14 @@ tsbl_vars_industry_median <- tsbl_vars %>%
   )
 
 tsbl_vars_industry_mean <- tsbl_vars %>%
-  dplyr::group_by(indcd) %>%
+  dplyr::group_by(.data$indcd) %>%
   dplyr::summarise(
     dplyr::across(where(is.numeric), ~ mean(., na.rm = TRUE))
   )
 
 tsbl_vars_industry <- tsbl_vars_industry_median
 focus_indcds <- unique(tsbl_focus_stock_raw$indcd)
-focus_indnames <- code2name(focus_indcds)
+focus_indnames <- zstexplorer::code2name(focus_indcds)
 
 tsbl_focus_industry_raw <- tsbl_vars_industry %>%
   tsibble::filter_index(format(params$start_date) ~ format(params$end_date)) %>%
@@ -1704,8 +1705,7 @@ knitr::kable(long_tsbl_focus_stock_simple_cv_point_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-
-# Exponential smoothing model
+# Forecast models
 
 ## Data preparation
 
@@ -1726,10 +1726,19 @@ long_tsbl_focus_stock_test <- long_tsbl_focus_stock %>%
   tsibble::group_by_key() %>%
   tsibble::filter_index(format(test_start_date) ~ .)
 
+nest_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
+  tidyr::nest(tsbl_variable = c("date", "value")) %>%
+  dplyr::ungroup()
+
+nest_tsbl_focus_stock_test <- long_tsbl_focus_stock_test %>%
+  tidyr::nest(tsbl_variable = c("date", "value")) %>%
+  dplyr::ungroup()
+
 ```
 
 
-## Model Selection
+## Exponential smoothing model
+### Model Selection
 
 ```{r}
 
@@ -1815,7 +1824,7 @@ tbl_focus_stock_ets_candidate_model %>%
 ```
 
 
-## Fiting model on training data
+### Fiting model on training data
 
 ```{r}
 
@@ -1936,7 +1945,7 @@ knitr::kable(long_tsbl_focus_stock_ets_res_test,
 ```
 
 
-## Evaluate model on testing data
+### Evaluate model on testing data
 
 ```{r}
 
@@ -1945,7 +1954,7 @@ long_tsbl_focus_stock_ets_forecast <- long_tsbl_focus_stock_ets_fit %>%
   fabletools::forecast(h = test_periods)
 
 ```
-### Point forecast accuracy 
+#### Point forecast accuracy 
 
 ```{r}
 
@@ -1968,9 +1977,9 @@ knitr::kable(long_tsbl_focus_stock_ets_point_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
+#### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
 
-#### Interval accuracy {.unnumbered}
+##### Interval accuracy {.unnumbered}
 
 ```{r}
 
@@ -1997,7 +2006,7 @@ knitr::kable(long_tsbl_focus_stock_ets_interval_accuracy,
 ```
 
 
-#### distributional accuracy {.unnumbered}
+##### distributional accuracy {.unnumbered}
 
 ```{r}
 
@@ -2023,7 +2032,7 @@ knitr::kable(long_tsbl_focus_stock_ets_distribution_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-#### Scale-free comparision using skill scores {.unnumbered}
+##### Scale-free comparision using skill scores {.unnumbered}
 
 ```{r}
 
@@ -2049,7 +2058,7 @@ knitr::kable(long_tsbl_focus_stock_ets_forecast_skillscore_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-## Rolling forecasting with models
+### Rolling forecasting with models
 
 ```{r}
 
@@ -2090,36 +2099,10 @@ long_tsbl_focus_stock_ets_cv_forecast %>%
 ```
 
 
-# ARIMA model model
 
-## Data preparation
 
-```{r}
-
-# Build train/test data dataset
-test_periods <- 4
-date_field <- tsibble::index_var(long_tsbl_focus_stock)
-test_end_date <- max(dplyr::pull(long_tsbl_focus_stock[, date_field]))
-test_start_date <- test_end_date - test_periods + 1
-train_end_date <- test_start_date - 1
-
-long_tsbl_focus_stock_train <- long_tsbl_focus_stock %>%
-  tsibble::group_by_key() %>%
-  tsibble::filter_index(. ~ format(train_end_date))
-
-long_tsbl_focus_stock_test <- long_tsbl_focus_stock %>%
-  tsibble::group_by_key() %>%
-  tsibble::filter_index(format(test_start_date) ~ .)
-
-nest_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
-  tidyr::nest(tsbl_variable = c("date", "value")) %>%
-  dplyr::ungroup()
-
-nest_tsbl_focus_stock_test <- long_tsbl_focus_stock_test %>%
-  tidyr::nest(tsbl_variable = c("date", "value")) %>%
-  dplyr::ungroup()
-```
-## Model Selection
+## ARIMA model model
+### Model Selection
 
 ### Explore Differencing
 
@@ -2330,7 +2313,7 @@ tbl_focus_stock_arima_candidate_model %>%
   )
 ```
 
-## Fiting model on training data
+### Fiting model on training data
 
 ```{r}
 
@@ -2341,9 +2324,9 @@ long_tsbl_focus_stock_arima_fit <- long_tsbl_focus_stock_train %>%
   )
 ```
 
-### Model summary {.tabset .tabset-fade .tabset-pills}
+#### Model summary {.tabset .tabset-fade .tabset-pills}
 
-#### Model specification {.unnumbered}
+##### Model specification {.unnumbered}
 
 ```{r}
 tbl_focus_stock_arima_fit_model_spec <-
@@ -2360,13 +2343,13 @@ tbl_focus_stock_arima_fit_model_spec %>%
 ```
 
 
-#### Coefficient estimates  {.unnumbered}
+##### Coefficient estimates  {.unnumbered}
 ```{r}
 fabletools::tidy(long_tsbl_focus_stock_arima_fit) %>%
   formattable::formattable(list(estimate = x ~ digits(x, digits = 2)))
 ```
 
-#### Benchmarks  {.unnumbered}
+##### Benchmarks  {.unnumbered}
 ```{r}
 
 fabletools::glance(long_tsbl_focus_stock_arima_fit) %>%
@@ -2415,7 +2398,7 @@ knitr::kable(long_tsbl_focus_stock_arima_res_test,
 ```
 
 
-## Evaluate model on testing data
+### Evaluate model on testing data
 
 ```{r}
 
@@ -2424,7 +2407,7 @@ long_tsbl_focus_stock_arima_forecast <- long_tsbl_focus_stock_arima_fit %>%
   fabletools::forecast(h = test_periods)
 
 ```
-### Point forecast accuracy 
+#### Point forecast accuracy 
 
 ```{r}
 
@@ -2447,9 +2430,9 @@ knitr::kable(long_tsbl_focus_stock_arima_point_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
+#### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
 
-#### Interval accuracy {.unnumbered}
+##### Interval accuracy {.unnumbered}
 
 ```{r}
 
@@ -2476,7 +2459,7 @@ knitr::kable(long_tsbl_focus_stock_arima_interval_accuracy,
 ```
 
 
-#### distributional accuracy {.unnumbered}
+##### distributional accuracy {.unnumbered}
 
 ```{r}
 
@@ -2502,7 +2485,7 @@ knitr::kable(long_tsbl_focus_stock_arima_distribution_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-#### Scale-free comparision using skill scores {.unnumbered}
+##### Scale-free comparision using skill scores {.unnumbered}
 
 ```{r}
 
@@ -2529,7 +2512,7 @@ knitr::kable(long_tsbl_focus_stock_arima_forecast_skillscore_accuracy,
 ```
 
 
-## Rolling forecasting with models
+### Rolling forecasting with models
 
 ```{r}
 
@@ -2565,37 +2548,11 @@ long_tsbl_focus_stock_arima_cv_forecast %>%
 ```
 
 
-# Prophet model
 
-## Data preparation
 
-```{r}
 
-# Build train/test data dataset
-test_periods <- 4
-date_field <- tsibble::index_var(long_tsbl_focus_stock)
-test_end_date <- max(dplyr::pull(long_tsbl_focus_stock[, date_field]))
-test_start_date <- test_end_date - test_periods + 1
-train_end_date <- test_start_date - 1
-
-long_tsbl_focus_stock_train <- long_tsbl_focus_stock %>%
-  tsibble::group_by_key() %>%
-  tsibble::filter_index(. ~ format(train_end_date))
-
-long_tsbl_focus_stock_test <- long_tsbl_focus_stock %>%
-  tsibble::group_by_key() %>%
-  tsibble::filter_index(format(test_start_date) ~ .)
-
-nest_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
-  tidyr::nest(tsbl_variable = c("date", "value")) %>%
-  dplyr::ungroup()
-
-nest_tsbl_focus_stock_test <- long_tsbl_focus_stock_test %>%
-  tidyr::nest(tsbl_variable = c("date", "value")) %>%
-  dplyr::ungroup()
-```
-
-## Fiting model on training data
+## Prophet model
+### Fiting model on training data
 
 ```{r}
 
@@ -2715,7 +2672,7 @@ knitr::kable(long_tsbl_focus_stock_prophet_res_test,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-## Evaluate model on testing data
+### Evaluate model on testing data
 ```{r}
 
 # Forecast in test_periods
@@ -2723,7 +2680,7 @@ long_tsbl_focus_stock_prophet_forecast <- long_tsbl_focus_stock_prophet_fit %>%
   fabletools::forecast(h = test_periods)
 ```
 
-### Point forecast accuracy 
+#### Point forecast accuracy 
 
 ```{r}
 
@@ -2746,9 +2703,9 @@ knitr::kable(long_tsbl_focus_stock_prophet_point_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
+#### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
 
-#### Interval accuracy {.unnumbered}
+##### Interval accuracy {.unnumbered}
 
 ```{r}
 
@@ -2775,7 +2732,7 @@ knitr::kable(long_tsbl_focus_stock_prophet_interval_accuracy,
 ```
 
 
-#### distributional accuracy {.unnumbered}
+##### distributional accuracy {.unnumbered}
 
 ```{r}
 
@@ -2801,7 +2758,7 @@ knitr::kable(long_tsbl_focus_stock_prophet_distribution_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-#### Scale-free comparision using skill scores {.unnumbered}
+##### Scale-free comparision using skill scores {.unnumbered}
 
 ```{r}
 
@@ -2828,7 +2785,8 @@ knitr::kable(long_tsbl_focus_stock_prophet_forecast_skillscore_accuracy,
 ```
 
 
-## Rolling forecasting with models
+
+### Rolling forecasting with models
 
 ```{r}
 
@@ -2864,37 +2822,10 @@ long_tsbl_focus_stock_prophet_cv_forecast %>%
 ```
 
 
-# Neural network model
 
-## Data preparation
 
-```{r}
-
-# Build train/test data dataset
-test_periods <- 4
-date_field <- tsibble::index_var(long_tsbl_focus_stock)
-test_end_date <- max(dplyr::pull(long_tsbl_focus_stock[, date_field]))
-test_start_date <- test_end_date - test_periods + 1
-train_end_date <- test_start_date - 1
-
-long_tsbl_focus_stock_train <- long_tsbl_focus_stock %>%
-  tsibble::group_by_key() %>%
-  tsibble::filter_index(. ~ format(train_end_date))
-
-long_tsbl_focus_stock_test <- long_tsbl_focus_stock %>%
-  tsibble::group_by_key() %>%
-  tsibble::filter_index(format(test_start_date) ~ .)
-
-nest_tsbl_focus_stock_train <- long_tsbl_focus_stock_train %>%
-  tidyr::nest(tsbl_variable = c("date", "value")) %>%
-  dplyr::ungroup()
-
-nest_tsbl_focus_stock_test <- long_tsbl_focus_stock_test %>%
-  tidyr::nest(tsbl_variable = c("date", "value")) %>%
-  dplyr::ungroup()
-```
-
-## Fiting model on training data
+## Neural network model
+### Fiting model on training data
 
 ```{r}
 
@@ -2977,7 +2908,7 @@ knitr::kable(long_tsbl_focus_stock_nnetar_res_test,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-## Evaluate model on testing data
+### Evaluate model on testing data
 ```{r}
 
 # Forecast in test_periods
@@ -2985,7 +2916,7 @@ long_tsbl_focus_stock_nnetar_forecast <- long_tsbl_focus_stock_nnetar_fit %>%
   fabletools::forecast(h = test_periods)
 ```
 
-### Point forecast accuracy 
+#### Point forecast accuracy 
 
 ```{r}
 
@@ -3008,9 +2939,9 @@ knitr::kable(long_tsbl_focus_stock_nnetar_point_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
+#### Distribution forecast accuracy  {.tabset .tabset-fade .tabset-pills}
 
-#### Interval accuracy {.unnumbered}
+##### Interval accuracy {.unnumbered}
 
 ```{r}
 
@@ -3037,7 +2968,7 @@ knitr::kable(long_tsbl_focus_stock_nnetar_interval_accuracy,
 ```
 
 
-#### distributional accuracy {.unnumbered}
+##### distributional accuracy {.unnumbered}
 
 ```{r}
 
@@ -3063,7 +2994,7 @@ knitr::kable(long_tsbl_focus_stock_nnetar_distribution_accuracy,
   kableExtra::kable_styling(latex_options = "striped")
 ```
 
-#### Scale-free comparision using skill scores {.unnumbered}
+##### Scale-free comparision using skill scores {.unnumbered}
 
 ```{r}
 
@@ -3090,7 +3021,7 @@ knitr::kable(long_tsbl_focus_stock_nnetar_forecast_skillscore_accuracy,
 ```
 
 
-## Rolling forecasting with models
+### Rolling forecasting with models
 
 ```{r}
 
@@ -3124,6 +3055,7 @@ long_tsbl_focus_stock_nnetar_cv_forecast %>%
   facet_grid(stkcd ~ variable, scale = "free") +
   gganimate::transition_reveal(as.Date(date))
 ```
+
 
 
 # Assessment of models
