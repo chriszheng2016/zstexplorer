@@ -3,7 +3,7 @@
 #' @description A shiny module for cs_analysis.
 #'
 #' @details
-#'  The module is an UI for user to ...
+#'  The module is an UI for user to analyze variables in cross-section.
 #'
 #' @name cs_analysis
 #'
@@ -192,7 +192,7 @@ cs_analysis_ui <- function(id, debug = FALSE) {
 #'  means to disable output of debug.
 #'
 #' @describeIn cs_analysis  Server function of cs_analysis.
-#' @return * Server function return a data frame of ...
+#' @return * Server function dosen't return value.
 cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
