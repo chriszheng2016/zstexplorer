@@ -119,7 +119,98 @@ tsbl2csbl <- function(tsbl_vars) {
 
   csbl_vars <- tsbl_vars %>%
     tsibble::as_tibble() %>%
-    tidyr::unite(col = "id", {{index_var}},{{key_vars}}, remove = TRUE)
+    tidyr::unite(col = "id", {{ index_var }}, {{ key_vars }}, remove = TRUE)
 
   return(csbl_vars)
 }
+
+#' Aggregate tsbl_vars by new key field
+#'
+#' Use new key to aggregate tsbl_vars.
+#'
+#' `industry_median()`/`industry_mean()` is a wrapper of `aggregate_tsbl_vars()`.
+#'
+#' @param tsbl_vars A tsibble of time series vars.
+#' @param by A character of key field.
+#' @param .fun A function to aggregate numeric variables.
+#' @param ...  Params to .fun.
+#'
+#' @return A tsibble aggregated by new key
+#' @export
+#'
+aggregate_tsbl_vars <- function(tsbl_vars,
+                                by,
+                                .fun = median,
+                                ...) {
+
+  # Validate parameters
+  assertive::assert_is_inherited_from(tsbl_vars, c("tbl_ts"))
+  assertive::assert_is_character(by)
+  assertive::assert_all_are_true(by %in% names(tsbl_vars))
+  assertive::assert_is_function(.fun)
+
+  agg_fun <- purrr::partial(.fun, ...)
+
+  tsbl_vars %>%
+    dplyr::group_by(.data[[by]]) %>%
+    dplyr::summarise(
+      period = zstmodelr::mode_value(.data$period),
+      dplyr::across(where(is.numeric), ~ agg_fun(.))
+    ) %>%
+    dplyr::select(date, {{by}}, dplyr::everything())
+}
+
+# Compute mean of tsbl_vars by industries
+#'@describeIn aggregate_tsbl_vars Aggregate mean of tsbl_vars by industries.
+#'@export
+industry_median <- function(tsbl_vars) {
+  aggregate_tsbl_vars(tsbl_vars, by = "indcd", .fun = median, na.rm = TRUE)
+}
+
+# Compute median of tsbl_vars by industries
+#'@describeIn aggregate_tsbl_vars Aggregate median of tsbl_vars by industries.
+#'@export
+industry_mean <- function(tsbl_vars) {
+  aggregate_tsbl_vars(tsbl_vars, by = "indcd", .fun = mean, na.rm = TRUE)
+}
+
+#' Transform index of tsbl_var into period date
+#'
+#' @param tsbl_vars A tsibble of time series vars.
+#' @param period_field A character name of field which contain "quarter",
+#'  "month", "week" as period indicators. Default is "period".
+#'
+#' @return A tsibble with with index of periodic date.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   tsbl_vars_new <- periodize_index(tsbl_vars, period_field = "period")
+#' }
+#'
+periodize_index <- function(tsbl_vars, period_field = "period") {
+
+  # Validate parameters
+  assertive::assert_is_inherited_from(tsbl_vars, c("tbl_ts"))
+  assertive::assert_all_are_true(period_field %in% names(tsbl_vars))
+
+
+  index_var <- tsibble::index_var(tsbl_vars)
+  key_vars <- tsibble::key_vars(tsbl_vars)
+
+  # Make tsibble index as period date
+  period <- unique(tsbl_vars[[period_field]])
+  assertive::assert_all_are_equal_to(length(period), 1)
+  period_date_fun <- switch(period,
+                            "quarter" = tsibble::yearquarter,
+                            "month" = tsibble::yearmonth,
+                            "week" = tsibble::yearweek,
+                            as.Date)
+
+  tsbl_vars_new <- tsbl_vars %>%
+    dplyr::mutate(!!index_var := period_date_fun(.data[[index_var]])) %>%
+    dplyr::select(-c({{period_field}}))
+
+  tsbl_vars_new
+}
+

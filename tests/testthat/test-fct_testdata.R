@@ -1,6 +1,6 @@
 # Tests for auxiliary functions about testing data of the project ----
 
-#context("Tests for auxiliary functions about testing data")
+# context("Tests for auxiliary functions about testing data")
 
 # Test database is ready ?
 dsn <- get_golem_config("database_dsn")
@@ -13,8 +13,10 @@ test_that("load_factors_info, with various arguments", {
     # load_factors_info on default arguments  ====
     factors_info <- load_factors_info()
     expect_s3_class(factors_info, c("tbl_df", "data.frame"))
-    expect_fields <- c("factor_code", "factor_name", "factor_type",
-                       "factor_group", "factor_description", "factor_lag_month")
+    expect_fields <- c(
+      "factor_code", "factor_name", "factor_type",
+      "factor_group", "factor_description", "factor_lag_month"
+    )
     actual_fields <- names(factors_info)
     expect_equal(expect_fields, actual_fields)
 
@@ -23,13 +25,13 @@ test_that("load_factors_info, with various arguments", {
     skip_if_not(db_ready, "skip due to database is not ready")
     factors_info <- load_factors_info(use_online_data = TRUE)
     expect_s3_class(factors_info, c("tbl_df", "data.frame"))
-    expect_fields <- c("factor_code", "factor_name", "factor_type",
-                       "factor_group", "factor_description", "factor_lag_month")
+    expect_fields <- c(
+      "factor_code", "factor_name", "factor_type",
+      "factor_group", "factor_description", "factor_lag_month"
+    )
     actual_fields <- names(factors_info)
     expect_equal(expect_fields, actual_fields)
-
   })
-
 })
 
 test_that("load_tsbl_vars, with various arguments", {
@@ -53,18 +55,15 @@ test_that("load_tsbl_vars, with various arguments", {
     expect_true(all(expect_fields %in% actual_fields))
     expect_equal(tsibble::index_var(tsbl_vars), "date")
     expect_true(all(tsibble::key_vars(tsbl_vars) %in% c("stkcd", "period")))
-
   })
-
 })
 
 test_that("load_csbl_vars, with various arguments", {
-
   suppressMessages({
     # load_csbl_vars on default arguments  ====
     csbl_vars <- load_csbl_vars()
     expect_s3_class(csbl_vars, c("tbl_df", "data.frame"))
-    expect_fields <- c("id", "indcd", "QR", "CR", "ICR", "CFOR", "TDR","CFCR")
+    expect_fields <- c("id", "indcd", "QR", "CR", "ICR", "CFOR", "TDR", "CFCR")
     actual_fields <- names(csbl_vars)
     expect_true(all(expect_fields %in% actual_fields))
 
@@ -72,23 +71,106 @@ test_that("load_csbl_vars, with various arguments", {
     skip_if_not(db_ready, "skip due to database is not ready")
     csbl_vars <- load_csbl_vars(use_online_data = TRUE)
     expect_s3_class(csbl_vars, c("tbl_df", "data.frame"))
-    expect_fields <- c("id", "indcd", "QR", "CR", "ICR", "CFOR", "TDR","CFCR")
+    expect_fields <- c("id", "indcd", "QR", "CR", "ICR", "CFOR", "TDR", "CFCR")
     actual_fields <- names(csbl_vars)
     expect_true(all(expect_fields %in% actual_fields))
   })
-
 })
 
 test_that("tsbl2csbl, with various arguments", {
 
   # tsbl2csbl on default arguments  ====
-  #
   tsbl_vars <- readRDS("data/tsbl_vars.rds")
   csbl_vars <- tsbl2csbl(tsbl_vars)
-  expect_fields <- c("id", setdiff(names(tsbl_vars),
-                          c("date", "stkcd", "period")))
+  expect_fields <- c("id", setdiff(
+    names(tsbl_vars),
+    c("date", "stkcd", "period")
+  ))
 
   actual_fields <- names(csbl_vars)
   expect_true(all(expect_fields %in% actual_fields))
+})
 
+test_that("aggregate_tsbl_vars, with various arguments", {
+
+  # aggregate_tsbl_vars on default arguments  ====
+  tsbl_vars <- readRDS("data/tsbl_vars.rds")
+  tsbl_vars_aggregate <- aggregate_tsbl_vars(tsbl_vars = tsbl_vars, by = "indcd")
+  expect_s3_class(tsbl_vars_aggregate, c("tbl_ts", "data.frame"))
+  expect_fields <- c(
+    c("date", "period", "indcd"),
+    setdiff(names(tsbl_vars), c("date", "period", "stkcd", "indcd"))
+  )
+  actual_fields <- names(tsbl_vars_aggregate)
+  expect_true(all(expect_fields %in% actual_fields))
+  expect_equal(tsibble::index_var(tsbl_vars_aggregate), "date")
+  expect_true(all(tsibble::key_vars(tsbl_vars_aggregate) %in% c("indcd", "period")))
+})
+
+test_that("industry_median/industry_mean, with various arguments", {
+
+  # industry_median/industry_mean on default arguments  ====
+  tsbl_vars <- readRDS("data/tsbl_vars.rds")
+
+  tsbl_vars_industry <- industry_mean(tsbl_vars)
+  expect_s3_class(tsbl_vars_industry, c("tbl_ts", "data.frame"))
+  expect_fields <- c(
+    c("date", "period", "indcd"),
+    setdiff(names(tsbl_vars), c("date", "period", "stkcd", "indcd"))
+  )
+  actual_fields <- names(tsbl_vars_industry)
+  expect_true(all(expect_fields %in% actual_fields))
+  expect_equal(tsibble::index_var(tsbl_vars_industry), "date")
+  expect_true(all(tsibble::key_vars(tsbl_vars_industry) %in% c("indcd", "period")))
+
+  tsbl_vars_industry <- industry_median(tsbl_vars)
+  expect_s3_class(tsbl_vars_industry, c("tbl_ts", "data.frame"))
+  expect_fields <- c(
+    c("date", "period", "indcd"),
+    setdiff(names(tsbl_vars), c("date", "period", "stkcd", "indcd"))
+  )
+  actual_fields <- names(tsbl_vars_industry)
+  expect_true(all(expect_fields %in% actual_fields))
+  expect_equal(tsibble::index_var(tsbl_vars_industry), "date")
+  expect_true(all(tsibble::key_vars(tsbl_vars_industry) %in% c("indcd", "period")))
+})
+
+test_that("periodize_index, with various arguments", {
+
+  # periodize_index on default arguments  ====
+  tsbl_vars <- readRDS("data/tsbl_vars.rds")
+
+  tsbl_vars_result <- periodize_index(tsbl_vars)
+  period <- unique(tsbl_vars$period)
+  switch(period,
+    "quarter" = {
+      expect_true(tsibble::is_yearquarter(tsbl_vars_result$date))
+    },
+    "month" = {
+      expect_true(tsibble::is_yearmonth(tsbl_vars_result$date))
+    },
+    "week" = {
+      expect_true(tsibble::is_yearweek(tsbl_vars_result$date))
+    }
+  )
+
+  # periodize_index on various arguments  ====
+  for (period in c("quarter", "month", "week")) {
+    tsbl_vars_new <- tsbl_vars %>%
+      dplyr::mutate(period = {{ period }})
+
+    tsbl_vars_result <- periodize_index(tsbl_vars_new)
+
+    switch(period,
+      "quarter" = {
+        expect_true(tsibble::is_yearquarter(tsbl_vars_result$date))
+      },
+      "month" = {
+        expect_true(tsibble::is_yearmonth(tsbl_vars_result$date))
+      },
+      "week" = {
+        expect_true(tsibble::is_yearweek(tsbl_vars_result$date))
+      }
+    )
+  }
 })
