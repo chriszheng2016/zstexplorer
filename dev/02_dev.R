@@ -33,6 +33,46 @@ golem::add_js_file("script")
 golem::add_js_handler("handlers")
 golem::add_css_file("custom")
 
+## Add customized shiny module for zstexplorer package ----
+
+## Create general shiny module for zstexplorer
+#Create source file for module of "xyz" with name of "mod_xyz.R"
+add_shiny_module("xyz")
+# Try integration test of module
+devtools::load_all()
+xyz_app()
+# Create test file for module of "xyz" with name of "test-mod_zys.R"
+add_shiny_module("xyz", type = "test")
+# Make sure tests of module is OK
+test_file("tests/testthat/test-mod_xyz.R")
+
+## Create cross-section analysis module for zstexplorer
+# Create source and test file for module of "cs_xyz" with name of "mod_cs_xyz.R"
+# and "test-mod_cs_xyz.R"
+add_cs_module("xyz")
+# Try integration test of module
+devtools::load_all()
+xyz_cs_app()
+# Make sure tests of module is OK
+test_file("tests/testthat/test-mod_cs_xyz.R")
+
+## Create time series analysis module for zstexplorer
+# Create source and test file for module of "ts_xyz" with name of "mod_ts_xyz.R"
+# and "test-mod_ts_xyz.R"
+add_ts_module("xyz")
+# Try integration test of module
+devtools::load_all()
+xyz_ts_app()
+# Make sure tests of module is OK
+test_file("tests/testthat/test-mod_ts_xyz.R")
+
+## Enable/disable debug for zstexplorer ----
+devtools::load_all()
+enable_debug()  # Enable environment variable for debug
+disable_debug() # disable environment variable for debug
+on_debug() # Judge whether debug is enable or not
+
+
 ## Add internal datasets ----
 ## If you have data in your package
 usethis::use_data_raw(name = "my_dataset", open = FALSE)

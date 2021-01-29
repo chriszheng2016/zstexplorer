@@ -34,25 +34,73 @@ test_that("add_shiny_module, with various arguments", {
 
 })
 
-test_that("add_skeleton_cs_module, with various arguments", {
+test_that("add_analysis_module, with various arguments", {
 
   skip_on_cran()
   skip_on_ci()
   skip_on_covr()
 
-  # add_skeleton_cs_module on default arguments  ====
+  # add_analysis_module on default arguments  ====
   suppressMessages({
-    expect_true(create_success <- add_skeleton_cs_module("cs_abc"))
+    expect_true(create_success <- add_analysis_module("abc"))
   })
 
   if(create_success) {
     expect_source_file <- fs::path(find.package("zstexplorer"),
-                            "R/mod_cs_abc.R")
+                            "R/mod_abc.R")
     expect_true(fs::file_exists(expect_source_file))
     fs::file_delete(expect_source_file)
 
     expect_test_file <- fs::path(find.package("zstexplorer"),
-                                   "tests/testthat/test-mod_cs_abc.R")
+                                   "tests/testthat/test-mod_abc.R")
+    expect_true(fs::file_exists(expect_test_file))
+    fs::file_delete(expect_test_file)
+  }
+
+})
+
+test_that("add_cs_module, with various arguments", {
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
+
+  # add_cs_module on default arguments  ====
+  suppressMessages({
+    expect_true(create_success <- add_cs_module("abc"))
+  })
+
+  if(create_success) {
+    expect_source_file <- fs::path(find.package("zstexplorer"),
+                                   "R/mod_cs_abc.R")
+    expect_true(fs::file_exists(expect_source_file))
+    fs::file_delete(expect_source_file)
+
+    expect_test_file <- fs::path(find.package("zstexplorer"),
+                                 "tests/testthat/test-mod_cs_abc.R")
+    expect_true(fs::file_exists(expect_test_file))
+    fs::file_delete(expect_test_file)
+  }
+})
+
+test_that("add_ts_module, with various arguments", {
+
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
+
+  # add_ts_module on default arguments  ====
+  suppressMessages({
+    expect_true(create_success <- add_ts_module("abc"))
+  })
+
+  if(create_success) {
+    expect_source_file <- fs::path(find.package("zstexplorer"),
+                                   "R/mod_ts_abc.R")
+    expect_true(fs::file_exists(expect_source_file))
+    fs::file_delete(expect_source_file)
+
+    expect_test_file <- fs::path(find.package("zstexplorer"),
+                                 "tests/testthat/test-mod_ts_abc.R")
     expect_true(fs::file_exists(expect_test_file))
     fs::file_delete(expect_test_file)
   }
