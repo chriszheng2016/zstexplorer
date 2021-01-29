@@ -53,11 +53,14 @@ test_that("cs_analysis_app - Module App works", {
 
     # Load test App
     suppressWarnings({
-      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 100)
+      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 300)
     })
 
 
     # cs_analysis_app with typical user inputs ====
+
+    # Use to avoid skip message due to empty test, replace it with real tests
+    # expect_true(TRUE)
 
     # -- Sample Code for reference --
     # select_factors <- c("CR", "QR")
