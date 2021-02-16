@@ -75,14 +75,14 @@ load_data_ui <- function(id) {
             actionButton(
               inputId = ns("clear_vars"),
               label = strong("Clear selection"),
-              width = "300px"
+              width = "100%"
             ),
             br(),
             br(),
             actionButton(
               inputId = ns("load_data"),
-              label = strong("Load Data"),
-              width = "300px"
+              label = strong("Load data"),
+              width = "100%"
             )
           )
         )
