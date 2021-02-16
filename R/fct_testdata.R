@@ -151,13 +151,24 @@ aggregate_tsbl_vars <- function(tsbl_vars,
 
   agg_fun <- purrr::partial(.fun, ...)
 
-  tsbl_vars %>%
-    dplyr::group_by(.data[[by]]) %>%
-    dplyr::summarise(
-      period = zstmodelr::mode_value(.data$period),
-      dplyr::across(where(is.numeric), ~ agg_fun(.))
-    ) %>%
-    dplyr::select(date, {{by}}, dplyr::everything())
+  if("period" %in% names(tsbl_vars)) {
+    agg_tsbl_vars <- tsbl_vars %>%
+      dplyr::group_by(.data[[by]]) %>%
+      dplyr::summarise(
+        period = zstmodelr::mode_value(.data$period),
+        dplyr::across(where(is.numeric), ~ agg_fun(.))
+      ) %>%
+      dplyr::select(date, {{by}}, dplyr::everything())
+  } else {
+    agg_tsbl_vars <- tsbl_vars %>%
+      dplyr::group_by(.data[[by]]) %>%
+      dplyr::summarise(
+        dplyr::across(where(is.numeric), ~ agg_fun(.))
+      ) %>%
+      dplyr::select(date, {{by}}, dplyr::everything())
+  }
+
+  agg_tsbl_vars
 }
 
 # Compute mean of tsbl_vars by industries
