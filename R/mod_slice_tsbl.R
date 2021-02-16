@@ -64,13 +64,13 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
   tagList(
     selectInput(
       inputId = ns("indcd"),
-      label = strong("Industry:"),
+      label = strong("Industry codes:"),
       choices = "", multiple = TRUE
     ),
 
     selectInput(
       inputId = ns("stkcd"),
-      label = strong("Stock Code:"),
+      label = strong("Stock codes:"),
       choices = "", multiple = TRUE
     ),
 
@@ -165,105 +165,41 @@ slice_tsbl_server <- function(id, tsbl_vars,
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
 
-    # Update UI with dataset and user inputs ----
+    # Logic reactive ----
 
-    # Set up initial state of UI controls
-    observe({
+    # Available industries for choices
+    available_industry_codes <- reactive({
+
       tsbl_vars <- tsbl_vars()
-      date_var <- tsibble::index_var(tsbl_vars)
-      key_vars <- tsibble::key_vars(tsbl_vars)
-      assertive::assert_all_are_true(date_var == "date")
-      assertive::assert_all_are_true(key_vars %in% c("period", "stkcd"))
-      focus_vars <- setdiff(names(tsbl_vars), c(date_var, key_vars))
-
-      # Set choices for select inputs
-      updateSelectInput(
-        session = session, inputId = "indcd",
-        choices = sort(unique(tsbl_vars$indcd)),
-        # Set selected with current value to ensure not clear current input
-        # selected = input$indcd
+      industry_codes <- sort(unique(tsbl_vars$indcd))
+      industry_names <- paste0(
+        code2name(industry_codes, exact_match = TRUE),
+        "(", industry_codes, ")"
       )
+      industry_codes <- setNames(industry_codes, industry_names)
 
-      updateSelectInput(
-        session = session, inputId = "stkcd",
-        choices = sort(unique(tsbl_vars$stkcd)),
-        # Don't set selected value to clear current input
-        # selected = input$stkcd
-      )
-
-      updateSelectInput(
-        session = session, inputId = "focus_vars",
-        choices = sort(unique(focus_vars)),
-        # Set selected with current value to ensure not clear current input
-        # selected = input$focus_vars
-      )
-
-      updateSelectInput(
-        session = session, inputId = "period",
-        choices = sort(unique(tsbl_vars$period)),
-        # Set selected with current value to ensure not clear current input
-        # selected = input$period
-      )
-
-      # Set initial state of date_type(only once at start-up)
-      if (isolate(isTRUE(input$report_date == 0))) {
-        slice_type <- match.arg(slice_type,
-          choices = c("cross_section", "time_series")
-        )
-        if (slice_type == "cross_section") {
-          updateRadioButtons(
-            session = session, inputId = "date_type",
-            selected = "single_period"
-          )
-        } else {
-          updateRadioButtons(
-            session = session, inputId = "date_type",
-            selected = "multi_period"
-          )
-        }
-      }
-
-      updateSliderInput(
-        session = session, inputId = "report_date",
-        min = min(unique(tsbl_vars$date), na.rm = TRUE),
-        max = max(unique(tsbl_vars$date), na.rm = TRUE),
-        value = max(unique(tsbl_vars$date), na.rm = TRUE)
-      )
-
-      updateSelectInput(
-        session = session, inputId = "start_date",
-        choices = sort(unique(tsbl_vars$date)),
-        selected = min(unique(tsbl_vars$date), na.rm = TRUE)
-      )
-
-      updateSelectInput(
-        session = session, inputId = "end_date",
-        choices = sort(unique(tsbl_vars$date)),
-        selected = max(unique(tsbl_vars$date), na.rm = TRUE)
-      )
+      industry_codes
     })
 
-    # Update stkcd choices by input of indcd
-    observeEvent(input$indcd, ignoreNULL = FALSE, {
+    # Available stocks for choices
+    available_stock_codes <- reactive({
 
-      tsbl_vars <- tsbl_vars()
       if (is.null(input$indcd)) {
-        avaiable_stkcds <- sort(unique(tsbl_vars$stkcd))
+        tsbl_vars <- tsbl_vars()
       } else {
-        avaiable_stkcds <-
-          tsbl_vars %>%
-          dplyr::filter(.data$indcd %in% input$indcd) %>%
-          dplyr::distinct(.data$stkcd) %>%
-          dplyr::arrange(.data$stkcd) %>%
-          dplyr::pull()
+        tsbl_vars <- tsbl_vars() %>%
+          dplyr::filter(.data$indcd %in% input$indcd)
       }
 
-      updateSelectInput(
-        session = session, inputId = "stkcd",
-        choices = avaiable_stkcds
+      stock_codes <- sort(unique(tsbl_vars$stkcd))
+      stock_names <- paste0(
+        code2name(stock_codes, exact_match = TRUE),
+        "(", stock_codes, ")"
       )
-    })
+      stock_codes <- setNames(stock_codes, stock_names)
 
+      stock_codes
+    })
 
     # Select date range
     select_date_range <- reactive({
@@ -299,7 +235,6 @@ slice_tsbl_server <- function(id, tsbl_vars,
 
       return(list(start_date = start_date, end_date = end_date))
     })
-
 
     # Filter data according user inputs
     slice_dataset <- eventReactive(input$apply_filter, {
@@ -355,6 +290,82 @@ slice_tsbl_server <- function(id, tsbl_vars,
 
       return(slice_dataset)
     })
+
+    # Controls interaction ----
+
+    # Set up initial state of UI controls
+    observe({
+      tsbl_vars <- tsbl_vars()
+      date_var <- tsibble::index_var(tsbl_vars)
+      key_vars <- tsibble::key_vars(tsbl_vars)
+      assertive::assert_all_are_true(date_var == "date")
+      assertive::assert_all_are_true(key_vars %in% c("period", "stkcd"))
+      focus_vars <- setdiff(names(tsbl_vars), c(date_var, key_vars))
+
+
+      # Set choices for select inputs
+
+      updateSelectInput(
+        session = session, inputId = "indcd",
+        choices = available_industry_codes(),
+        # Set selected with current value to ensure not clear current input
+        selected = input$indcd
+      )
+
+      updateSelectInput(
+        session = session, inputId = "stkcd",
+        choices = available_stock_codes()
+      )
+
+      updateSelectInput(
+        session = session, inputId = "focus_vars",
+        choices = sort(unique(focus_vars))
+      )
+
+      updateSelectInput(
+        session = session, inputId = "period",
+        choices = sort(unique(tsbl_vars$period))
+      )
+
+      # Set initial state of date_type(only once at start-up)
+      if (isolate(isTRUE(input$report_date == 0))) {
+        slice_type <- match.arg(slice_type,
+          choices = c("cross_section", "time_series")
+        )
+        if (slice_type == "cross_section") {
+          updateRadioButtons(
+            session = session, inputId = "date_type",
+            selected = "single_period"
+          )
+        } else {
+          updateRadioButtons(
+            session = session, inputId = "date_type",
+            selected = "multi_period"
+          )
+        }
+      }
+
+      updateSliderInput(
+        session = session, inputId = "report_date",
+        min = min(unique(tsbl_vars$date), na.rm = TRUE),
+        max = max(unique(tsbl_vars$date), na.rm = TRUE),
+        value = max(unique(tsbl_vars$date), na.rm = TRUE)
+      )
+
+      updateSelectInput(
+        session = session, inputId = "start_date",
+        choices = sort(unique(tsbl_vars$date)),
+        selected = min(unique(tsbl_vars$date), na.rm = TRUE)
+      )
+
+      updateSelectInput(
+        session = session, inputId = "end_date",
+        choices = sort(unique(tsbl_vars$date)),
+        selected = max(unique(tsbl_vars$date), na.rm = TRUE)
+      )
+    })
+
+    # Output ----
 
     output$status_text <- renderText({
       current_dataset <- if (input$apply_filter == 0) {
