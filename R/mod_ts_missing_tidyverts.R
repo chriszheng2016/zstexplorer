@@ -103,15 +103,18 @@ ts_missing_tidyverts_server <- function(id, tsbl_vars) {
 
     # Stock time series
     tsbl_vars_stock_raw <- reactive({
-      tsbl_vars() %>%
-        periodize_index(period_field = "period")
+      tsbl_vars_stock_raw <- tsbl_vars()
+      if ("period" %in% names(tsbl_vars_stock_raw)) {
+        tsbl_vars_stock_raw <- tsbl_vars_stock_raw%>%
+          periodize_index(period_field = "period")
+      }
+      tsbl_vars_stock_raw
     })
 
     # Industry time series
     tsbl_vars_industry_raw <- reactive({
-      tsbl_vars() %>%
-        industry_median() %>%
-        periodize_index(period_field = "period")
+      tsbl_vars_stock_raw() %>%
+        industry_median()
     })
 
     # Stock time series after filling gaps
@@ -153,13 +156,13 @@ ts_missing_tidyverts_server <- function(id, tsbl_vars) {
 
 
     # Stock time series after processing
-    tsbl_vars_stock <- reactive({
+    tidy_tsbl_vars <- reactive({
       switch(input$output_type,
         "Fill gaps + impute nas" = {
           tsbl_vars_stock_impute_nas()
         },
         "Only fill gaps" = {
-          tsbl_vars_industry_fill_gaps()
+          tsbl_vars_stock_fill_gaps()
         },
         "Origin" = {
           tsbl_vars_stock_raw
@@ -237,7 +240,7 @@ ts_missing_tidyverts_server <- function(id, tsbl_vars) {
       )
     })
 
-    return(tsbl_vars_stock)
+    return(tidy_tsbl_vars)
   })
 }
 

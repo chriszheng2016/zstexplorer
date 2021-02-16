@@ -102,15 +102,18 @@ ts_gap_tidyverts_server <- function(id, tsbl_vars) {
 
     # Stock time series
     tsbl_vars_stock_raw <- reactive({
-      tsbl_vars() %>%
-        periodize_index(period_field = "period")
+      tsbl_vars_stock_raw <- tsbl_vars()
+      if ("period" %in% names(tsbl_vars_stock_raw)) {
+        tsbl_vars_stock_raw <- tsbl_vars_stock_raw%>%
+          periodize_index(period_field = "period")
+      }
+      tsbl_vars_stock_raw
     })
 
     # Industry time series
     tsbl_vars_industry_raw <- reactive({
-      tsbl_vars() %>%
-        industry_median() %>%
-        periodize_index(period_field = "period")
+      tsbl_vars_stock_raw() %>%
+        industry_median()
     })
 
     # Info about gap existence in ts
