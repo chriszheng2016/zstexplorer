@@ -69,7 +69,7 @@ NULL
 {{module_name}}_app <- function(use_online_data = FALSE) {
 
   # Prepare data
-  csbl_vars <- load_csbl_vars(use_online_data = FALSE)
+  csbl_vars <- load_csbl_vars(use_online_data = use_online_data)
 
   ui <- fluidPage(
     {{module_name}}_ui("{{module_name}}_module")
