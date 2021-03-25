@@ -76,7 +76,7 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
 
     selectInput(
       inputId = ns("focus_vars"),
-      label = strong("Focus Varable:"),
+      label = strong("Varable codes:"),
       choices = "", multiple = TRUE
     ),
 
@@ -166,6 +166,27 @@ slice_tsbl_server <- function(id, tsbl_vars,
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
 
     # Logic reactive ----
+
+    # Available variables for choices
+    available_variable_codes <- reactive({
+
+      tsbl_vars <- tsbl_vars()
+      date_var <- tsibble::index_var(tsbl_vars)
+      key_vars <- tsibble::key_vars(tsbl_vars)
+
+      variable_codes <- setdiff(names(tsbl_vars), c(date_var, key_vars))
+      variable_codes <- sort(unique(variable_codes))
+
+      variable_names <- paste0(
+        variable_codes,
+        "(", code2name(variable_codes, exact_match = TRUE), ")"
+      )
+
+      variable_codes <- setNames(variable_codes, variable_names)
+
+      variable_codes
+
+    })
 
     # Available industries for choices
     available_industry_codes <- reactive({
@@ -300,7 +321,6 @@ slice_tsbl_server <- function(id, tsbl_vars,
       key_vars <- tsibble::key_vars(tsbl_vars)
       assertive::assert_all_are_true(date_var == "date")
       assertive::assert_all_are_true(key_vars %in% c("period", "stkcd"))
-      focus_vars <- setdiff(names(tsbl_vars), c(date_var, key_vars))
 
 
       # Set choices for select inputs
@@ -319,7 +339,7 @@ slice_tsbl_server <- function(id, tsbl_vars,
 
       updateSelectInput(
         session = session, inputId = "focus_vars",
-        choices = sort(unique(focus_vars))
+        choices = available_variable_codes()
       )
 
       updateSelectInput(
