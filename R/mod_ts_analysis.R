@@ -71,6 +71,10 @@ ts_analysis_ui <- function(id) {
           tabPanel(
             "Basic features",
             ts_feat_basic_tidyverts_ui(ns("ts_feat_basic_tidyverts_module"))
+          ),
+          tabPanel(
+            "Correlation features",
+            ts_feat_cor_tidyverts_ui(ns("ts_feat_cor_tidyverts_module"))
           )
         )
       )
@@ -119,6 +123,11 @@ ts_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
       tsbl_vars = tidy_tsbl_vars
     )
 
+    # Analyze correlation features of time series
+    ts_feat_cor_tidyverts_server(
+      "ts_feat_cor_tidyverts_module",
+      tsbl_vars = tidy_tsbl_vars
+    )
   })
 }
 

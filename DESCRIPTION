@@ -6,8 +6,7 @@ Authors@R:
            family = "Zheng",
            role = c("cre", "aut"),
            email = "chriszheng@vip.sina.com.cn")
-Description: An interactive tool to explore data of China stock
-    market.
+Description: An interactive tool to explore data of China stock market.
 License: MIT + file LICENSE
 URL: https://github.com/chriszheng2016/zstexplorer
 BugReports: https://github.com/chriszheng2016/zstexplorer/issues
@@ -35,6 +34,7 @@ Imports:
     formattable,
     fpc,
     fs,
+    ggh4x,
     GGally,
     ggplot2,
     glue,
@@ -52,12 +52,16 @@ Imports:
     plotly,
     purrr,
     pvclust,
+    qqplotr,
     rlang,
+    scales,
     shiny,
     shinydashboard,
     shinyjs,
     skimr,
+    slider,
     tibble,
+    tidyquant,
     tidyr,
     tsibble,
     tsibble,
