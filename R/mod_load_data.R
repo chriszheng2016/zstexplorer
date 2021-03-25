@@ -125,6 +125,11 @@ load_data_server <- function(id) {
       )
     })
 
+    stock_info <- reactive({
+      stock_db <- stock_db()
+      zstmodelr::get_stock_info(stock_db)
+    })
+
     data_info_in_group <- reactive({
       if (!is.null(input$data_groups) && (input$data_groups != "")) {
         data_info() %>%
@@ -208,7 +213,6 @@ load_data_server <- function(id) {
     }
 
     observeEvent(input$vars_info_table_cell_clicked, ignoreInit = TRUE, {
-
       if (length(input$vars_info_table_cell_clicked) > 0) {
         user_select_codes(
           DT_tableId = "vars_info_table",
@@ -216,7 +220,6 @@ load_data_server <- function(id) {
           id_var = id_var()
         )
       }
-
     })
 
 
@@ -233,8 +236,7 @@ load_data_server <- function(id) {
 
     # Load data
     load_data <- eventReactive(input$load_data, {
-
-      vars_list <- stringr::str_split(input$select_vars,
+      vars_list <- stringr::str_split(req(input$select_vars),
         pattern = "\\s*,\\s*|\\s+"
       )[[1]]
 
@@ -264,17 +266,22 @@ load_data_server <- function(id) {
             }
           )
 
-
         incProgress(message = "convert to tsibble")
 
-        # Fix stkcd and incd for missing
+        # Fix stkcd and indcd for missing
         if (!("stkcd" %in% names(ds_vars))) {
           ds_vars <- ds_vars %>%
             dplyr::mutate(stkcd = "NA")
         }
         if (!("indcd" %in% names(ds_vars))) {
-          ds_vars <- ds_vars %>%
-            dplyr::mutate(indcd = "NA")
+          if ("stkcd" %in% names(ds_vars)) {
+            ds_vars <- ds_vars %>%
+              dplyr::left_join(stock_info(), by = "stkcd") %>%
+              dplyr::select(c(names(ds_vars), "indcd"))
+          } else {
+            ds_vars <- ds_vars %>%
+              dplyr::mutate(indcd = "NA")
+          }
         }
 
         # Turn into tsibble
