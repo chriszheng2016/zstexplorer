@@ -48,7 +48,7 @@ ts_missing_tidyverts_ui <- function(id) {
         width = 3,
         selectInput(
           inputId = ns("ts_type"),
-          label = strong("Time-series Type:"),
+          label = strong("Time-series type:"),
           choices = c("stock", "industry")
         ),
         selectInput(
