@@ -68,12 +68,13 @@ NULL
         wellPanel(
           selectInput(
             inputId = ns("ts_type"),
-            label = strong("Time-series Type:"),
+            label = strong("Time-series type:"),
             choices = c("stock", "industry")
           ),
           selectInput(
             inputId = ns("focus_var"),
-            label = strong("Focus variable:"),
+            label = strong("Focus variables:"),
+            multiple = TRUE,
             choices = ""
           ),
           selectInput(
@@ -186,7 +187,11 @@ NULL
       }
     })
 
-    tsbl_focus_stock <- eventReactive(input$update_output, {
+    tsbl_focus_stock <- eventReactive(input$update_output,
+      # Build focus data when creating button and clicking button
+      ignoreInit = FALSE,
+      ignoreNULL = FALSE,
+    {
       tsbl_vars_stock_raw() %>%
         dplyr::filter(
           .data$stkcd %in% focus_stock(),
@@ -206,7 +211,11 @@ NULL
         )
     })
 
-    tsbl_focus_industry <- eventReactive(input$update_output, {
+    tsbl_focus_industry <- eventReactive(input$update_output,
+      # Build focus data when creating button and clicking button
+      ignoreInit = FALSE,
+      ignoreNULL = FALSE,
+    {
       tsbl_vars_industry_raw() %>%
         dplyr::filter(.data$indcd %in% focus_industry()) %>%
         dplyr::select(
@@ -235,6 +244,24 @@ NULL
           variable, value_stock, value_industry
         )) %>%
         tsibble::as_tsibble(key = c(stkcd, indcd, variable))
+    })
+
+    # Available variables for choices
+    available_variable_codes <- reactive({
+
+      variable_codes <- zstmodelr::expect_type_fields(
+        tsbl_vars_stock_raw(),
+        expect_type = "numeric"
+      )
+      variable_codes <- sort(variable_codes)
+      variable_names <- paste0(
+        variable_codes,
+        "(", code2name(variable_codes, exact_match = TRUE), ")"
+      )
+      variable_codes <- setNames(variable_codes, variable_names)
+
+      variable_codes
+
     })
 
     # Available industries for choices
@@ -274,15 +301,10 @@ NULL
     # Update UI with dataset and user inputs
     observe({
 
-      focus_var_value <- zstmodelr::expect_type_fields(
-        tsbl_vars_stock_raw(),
-        expect_type = "numeric"
-      )
-
       # Set choices for select inputs
       updateSelectInput(
         session = session, inputId = "focus_var",
-        choices = focus_var_value,
+        choices = available_variable_codes(),
         # Set selected with current value to ensure not clear current input
         selected = input$focus_var
       )
@@ -327,7 +349,7 @@ NULL
 {{module_name}}_app <- function(use_online_data = FALSE) {
 
   # Prepare data
-  tsbl_vars <- load_tsbl_vars(use_online_data = FALSE)
+  tsbl_vars <- load_tsbl_vars(use_online_data = use_online_data)
 
   # Only show some stocks for demonstration
   focus_stocks <- c(
