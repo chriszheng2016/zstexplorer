@@ -23,7 +23,8 @@
 #' server <- function(input, output, session) {
 #'   {{module_name}} <- {{module_name}}_server(
 #'   "{{module_name}}_module",
-#'    tsbl_vars = reactive(tsbl_vars))
+#'    tsbl_vars = reactive(tsbl_vars)),
+#'    tsbl_vars_average = reactive(tsbl_vars_average)
 #' }
 #'
 #' # Run testing App for integration testing
@@ -48,15 +49,8 @@ NULL
         width = 3,
         fluidRow(
           column(
-            width = 6,
-            actionButton(
-              inputId = ns("update_output"),
-              label = strong("Refresh output"),
-              width = "100%"
-            )
-          ),
-          column(
-            width = 6,
+            offset = 1,
+            width = 10,
             actionButton(
               inputId = ns("clear_focus"),
               label = strong("Clear selection"),
@@ -73,20 +67,7 @@ NULL
           ),
           selectInput(
             inputId = ns("focus_var"),
-            label = strong("Focus variables:"),
-            multiple = TRUE,
-            choices = ""
-          ),
-          selectInput(
-            inputId = ns("focus_indcd"),
-            label = strong("Focus industries:"),
-            multiple = TRUE,
-            choices = ""
-          ),
-          selectInput(
-            inputId = ns("focus_stkcd"),
-            label = strong("Focus stocks:"),
-            multiple = TRUE,
+            label = strong("Focus variable:"),
             choices = ""
           ),
         ),
@@ -98,14 +79,17 @@ NULL
           id = ns("ts_feature"),
           type = "tabs",
           tabPanel(
-            "Feature stats",
-            # DT::dataTableOutput(ns("stats_table"))
-            # dataTableOutput(ns("stats_table"))
+            "Feature stats1",
+
+            # DT::dataTableOutput(ns("feat_stats_table")),
+            dataTableOutput(ns("feat_stats_table")),
+
+            # plotly::plotlyOutput(ns("feat_stats_plot"), height = "600px"),
+            plotOutput(ns("feat_stats_plot"), height = "600px"),
+            #
             ),
           tabPanel(
-            "Feature plot",
-            # plotly::plotlyOutput(ns("feature_plot"), height = "600px")
-            # plotOutput(ns("feature_plot"), height = "600px")
+            "Feature stats2",
           )
         )
       )
@@ -117,14 +101,17 @@ NULL
 #'
 #' @param tsbl_vars A tibble of vars of time series.
 #'
+#' @param tsbl_vars_average A tsibble of average of vars of time series.
+#'
 #' @describeIn {{module_name}}  Server function of {{module_name}}.
 #' @return * Server function return a data frame of ...
-{{module_name}}_server <- function(id, tsbl_vars) {
+{{module_name}}_server <- function(id, tsbl_vars, tsbl_vars_average) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
+    assertive::assert_all_are_true(is.reactive(tsbl_vars_average))
 
     ## Logical reactive ----
 
@@ -139,66 +126,53 @@ NULL
     })
 
     tsbl_vars_industry_raw <- reactive({
-      tsbl_vars_stock_raw() %>%
-        industry_median()
-    })
-
-    # Raw time series
-    tsbl_vars_stock_raw <- reactive({
-      tsbl_vars_stock_raw <- tsbl_vars()
-      if ("period" %in% names(tsbl_vars_stock_raw)) {
-        tsbl_vars_stock_raw <- tsbl_vars_stock_raw %>%
+      tsbl_vars_industry_raw <- tsbl_vars_average()
+      if ("period" %in% names(tsbl_vars_industry_raw)) {
+        tsbl_vars_industry_raw <- tsbl_vars_industry_raw %>%
           periodize_index(period_field = "period")
       }
-      tsbl_vars_stock_raw
+      tsbl_vars_industry_raw
     })
 
-    tsbl_vars_industry_raw <- reactive({
-      tsbl_vars_stock_raw() %>%
-        industry_median()
+    # ID var of stock time series
+    stock_id_var <- reactive({
+      key_vars <- tsibble::key_vars(tsbl_vars_stock_raw())
+
+      # Use first var as id var
+      id_var <- key_vars[1]
+
+      id_var
+    })
+
+    # ID var of industry time series
+    industry_id_var <- reactive({
+      key_vars <- tsibble::key_vars(tsbl_vars_industry_raw())
+
+      # Use first var as id var
+      id_var <- key_vars[1]
+
+      id_var
     })
 
     # Focused time series
-
     focus_var <- reactive({
-      if (is.null(input$focus_var)) {
+      if (!isTruthy(input$focus_var)) {
         zstmodelr::expect_type_fields(
           tsbl_vars_stock_raw(),
           expect_type = "numeric"
         )
       } else {
-        req(input$focus_var)
+        input$focus_var
       }
     })
 
-    focus_stock <- reactive({
-      if (is.null(input$focus_stkcd)) {
-        unique(tsbl_vars_stock_raw()[["stkcd"]])
-      } else {
-        req(input$focus_stkcd)
-      }
-    })
-
-    focus_industry <- reactive({
-      if (is.null(input$focus_indcd)) {
-        unique(tsbl_vars_stock_raw()[["indcd"]])
-      } else {
-        req(input$focus_indcd)
-      }
-    })
-
-    tsbl_focus_stock <- eventReactive(input$update_output,
-      # Build focus data when creating button and clicking button
-      ignoreInit = FALSE,
-      ignoreNULL = FALSE,
-    {
+    tsbl_focus_stock <- reactive({
       tsbl_vars_stock_raw() %>%
-        dplyr::filter(
-          .data$stkcd %in% focus_stock(),
-          .data$indcd %in% focus_industry()
-        ) %>%
         dplyr::select(
-          c("date", "stkcd", "indcd"),
+          c(
+            tsibble::index_var(.), tsibble::key_vars(.),
+            industry_id_var()
+          ),
           tidyselect::all_of(focus_var())
         )
     })
@@ -206,20 +180,18 @@ NULL
     long_tsbl_focus_stock <- reactive({
       tsbl_focus_stock() %>%
         tidyr::pivot_longer(
-          cols = -c("date", "stkcd", "indcd"),
+          cols = -c(
+            tsibble::index_var(.), tsibble::key_vars(.),
+            industry_id_var()
+          ),
           names_to = "variable", values_to = "value"
         )
     })
 
-    tsbl_focus_industry <- eventReactive(input$update_output,
-      # Build focus data when creating button and clicking button
-      ignoreInit = FALSE,
-      ignoreNULL = FALSE,
-    {
+    tsbl_focus_industry <- reactive({
       tsbl_vars_industry_raw() %>%
-        dplyr::filter(.data$indcd %in% focus_industry()) %>%
         dplyr::select(
-          c("date", "indcd"),
+          c(tsibble::index_var(.), tsibble::key_vars(.)),
           tidyselect::all_of(focus_var())
         )
     })
@@ -227,7 +199,7 @@ NULL
     long_tsbl_focus_industry <- reactive({
       tsbl_focus_industry() %>%
         tidyr::pivot_longer(
-          cols = -c("date", "indcd"),
+          cols = -c(tsibble::index_var(.), tsibble::key_vars(.)),
           names_to = "variable", values_to = "value"
         )
     })
@@ -236,19 +208,17 @@ NULL
       long_tsbl_focus_stock() %>%
         dplyr::left_join(
           long_tsbl_focus_industry(),
-          by = c("date", "indcd", "variable"),
+          by = c(tsibble::index_var(.), industry_id_var(), "variable"),
           suffix = c("_stock", "_industry")
         ) %>%
         dplyr::select(c(
-          date, stkcd, indcd,
-          variable, value_stock, value_industry
-        )) %>%
-        tsibble::as_tsibble(key = c(stkcd, indcd, variable))
+          tsibble::index_var(.), stock_id_var(), industry_id_var(),
+          "variable", "value_stock", "value_industry"
+        ))
     })
 
     # Available variables for choices
     available_variable_codes <- reactive({
-
       variable_codes <- zstmodelr::expect_type_fields(
         tsbl_vars_stock_raw(),
         expect_type = "numeric"
@@ -261,39 +231,6 @@ NULL
       variable_codes <- setNames(variable_codes, variable_names)
 
       variable_codes
-
-    })
-
-    # Available industries for choices
-    available_industry_codes <- reactive({
-      tsbl_vars <- tsbl_vars_stock_raw()
-      industry_codes <- sort(unique(tsbl_vars$indcd))
-      industry_names <- paste0(
-        code2name(industry_codes, exact_match = TRUE),
-        "(", industry_codes, ")"
-      )
-      industry_codes <- setNames(industry_codes, industry_names)
-
-      industry_codes
-    })
-
-    # Available stocks for choices
-    available_stock_codes <- reactive({
-      if (is.null(input$focus_indcd)) {
-        tsbl_vars <- tsbl_vars_stock_raw()
-      } else {
-        tsbl_vars <- tsbl_vars_stock_raw() %>%
-          dplyr::filter(.data$indcd %in% input$focus_indcd)
-      }
-
-      stock_codes <- sort(unique(tsbl_vars$stkcd))
-      stock_names <- paste0(
-        code2name(stock_codes, exact_match = TRUE),
-        "(", stock_codes, ")"
-      )
-      stock_codes <- setNames(stock_codes, stock_names)
-
-      stock_codes
     })
 
     # Controls interaction ----
@@ -306,34 +243,42 @@ NULL
         session = session, inputId = "focus_var",
         choices = available_variable_codes(),
         # Set selected with current value to ensure not clear current input
-        selected = input$focus_var
+        # selected = input$focus_var
       )
 
-      updateSelectInput(
-        session = session, inputId = "focus_indcd",
-        choices = available_industry_codes(),
-        # Set selected with current value to ensure not clear current input
-        selected = input$focus_indcd
-      )
-
-      updateSelectInput(
-        session = session, inputId = "focus_stkcd",
-        choices = available_stock_codes(),
-        # Set selected with current value to ensure not clear current input
-        selected = input$focus_stkcd
-      )
     })
+
+    # Handler for user to clear focus input for stock and industry
+    clear_focus <- function() {
+
+      # Clear selections in table
+      # dt_table <- "feat_stats_table"
+      # proxy <- DT::dataTableProxy(dt_table)
+      # DT::selectRows(proxy, selected = NULL)
+
+      # Refresh output
+      # shinyjs::click(id = "update_output")
+    }
+
+    # Click to clear focus inputs for stock and industry
+    observeEvent(input$clear_focus, ignoreInit = TRUE, {
+      clear_focus()
+    })
+
+
+
 
     ## Output of features ----
 
-    # output$stats_table <- DT::renderDataTable({
-    output$stats_table <- renderDataTable({
+    # output$feat_stats_table <- DT::renderDataTable({
+    output$feat_stats_table <- renderDataTable({
 
 
     })
 
-    #output$feature_plot <- plotly::renderPlotly({
-    output$feature_plot <- renderPlot({
+    #output$feat_stats_plot <- plotly::renderPlotly({
+    output$feat_stats_plot <- renderPlot({
+
 
     })
 
@@ -350,6 +295,7 @@ NULL
 
   # Prepare data
   tsbl_vars <- load_tsbl_vars(use_online_data = use_online_data)
+  tsbl_vars_average <- industry_mean(tsbl_vars)
 
   # Only show some stocks for demonstration
   focus_stocks <- c(
@@ -360,13 +306,19 @@ NULL
   tsbl_vars <- tsbl_vars %>%
     dplyr::filter(stkcd %in% focus_stocks)
 
+  focus_industries <- unique(tsbl_vars$indcd)
+
+  tsbl_vars_average <- tsbl_vars_average %>%
+    dplyr::filter(.data$indcd %in% focus_industries)
+
   ui <- fluidPage(
     {{module_name}}_ui("{{module_name}}_module")
   )
   server <- function(input, output, session) {
     {{module_name}}_server(
       "{{module_name}}_module",
-      tsbl_vars = reactive(tsbl_vars)
+      tsbl_vars = reactive(tsbl_vars),
+      tsbl_vars_average = reactive(tsbl_vars_average)
     )
   }
   shinyApp(ui, server)

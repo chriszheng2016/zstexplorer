@@ -7,10 +7,23 @@
 
 # Prepare test data
 tsbl_vars <- load_tsbl_vars(use_online_data = FALSE)
+tsbl_vars_average <- industry_mean(tsbl_vars)
+
+focus_stocks <- c(
+  "000651", "000333", "600066",
+  "000550", "600031", "000157"
+)
+tsbl_vars <- tsbl_vars %>%
+  dplyr::filter(stkcd %in% focus_stocks)
+
+focus_industries <- unique(tsbl_vars$indcd)
+tsbl_vars_average <- tsbl_vars_average %>%
+  dplyr::filter(.data$indcd %in% focus_industries)
 
 test_that("ts_gap_tidyverts_server - reactives and output updates", {
   testServer(ts_gap_tidyverts_server,
-    args = list(tsbl_vars = reactive(tsbl_vars)),
+    args = list(tsbl_vars = reactive(tsbl_vars),
+                tsbl_vars_average = reactive(tsbl_vars_average)),
     {
       # ts_gap_tidyverts_server with typical user inputs ====
 

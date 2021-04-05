@@ -59,7 +59,8 @@ ts_analysis_ui <- function(id) {
           "Summary",
           tabPanel(
             "Gaps in timeseries",
-            ts_gap_tidyverts_ui(ns("ts_gap_tidyverts_module"))
+            ts_gap_tidyverts_ui(ns("ts_gap_tidyverts_module")),
+            tableOutput(ns("temp"))
           ),
           tabPanel(
             "Misings values",
@@ -98,35 +99,43 @@ ts_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
 
-    slice_tsbl_vars <- slice_tsbl_server("slice_tsbl_module",
+    slice_result <- slice_tsbl_server("slice_tsbl_module",
       tsbl_vars = tsbl_vars,
       slice_type = "time_series",
       debug = debug
     )
+    slice_tsbl_vars <- slice_result$slice_vars
+    slice_tsbl_vars_average <- slice_result$slice_vars_average
 
     # Summary output ----
 
     # Gaps in time series
     ts_gap_tidyverts_server("ts_gap_tidyverts_module",
-      tsbl_vars = slice_tsbl_vars
+      tsbl_vars = slice_tsbl_vars,
+      tsbl_vars_average = slice_tsbl_vars_average
     )
 
     # Missing values in time series
-    tidy_tsbl_vars <- ts_missing_tidyverts_server(
+    tidy_result <- ts_missing_tidyverts_server(
       "ts_missing_tidyverts_module",
-      tsbl_vars = slice_tsbl_vars
+      tsbl_vars = slice_tsbl_vars,
+      tsbl_vars_average = slice_tsbl_vars_average
     )
+    tidy_tsbl_vars <- tidy_result$tidy_tsbl_vars
+    tidy_tsbl_vars_average <- tidy_result$tidy_tsbl_vars_average
 
     # Analyze basic features of time series
     ts_feat_basic_tidyverts_server(
       "ts_feat_basic_tidyverts_module",
-      tsbl_vars = tidy_tsbl_vars
+      tsbl_vars = tidy_tsbl_vars,
+      tsbl_vars_average = tidy_tsbl_vars_average
     )
 
     # Analyze correlation features of time series
     ts_feat_cor_tidyverts_server(
       "ts_feat_cor_tidyverts_module",
-      tsbl_vars = tidy_tsbl_vars
+      tsbl_vars = tidy_tsbl_vars,
+      tsbl_vars_average = tidy_tsbl_vars_average
     )
   })
 }

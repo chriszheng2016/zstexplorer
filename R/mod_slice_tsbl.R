@@ -12,17 +12,29 @@
 #'
 #'  User will promote to use following filter conditions to filter:
 #'
-#'  * **Industry**: one or many industry codes.
+#'  * **Industry codes**: one or many industry codes.
 #'
-#'  * **Stock Code**: one or many stock codes.
+#'  * **Stock codes**: one or many stock codes.
 #'
-#'  * **Focus Variable**:  one or many variables to focus.
+#'  * **Variable coes**:  one or many variables to focus.
 #'
-#'  * **Date Range**:
+#'  * **Period**: Period type of time series, such as "quarter", "month",
+#'   "week", etc.
+#'
+#'  * **Date range**:
 #'
 #'    * Single Period:  specify report date.
 #'
 #'    * Multiple Periods: specify start/end date.
+#'
+#'  * **Industry average**: options for computing industry average.
+#'
+#'    * Average by: a variable used to compute industry average.
+#'
+#'    * Average method: use mean or median to compute industry average.
+#'
+#'
+#'
 #'
 #' @name slice_tsbl
 #'
@@ -41,13 +53,27 @@
 #'
 #' # Call control server in App server
 #' server <- function(input, output, session) {
-#'   load_factors <- slice_tsbl_server("slice_tsbl_module",
-#'     tsbl_vars = reactive(tsbl_vars)
-#'   )
+#'
+#'   # Slice tsibble of variables by timeseries and show result in debug mode
+#'   slice_result <- slice_tsbl_server("slice_tsbl_module",
+#'     tsbl_vars = reactive(tsbl_vars),
+#'     slice_type = "time_series",
+#'     debug = TRUE
+#'     )
+#'
+#'  # A tsibble of variables sliced by user
+#'  slice_tsbl_vars <- slice_result$slice_vars
+#'
+#'  # A tsibble of industry average of variables sliced by user
+#'  slice_vars_average <-  slice_result$slice_vars_average
+
 #' }
 #'
 #' # Run testing App for integration testing
-#' slice_tsbl_app(tsbl_vars)
+#' slice_tsbl_app( use_online_data = FALSE,
+#'                 slice_type = "time_series",
+#                  debug = TRUE
+#       )
 #' }
 #'
 NULL
@@ -62,6 +88,7 @@ NULL
 slice_tsbl_ui <- function(id, debug = FALSE) {
   ns <- NS(id)
   tagList(
+
     selectInput(
       inputId = ns("indcd"),
       label = strong("Industry codes:"),
@@ -76,7 +103,7 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
 
     selectInput(
       inputId = ns("focus_vars"),
-      label = strong("Varable codes:"),
+      label = strong("Variable codes:"),
       choices = "", multiple = TRUE
     ),
 
@@ -88,7 +115,7 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
 
     radioButtons(
       inputId = ns("date_type"),
-      label = strong("Date Range"),
+      label = strong("Date range"),
       choices = list(
         "Single Period" = "single_period",
         "Multiple Periods" = "multi_period"
@@ -114,35 +141,66 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
       condition = "input.date_type == 'multi_period'",
       selectInput(
         inputId = ns("start_date"),
-        label = strong("Start Date:"),
+        label = strong("Start date:"),
         choices = ""
       ),
       selectInput(
         inputId = ns("end_date"),
-        label = strong("End Date:"),
+        label = strong("End date:"),
         choices = ""
       ),
       ns = ns
     ),
+
+
+    h4("Industry average"),
+
+    selectInput(
+      inputId = ns("average_by"),
+      label = strong("Average by:"),
+      choices = ""
+    ),
+
+    radioButtons(
+      inputId = ns("average_method"),
+      label = strong("Average method:"),
+      choices = list(
+        "Mean" = "mean",
+        "Median" = "median"
+      ),
+      selected = "median",
+      inline = TRUE
+    ),
+
 
     h5("Please set filter and click Apply to slice data for analyzing"),
 
     actionButton(
       inputId = ns("apply_filter"),
       label = strong("Apply"),
-      width = "200px"
+      width = "100%"
     ),
 
     br(),
-
     textOutput(
       outputId = ns("status_text")
     ),
 
+    br(),
     # Debug Control for output
     if (debug) {
-      # tableOutput(outputId = ns("debug_output"))
-      DT::dataTableOutput(outputId = ns("debug_output"))
+      tabsetPanel(
+        id = ns("debug_output"),
+        type = "tabs",
+        tabPanel(
+          "sliced vars",
+          DT::dataTableOutput(outputId = ns("debug_output_slice_vars"))
+        ),
+        tabPanel(
+          "Sliced vars average",
+          DT::dataTableOutput(outputId = ns("debug_output_slice_vars_average"))
+        )
+      )
     }
   )
 }
@@ -152,7 +210,14 @@ slice_tsbl_ui <- function(id, debug = FALSE) {
 #' @param  slice_type  A character indicator about how to slice data, e.g.,
 #'  "cross_section", "time_series". Default is cross_section.
 #'
-#' @return * Server function return a tsibble sliced by user's filter conditions.
+#' @return
+#' * Server function return a list of tsibbles sliced by
+#'   user's filter conditions, which contains following fields:
+#'
+#'    + slice_vars : a tsibble of variables sliced by user.
+#'
+#'    + slice_vars_average: a tsibble of average of variables sliced by user.
+#'
 #'
 #' @describeIn slice_tsbl  Server function of slicing tibble of time series.
 #'
@@ -169,7 +234,6 @@ slice_tsbl_server <- function(id, tsbl_vars,
 
     # Available variables for choices
     available_variable_codes <- reactive({
-
       tsbl_vars <- tsbl_vars()
       date_var <- tsibble::index_var(tsbl_vars)
       key_vars <- tsibble::key_vars(tsbl_vars)
@@ -185,12 +249,10 @@ slice_tsbl_server <- function(id, tsbl_vars,
       variable_codes <- setNames(variable_codes, variable_names)
 
       variable_codes
-
     })
 
     # Available industries for choices
     available_industry_codes <- reactive({
-
       tsbl_vars <- tsbl_vars()
       industry_codes <- sort(unique(tsbl_vars$indcd))
       industry_names <- paste0(
@@ -204,7 +266,6 @@ slice_tsbl_server <- function(id, tsbl_vars,
 
     # Available stocks for choices
     available_stock_codes <- reactive({
-
       if (is.null(input$indcd)) {
         tsbl_vars <- tsbl_vars()
       } else {
@@ -220,6 +281,27 @@ slice_tsbl_server <- function(id, tsbl_vars,
       stock_codes <- setNames(stock_codes, stock_names)
 
       stock_codes
+    })
+
+    # Available average by variables for choice
+    avaliable_average_by_variables <- reactive({
+      tsbl_vars <- tsbl_vars()
+      date_var <- tsibble::index_var(tsbl_vars)
+      key_vars <- tsibble::key_vars(tsbl_vars)
+
+      # Only character or factor variable can be used for
+      # computing industry average
+      character_vairables <- zstmodelr::expect_type_fields(
+        tsbl_vars, expect_type = c("character"))
+
+      factor_vairables <- zstmodelr::expect_type_fields(
+        tsbl_vars, expect_type = c("factor"))
+
+      average_by_variables <- unique(character_vairables, factor_vairables)
+      average_by_variables <- setdiff(average_by_variables,
+                                      c(date_var, key_vars ))
+
+      average_by_variables
     })
 
     # Select date range
@@ -258,58 +340,112 @@ slice_tsbl_server <- function(id, tsbl_vars,
     })
 
     # Filter data according user inputs
-    slice_dataset <- eventReactive(input$apply_filter, {
-      tsbl_vars <- tsbl_vars()
-      date_var <- tsibble::index_var(tsbl_vars)
-      key_vars <- tsibble::key_vars(tsbl_vars)
-      focus_vars <- setdiff(names(tsbl_vars), c(date_var, key_vars))
+    slice_vars <- eventReactive(input$apply_filter, {
+
+      slice_vars <- tsbl_vars()
+      date_var <- tsibble::index_var(slice_vars)
+      key_vars <- tsibble::key_vars(slice_vars)
+      focus_vars <- setdiff(names(slice_vars), c(date_var, key_vars))
 
       # Slice dataset in term of user's inputs
-
-      slice_dataset <- tsbl_vars
       if (!is.null(input$indcd)) {
         select_indcd <- input$indcd
-        slice_dataset <-
-          slice_dataset %>%
+        slice_vars <- slice_vars %>%
           dplyr::filter(.data$indcd %in% select_indcd)
       }
 
       if (!is.null(input$stkcd)) {
         select_stkcd <- input$stkcd
-        slice_dataset <-
-          slice_dataset %>%
+        slice_vars <- slice_vars %>%
           dplyr::filter(.data$stkcd %in% select_stkcd)
       }
 
       if (!is.null(input$period)) {
         select_period <- input$period
-        slice_dataset <-
-          slice_dataset %>%
+        slice_vars <- slice_vars %>%
           dplyr::filter(.data$period %in% select_period)
       }
 
       select_date_range <- select_date_range()
       if ((select_date_range$start_date != "") &&
         (select_date_range$end_date != "")) {
-        slice_dataset <-
-          slice_dataset %>%
+        slice_vars <- slice_vars %>%
           dplyr::filter(.data$date >= select_date_range$start_date &
             .data$date <= select_date_range$end_date)
       }
 
       if (!is.null(input$focus_vars)) {
         select_vars <- input$focus_vars
-        slice_dataset <-
-          slice_dataset %>%
+        slice_vars <- slice_vars %>%
+          dplyr::select(c({{ date_var }}, {{ key_vars }},
+                          input$average_by, {{ select_vars }}))
+      }
+
+      # Remove any column with all NAs which contains meaningless information
+      slice_vars <- slice_vars %>%
+        dplyr::select(where(~ !all(is.na(.x))))
+
+      return(slice_vars)
+    })
+
+    # Filter average data by industry
+    slice_vars_average <- eventReactive(input$apply_filter, {
+
+      if (isTruthy(input$average_by)) {
+
+        slice_vars_average <- switch(input$average_method,
+           "mean" = {
+             tsbl_vars() %>%
+               aggregate_tsbl_vars(by = input$average_by,
+                                   .fun = mean,
+                                   na.rm = TRUE)
+           },
+           "median" = {
+             tsbl_vars() %>%
+               aggregate_tsbl_vars(by = input$average_by,
+                                   .fun = median,
+                                   na.rm = TRUE)
+           })
+      }
+
+
+      date_var <- tsibble::index_var(slice_vars_average)
+      key_vars <- tsibble::key_vars(slice_vars_average)
+      focus_vars <- setdiff(names(slice_vars_average), c(date_var, key_vars))
+
+      # Slice dataset in term of user's inputs
+
+      if (!is.null(input$indcd)) {
+        select_indcd <- input$indcd
+        slice_vars_average <- slice_vars_average %>%
+          dplyr::filter(.data$indcd %in% select_indcd)
+      }
+
+      if (!is.null(input$period)) {
+        select_period <- input$period
+        slice_vars_average <- slice_vars_average %>%
+          dplyr::filter(.data$period %in% select_period)
+      }
+
+      select_date_range <- select_date_range()
+      if ((select_date_range$start_date != "") &&
+        (select_date_range$end_date != "")) {
+        slice_vars_average <- slice_vars_average %>%
+          dplyr::filter(.data$date >= select_date_range$start_date &
+            .data$date <= select_date_range$end_date)
+      }
+
+      if (!is.null(input$focus_vars)) {
+        select_vars <- input$focus_vars
+        slice_vars_average <- slice_vars_average %>%
           dplyr::select(c({{ date_var }}, {{ key_vars }}, {{ select_vars }}))
       }
 
       # Remove column with all NAs which contains meaningless information
-      slice_dataset <-
-        slice_dataset %>%
+      slice_vars_average <- slice_vars_average %>%
         dplyr::select(where(~ !all(is.na(.x))))
 
-      return(slice_dataset)
+      slice_vars_average
     })
 
     # Controls interaction ----
@@ -383,33 +519,51 @@ slice_tsbl_server <- function(id, tsbl_vars,
         choices = sort(unique(tsbl_vars$date)),
         selected = max(unique(tsbl_vars$date), na.rm = TRUE)
       )
+
+      updateSelectInput(
+        session = session, inputId = "average_by",
+        choices = avaliable_average_by_variables()
+      )
+
     })
 
     # Output ----
 
-    output$status_text <- renderText({
-      current_dataset <- if (input$apply_filter == 0) {
+    output$status_text <- renderText(sep = "\n", {
+
+      if (input$apply_filter == 0) {
         # User never click apply_filter
-        tsbl_vars()
+        vars_status <- glue::glue(
+          "Vars:{NROW(tsbl_vars())}x{NCOL(tsbl_vars())}."
+        )
+        vars_average_status <- ""
+        data_state <- "Input"
+
       } else {
         # User has clicked apply_filter several times
-        slice_dataset()
+        vars_status <- glue::glue(
+          "Vars:{NROW(slice_vars())}x{NCOL(slice_vars())}."
+        )
+
+        vars_average_status <- glue::glue(
+          "Vars avg:{NROW(slice_vars_average())}x{NCOL(slice_vars_average())}."
+        )
+        data_state <- "Output"
       }
 
-      var_count <- NCOL(current_dataset)
-      case_count <- NROW(current_dataset)
       status_msg <- glue::glue(
-        "Current dataset: {case_count} cases with {var_count} variables"
+        "{data_state}: {vars_status}\n{vars_average_status}"
       )
+
       status_msg
     })
 
     # Render output for debug
     if (debug) {
-      # output$debug_output <- renderTable(head(slice_dataset()))
-      output$debug_output <- DT::renderDataTable({
-        DT::datatable(
-          slice_dataset(),
+      output$debug_output_slice_vars <- DT::renderDataTable({
+        slice_data <- slice_vars()
+        data_table <- DT::datatable(
+          slice_data,
           filter = "top",
           extensions = "Scroller",
           options = list(
@@ -421,10 +575,55 @@ slice_tsbl_server <- function(id, tsbl_vars,
             scroller = TRUE
           )
         )
+
+        # Format numeric columns
+        numeric_vars <- zstmodelr::expect_type_fields(
+          slice_data,
+          expect_type = "numeric"
+        )
+        if (length(numeric_vars) > 0) {
+          data_table <- data_table %>%
+            DT::formatRound(columns = numeric_vars, digits = 3)
+        }
+
+        data_table
+      })
+      output$debug_output_slice_vars_average <- DT::renderDataTable({
+        slice_data <- slice_vars_average()
+        data_table <- DT::datatable(
+          slice_data,
+          filter = "top",
+          extensions = "Scroller",
+          options = list(
+            pageLength = 5,
+            dom = "ltir",
+            deferRender = TRUE,
+            scrollY = 180,
+            scrollX = TRUE,
+            scroller = TRUE
+          )
+        )
+
+        # Format numeric columns
+        numeric_vars <- zstmodelr::expect_type_fields(
+          slice_data,
+          expect_type = "numeric"
+        )
+        if (length(numeric_vars) > 0) {
+          data_table <- data_table %>%
+            DT::formatRound(columns = numeric_vars, digits = 3)
+        }
+
+        data_table
       })
     }
 
-    return(slice_dataset)
+    # Result returned by Server function
+    slice_result <- list(
+      slice_vars = slice_vars,
+      slice_vars_average = slice_vars_average
+    )
+    return(slice_result)
   })
 }
 
@@ -455,7 +654,7 @@ slice_tsbl_app <- function(use_online_data = FALSE,
   )
 
   server <- function(input, output, session) {
-    slice_vars <- slice_tsbl_server("slice_tsbl_module",
+    slice_result <- slice_tsbl_server("slice_tsbl_module",
       tsbl_vars = reactive(tsbl_vars),
       slice_type = slice_type,
       debug = debug

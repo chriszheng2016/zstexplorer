@@ -152,8 +152,9 @@ aggregate_tsbl_vars <- function(tsbl_vars,
   agg_fun <- purrr::partial(.fun, ...)
 
   if("period" %in% names(tsbl_vars)) {
+    # Need Special treatment for period field
     agg_tsbl_vars <- tsbl_vars %>%
-      dplyr::group_by(.data[[by]]) %>%
+      dplyr::group_by(.data[[by]], .data$period) %>%
       dplyr::summarise(
         period = zstmodelr::mode_value(.data$period),
         dplyr::across(where(is.numeric), ~ agg_fun(.))
@@ -167,6 +168,9 @@ aggregate_tsbl_vars <- function(tsbl_vars,
       ) %>%
       dplyr::select(date, {{by}}, dplyr::everything())
   }
+
+  agg_tsbl_vars <- agg_tsbl_vars %>%
+    dplyr::ungroup()
 
   agg_tsbl_vars
 }

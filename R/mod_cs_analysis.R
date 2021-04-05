@@ -200,11 +200,14 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
 
-    slice_tsbl_vars <- slice_tsbl_server("slice_tsbl_module",
+    slice_result <- slice_tsbl_server("slice_tsbl_module",
       tsbl_vars = tsbl_vars,
       slice_type = "cross_section",
       debug = debug
     )
+
+    slice_tsbl_vars <- slice_result$slice_vars
+    slice_tsbl_vars_average <- slice_result$slice_vars_average
 
     slice_csbl_vars <- reactive({
       slice_csbl_vars <- tsbl2csbl(slice_tsbl_vars())

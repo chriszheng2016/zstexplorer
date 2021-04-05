@@ -23,7 +23,8 @@
 #' server <- function(input, output, session) {
 #'   ts_feat_cor_tidyverts <- ts_feat_cor_tidyverts_server(
 #'     "ts_feat_cor_tidyverts_module",
-#'     tsbl_vars = reactive(tsbl_vars)
+#'     tsbl_vars = reactive(tsbl_vars),
+#'     tsbl_vars_average = reactive(tsbl_vars_average)
 #'   )
 #' }
 #'
@@ -48,15 +49,8 @@ ts_feat_cor_tidyverts_ui <- function(id) {
         width = 3,
         fluidRow(
           column(
-            width = 6,
-            actionButton(
-              inputId = ns("update_output"),
-              label = strong("Refresh output"),
-              width = "100%"
-            )
-          ),
-          column(
-            width = 6,
+            offset = 1,
+            width = 10,
             actionButton(
               inputId = ns("clear_focus"),
               label = strong("Clear selection"),
@@ -74,18 +68,6 @@ ts_feat_cor_tidyverts_ui <- function(id) {
           selectInput(
             inputId = ns("focus_var"),
             label = strong("Focus variable:"),
-            choices = ""
-          ),
-          selectInput(
-            inputId = ns("focus_indcd"),
-            label = strong("Focus industries:"),
-            multiple = TRUE,
-            choices = ""
-          ),
-          selectInput(
-            inputId = ns("focus_stkcd"),
-            label = strong("Focus stocks:"),
-            multiple = TRUE,
             choices = ""
           ),
         ),
@@ -200,16 +182,19 @@ ts_feat_cor_tidyverts_ui <- function(id) {
 
 #' Server function of ts_feat_cor_tidyverts
 #'
-#' @param tsbl_vars A tibble of vars of time series.
+#' @param tsbl_vars A tsibble of vars of time series.
+#'
+#' @param tsbl_vars_average A tsibble of average of vars of time series.
 #'
 #' @describeIn ts_feat_cor_tidyverts  Server function of ts_feat_cor_tidyverts.
-#' @return * Server function return a data frame of ...
-ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
+#' @return * Server function doesn't return value.
+ts_feat_cor_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
+    assertive::assert_all_are_true(is.reactive(tsbl_vars_average))
 
     ## Logical reactive ----
 
@@ -224,23 +209,33 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
     })
 
     tsbl_vars_industry_raw <- reactive({
-      tsbl_vars_stock_raw() %>%
-        industry_median()
-    })
-
-    # Raw time series
-    tsbl_vars_stock_raw <- reactive({
-      tsbl_vars_stock_raw <- tsbl_vars()
-      if ("period" %in% names(tsbl_vars_stock_raw)) {
-        tsbl_vars_stock_raw <- tsbl_vars_stock_raw %>%
+      tsbl_vars_industry_raw <- tsbl_vars_average()
+      if ("period" %in% names(tsbl_vars_industry_raw)) {
+        tsbl_vars_industry_raw <- tsbl_vars_industry_raw %>%
           periodize_index(period_field = "period")
       }
-      tsbl_vars_stock_raw
+      tsbl_vars_industry_raw
     })
 
-    tsbl_vars_industry_raw <- reactive({
-      tsbl_vars_stock_raw() %>%
-        industry_median()
+
+    # ID var of stock time series
+    stock_id_var <- reactive({
+      key_vars <- tsibble::key_vars(tsbl_vars_stock_raw())
+
+      # Use first var as id var
+      id_var <- key_vars[1]
+
+      id_var
+    })
+
+    # ID var of industry time series
+    industry_id_var <- reactive({
+      key_vars <- tsibble::key_vars(tsbl_vars_industry_raw())
+
+      # Use first var as id var
+      id_var <- key_vars[1]
+
+      id_var
     })
 
     # Focused time series
@@ -257,42 +252,28 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
     })
 
     focus_stock <- reactive({
-      if (!isTruthy(input$focus_stkcd)) {
-        unique(tsbl_vars_stock_raw()[["stkcd"]])
-      } else {
-        input$focus_stkcd
-      }
+      unique(tsbl_vars_stock_raw()[[stock_id_var()]])
     })
 
     focus_industry <- reactive({
-      if (!isTruthy(input$focus_indcd)) {
-        unique(tsbl_vars_stock_raw()[["indcd"]])
-      } else {
-        input$focus_indcd
-      }
+      unique(tsbl_vars_stock_raw()[[industry_id_var()]])
     })
 
-    tsbl_focus_stock <- eventReactive(input$update_output,
-      # Build focus data when creating button and clicking button
-      ignoreInit = FALSE,
-      ignoreNULL = FALSE,
-      {
-        tsbl_vars_stock_raw() %>%
-          dplyr::filter(
-            .data$stkcd %in% focus_stock(),
-            .data$indcd %in% focus_industry()
-          ) %>%
-          dplyr::select(
-            c("date", "stkcd", "indcd"),
-            tidyselect::all_of(focus_var())
-          )
-      }
-    )
+    tsbl_focus_stock <- reactive({
+      tsbl_vars_stock_raw() %>%
+        dplyr::select(
+          c(
+            tsibble::index_var(.), tsibble::key_vars(.),
+            industry_id_var()
+          ),
+          tidyselect::all_of(focus_var())
+        )
+    })
 
     long_tsbl_focus_stock <- reactive({
       tsbl_focus_stock() %>%
         tidyr::pivot_longer(
-          cols = -c("date", "stkcd", "indcd"),
+          cols = focus_var(),
           names_to = "variable", values_to = "value"
         )
     })
@@ -303,24 +284,18 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
         dplyr::ungroup()
     })
 
-    tsbl_focus_industry <- eventReactive(input$update_output,
-      # Build focus data when creating button and clicking button
-      ignoreInit = FALSE,
-      ignoreNULL = FALSE,
-      {
-        tsbl_vars_industry_raw() %>%
-          dplyr::filter(.data$indcd %in% focus_industry()) %>%
-          dplyr::select(
-            c("date", "indcd"),
-            tidyselect::all_of(focus_var())
-          )
-      }
-    )
+    tsbl_focus_industry <- reactive({
+      tsbl_vars_industry_raw() %>%
+        dplyr::select(
+          c(tsibble::index_var(.), tsibble::key_vars(.)),
+          tidyselect::all_of(focus_var())
+        )
+    })
 
     long_tsbl_focus_industry <- reactive({
       tsbl_focus_industry() %>%
         tidyr::pivot_longer(
-          cols = -c("date", "indcd"),
+          cols = focus_var(),
           names_to = "variable", values_to = "value"
         )
     })
@@ -335,14 +310,13 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
       long_tsbl_focus_stock() %>%
         dplyr::left_join(
           long_tsbl_focus_industry(),
-          by = c("date", "indcd", "variable"),
+          by = c(tsibble::index_var(.), industry_id_var(), "variable"),
           suffix = c("_stock", "_industry")
         ) %>%
         dplyr::select(c(
-          date, stkcd, indcd,
-          variable, value_stock, value_industry
-        )) %>%
-        tsibble::as_tsibble(key = c(stkcd, indcd, variable))
+          tsibble::index_var(.), stock_id_var(), industry_id_var(),
+          "variable", "value_stock", "value_industry"
+        ))
     })
 
 
@@ -366,7 +340,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
     # Available industries for choices
     available_industry_codes <- reactive({
       tsbl_vars <- tsbl_vars_stock_raw()
-      industry_codes <- sort(unique(tsbl_vars$indcd))
+      industry_codes <- sort(unique(tsbl_vars[[industry_id_var()]]))
       industry_names <- paste0(
         code2name(industry_codes, exact_match = TRUE),
         "(", industry_codes, ")"
@@ -378,14 +352,8 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
 
     # Available stocks for choices
     available_stock_codes <- reactive({
-      if (!isTruthy(input$focus_indcd)) {
-        tsbl_vars <- tsbl_vars_stock_raw()
-      } else {
-        tsbl_vars <- tsbl_vars_stock_raw() %>%
-          dplyr::filter(.data$indcd %in% input$focus_indcd)
-      }
-
-      stock_codes <- sort(unique(tsbl_vars$stkcd))
+      tsbl_vars <- tsbl_vars_stock_raw()
+      stock_codes <- sort(unique(tsbl_vars[[stock_id_var()]]))
       stock_names <- paste0(
         code2name(stock_codes, exact_match = TRUE),
         "(", stock_codes, ")"
@@ -399,16 +367,10 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
     available_base_series <- reactive({
       switch(input$ts_type,
         "stock" = {
-          series_codes <- focus_stock()
-          if (!isTruthy(isolate(input$focus_stkcd))) {
-            series_codes <- available_stock_codes()
-          }
+          series_codes <- available_stock_codes()
         },
         "industry" = {
-          series_codes <- focus_industry()
-          if (!isTruthy(isolate(input$focus_indcd))) {
-            series_codes <- available_industry_codes()
-          }
+          series_codes <- available_industry_codes()
         }
       )
 
@@ -444,42 +406,38 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
     # Compute feature statistics by feature function
     compute_feats_stats <- function(feats_fun) {
       assertive::is_function(feats_fun)
+
+      # Data setting for computing by stock or industry
       switch(input$ts_type,
         "stock" = {
-          long_tsbl_focus_stock() %>%
-            dplyr::group_by(.data$stkcd, .data$variable) %>%
-            fabletools::features(
-              .var = .data$value,
-              features = feats_fun
-            ) %>%
-            dplyr::arrange(.data$variable, .data$stkcd) %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(stkname = ifelse(!purrr::is_empty(stkcd),
-              zstexplorer::code2name(stkcd), character(0)
-            )) %>%
-            dplyr::select(
-              c("variable", "stkcd", "stkname"),
-              tidyselect::everything()
-            )
+          tsbl_focus <- long_tsbl_focus_stock()
+          id_var <- stock_id_var()
+          id_name <- "stkname"
         },
         "industry" = {
-          long_tsbl_focus_industry() %>%
-            dplyr::group_by(.data$indcd, .data$variable) %>%
-            fabletools::features(
-              .var = .data$value,
-              features = feats_fun
-            ) %>%
-            dplyr::arrange(.data$variable, .data$indcd) %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(indname = ifelse(!purrr::is_empty(indcd),
-              zstexplorer::code2name(indcd), character(0)
-            )) %>%
-            dplyr::select(
-              c("variable", "indcd", "indname"),
-              tidyselect::everything()
-            )
+          tsbl_focus <- long_tsbl_focus_industry()
+          id_var <- industry_id_var()
+          id_name <- "indname"
         }
       )
+
+      # Compute result
+      tsbl_focus %>%
+        dplyr::group_by(.data[[id_var]], .data$variable) %>%
+        fabletools::features(
+          .var = .data$value,
+          features = feats_fun
+        ) %>%
+        dplyr::arrange(.data$variable, .data[[id_var]]) %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
+          zstexplorer::code2name(.data[[id_var]]), character(0)
+        )) %>%
+        dplyr::select(
+          c("variable", id_var, id_name),
+          tidyselect::everything()
+        )
+
     }
 
     feat_acf_stats <- reactive({
@@ -503,19 +461,6 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
         # selected = input$focus_var
       )
 
-      updateSelectInput(
-        session = session, inputId = "focus_indcd",
-        choices = available_industry_codes(),
-        # Set selected with current value to ensure not clear current input
-        selected = input$focus_indcd
-      )
-
-      updateSelectInput(
-        session = session, inputId = "focus_stkcd",
-        choices = available_stock_codes(),
-        # Set selected with current value to ensure not clear current input
-        selected = input$focus_stkcd
-      )
 
       updateSelectInput(
         session = session, inputId = "cross_cor_base_series",
@@ -535,7 +480,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
     # Update UI when user choose feature tabs
     observeEvent(input$ts_feature, ignoreInit = TRUE, {
 
-      # Update setting_tabs according to plot type
+      # Update setting_tabs according to features
       if (input$ts_feature %in% c("Auto correlation")) {
         updateTabsetPanel(session,
           inputId = "setting_tabs",
@@ -551,19 +496,6 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
 
     # Handler for user to clear focus input for stock and industry
     clear_focus <- function() {
-
-      # Clear focus input
-      updateTextInput(
-        session = session,
-        inputId = "focus_stkcd",
-        value = ""
-      )
-
-      updateTextInput(
-        session = session,
-        inputId = "focus_indcd",
-        value = ""
-      )
 
       # Clear selections in tab;e
       dt_table <- "simple_stats_table"
@@ -582,9 +514,6 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
         value = ""
       )
 
-
-      # Refresh output
-      shinyjs::click(id = "update_output")
     }
 
     # Click to clear focus inputs for stock and industry
@@ -611,14 +540,14 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
               user_select_keys(
                 DT_tableId = "auto_cor_acf_table",
                 ds_info = feat_acf_stats(),
-                key_var = c("stkcd", "variable")
+                key_var = c(stock_id_var(), "variable")
               )
             },
             "industry" = {
               user_select_keys(
                 DT_tableId = "auto_cor_acf_table",
                 ds_info = feat_acf_stats(),
-                key_var = c("indcd", "variable")
+                key_var = c(industry_id_var(), "variable")
               )
             }
           )
@@ -636,15 +565,15 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
             "stock" = {
               user_select_keys(
                 DT_tableId = "auto_cor_pacf_table",
-                ds_info = feat_pfeat_acf_stats(),
-                key_var = c("stkcd", "variable")
+                ds_info = feat_pacf_stats(),
+                key_var = c(stock_id_var(), "variable")
               )
             },
             "industry" = {
               user_select_keys(
                 DT_tableId = "auto_cor_pacf_table",
-                ds_info = feat_pfeat_acf_stats(),
-                key_var = c("indcd", "variable")
+                ds_info = feat_pacf_stats(),
+                key_var = c(industry_id_var(), "variable")
               )
             }
           )
@@ -739,11 +668,11 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
 
     output$auto_cor_pacf_table <- DT::renderDataTable({
       numeric_vars <- zstmodelr::expect_type_fields(
-        feat_pfeat_acf_stats(),
+        feat_pacf_stats(),
         expect_type = "numeric"
       )
 
-      feat_pfeat_acf_stats() %>%
+      feat_pacf_stats() %>%
         DT::datatable(
           filter = "top",
           extensions = "Scroller",
@@ -773,13 +702,11 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
       switch(input$ts_type,
         "stock" = {
           tsbl_focus <- long_tsbl_focus_stock()
-          id_var <- "stkcd"
-          facet_fomula <- stkcd ~ variable
+          id_var <- stock_id_var()
         },
         "industry" = {
           tsbl_focus <- long_tsbl_focus_industry()
-          id_var <- "indcd"
-          facet_fomula <- indcd ~ variable
+          id_var <- industry_id_var()
         }
       )
 
@@ -794,6 +721,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
       }
 
       # Plot ACF
+      facet_fomula <- rlang::parse_expr(glue::glue("{id_var} ~ variable"))
       if (NROW(tsbl_focus) > 0) {
         p <- tsbl_focus %>%
           feasts::ACF(.data$value) %>%
@@ -819,14 +747,11 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
       switch(input$ts_type,
         "stock" = {
           tsbl_focus <- long_tsbl_focus_stock()
-          id_var <- "stkcd"
-          facet_fomula <- stkcd ~ variable
-
+          id_var <- stock_id_var()
         },
         "industry" = {
           tsbl_focus <- long_tsbl_focus_industry()
-          id_var <- "indcd"
-          facet_fomula <- indcd ~ variable
+          id_var <- industry_id_var()
         }
       )
 
@@ -841,6 +766,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
       }
 
       # Plot PACF
+      facet_fomula <- rlang::parse_expr(glue::glue("{id_var} ~ variable"))
       if (NROW(tsbl_focus) > 0) {
         p <- tsbl_focus %>%
           feasts::PACF(.data$value) %>%
@@ -883,11 +809,11 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars) {
       switch(input$ts_type,
         "stock" = {
           nest_varaible_focus <- nest_varible_focus_stock()
-          id_field <- "stkcd"
+          id_field <- stock_id_var()
         },
         "industry" = {
           nest_varaible_focus <- nest_varible_focus_industry()
-          id_field <- "indcd"
+          id_field <- industry_id_var()
         }
       )
 
@@ -1289,6 +1215,7 @@ ts_feat_cor_tidyverts_app <- function(use_online_data = FALSE) {
 
   # Prepare data
   tsbl_vars <- load_tsbl_vars(use_online_data = use_online_data)
+  tsbl_vars_average <- industry_mean(tsbl_vars)
 
   # Only show some stocks for demonstration
   focus_stocks <- c(
@@ -1299,13 +1226,19 @@ ts_feat_cor_tidyverts_app <- function(use_online_data = FALSE) {
   tsbl_vars <- tsbl_vars %>%
     dplyr::filter(stkcd %in% focus_stocks)
 
+  focus_industries <- unique(tsbl_vars$indcd)
+
+  tsbl_vars_average <- tsbl_vars_average %>%
+    dplyr::filter(.data$indcd %in% focus_industries)
+
   ui <- fluidPage(
     ts_feat_cor_tidyverts_ui("ts_feat_cor_tidyverts_module")
   )
   server <- function(input, output, session) {
     ts_feat_cor_tidyverts_server(
       "ts_feat_cor_tidyverts_module",
-      tsbl_vars = reactive(tsbl_vars)
+      tsbl_vars = reactive(tsbl_vars),
+      tsbl_vars_average = reactive(tsbl_vars_average)
     )
   }
   shinyApp(ui, server)

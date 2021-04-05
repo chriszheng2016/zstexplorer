@@ -23,7 +23,8 @@
 #' server <- function(input, output, session) {
 #'   ts_gap_tidyverts <- ts_gap_tidyverts_server(
 #'     "ts_gap_tidyverts_module",
-#'     tsbl_vars = reactive(tsbl_vars)
+#'     tsbl_vars = reactive(tsbl_vars),
+#'     tsbl_vars_average = reactive(tsbl_vars_average)
 #'   )
 #' }
 #'
@@ -88,14 +89,17 @@ ts_gap_tidyverts_ui <- function(id) {
 #'
 #' @param tsbl_vars A tsibble of vars of time series.
 #'
+#' @param tsbl_vars_average A tsibble of average of vars of time series.
+#'
 #' @describeIn ts_gap_tidyverts  Server function of ts_gap_tidyverts.
 #' @return * Server function doesn't return value.
-ts_gap_tidyverts_server <- function(id, tsbl_vars) {
+ts_gap_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Validate parameters
     assertive::assert_all_are_true(is.reactive(tsbl_vars))
+    assertive::assert_all_are_true(is.reactive(tsbl_vars_average))
 
     ## Logical reactive ----
 
@@ -104,7 +108,7 @@ ts_gap_tidyverts_server <- function(id, tsbl_vars) {
     tsbl_vars_stock_raw <- reactive({
       tsbl_vars_stock_raw <- tsbl_vars()
       if ("period" %in% names(tsbl_vars_stock_raw)) {
-        tsbl_vars_stock_raw <- tsbl_vars_stock_raw%>%
+        tsbl_vars_stock_raw <- tsbl_vars_stock_raw %>%
           periodize_index(period_field = "period")
       }
       tsbl_vars_stock_raw
@@ -112,100 +116,119 @@ ts_gap_tidyverts_server <- function(id, tsbl_vars) {
 
     # Industry time series
     tsbl_vars_industry_raw <- reactive({
-      tsbl_vars_stock_raw() %>%
-        industry_median()
+      tsbl_vars_industry_raw <- tsbl_vars_average()
+      if ("period" %in% names(tsbl_vars_industry_raw)) {
+        tsbl_vars_industry_raw <- tsbl_vars_industry_raw %>%
+          periodize_index(period_field = "period")
+      }
+      tsbl_vars_industry_raw
+    })
+
+    # ID var of stock time series
+    stock_id_var <- reactive({
+      key_vars <- tsibble::key_vars(tsbl_vars_stock_raw())
+
+      # Use first var as id var
+      id_var <- key_vars[1]
+
+      id_var
+    })
+
+    # ID var of industry time series
+    industry_id_var <- reactive({
+      key_vars <- tsibble::key_vars(tsbl_vars_industry_raw())
+
+      # Use first var as id var
+      id_var <- key_vars[1]
+
+      id_var
     })
 
     # Info about gap existence in ts
     tsbl_vars_focus_has_gaps <- reactive({
+
+      # Data setting for computing by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_vars_stock_raw() %>%
-            tsibble::has_gaps(
-              .full = !!rlang::parse_expr(req(input$full_gap))
-            ) %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(stkname = ifelse(!purrr::is_empty(stkcd),
-              zstexplorer::code2name(stkcd), character(0)
-            )) %>%
-            dplyr::select(c("stkcd", "stkname"), tidyselect::everything())
+          tsbl_focus <- tsbl_vars_stock_raw()
+          id_var <- stock_id_var()
+          id_name <- "stkname"
         },
         "industry" = {
-          tsbl_vars_industry_raw() %>%
-            tsibble::has_gaps(
-              .full = !!rlang::parse_expr(req(input$full_gap))
-            ) %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(indname = ifelse(!purrr::is_empty(indcd),
-              zstexplorer::code2name(indcd), character(0)
-            )) %>%
-            dplyr::select(c("indcd", "indname"), tidyselect::everything())
+          tsbl_focus <- tsbl_vars_industry_raw()
+          id_var <- industry_id_var()
+          id_name <- "indname"
         }
       )
+
+      # Compute gap info
+      tsbl_focus %>%
+        tsibble::has_gaps(
+          .full = !!rlang::parse_expr(req(input$full_gap))
+        ) %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(!!id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
+          zstexplorer::code2name(.data[[id_var]]), character(0)
+        )) %>%
+        dplyr::select(c(id_var, id_name), tidyselect::everything())
     })
 
     # Info about gap positions in ts
     tsbl_vars_focus_scan_gaps <- reactive({
+
+      # Data setting for computing by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_vars_stock_raw() %>%
-            tsibble::scan_gaps(
-              .full = !!rlang::parse_expr(req(input$full_gap))
-            ) %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(
-              stkname = ifelse(!purrr::is_empty(stkcd),
-                zstexplorer::code2name(stkcd), character(0)
-              )
-            ) %>%
-            dplyr::select(c("stkcd", "stkname"), tidyselect::everything())
+          tsbl_focus <- tsbl_vars_stock_raw()
+          id_var <- stock_id_var()
+          id_name <- "stkname"
         },
         "industry" = {
-          tsbl_vars_industry_raw() %>%
-            tsibble::scan_gaps(
-              .full = !!rlang::parse_expr(req(input$full_gap))
-            ) %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(
-              indname = ifelse(!purrr::is_empty(indcd),
-                zstexplorer::code2name(indcd), character(0)
-              )
-            ) %>%
-            dplyr::select(c("indcd", "indname"), tidyselect::everything())
+          tsbl_focus <- tsbl_vars_industry_raw()
+          id_var <- industry_id_var()
+          id_name <- "indname"
         }
       )
+
+      # Compute gap info
+      tsbl_focus %>%
+        tsibble::scan_gaps(
+          .full = !!rlang::parse_expr(req(input$full_gap))
+        ) %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(!!id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
+          zstexplorer::code2name(.data[[id_var]]), character(0)
+        )) %>%
+        dplyr::select(c(id_var, id_name), tidyselect::everything())
     })
 
     # Info about gap counts in ts
     tsbl_vars_focus_count_gaps <- reactive({
+
+      # Data setting for computing by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_vars_stock_raw() %>%
-            tsibble::count_gaps(
-              .full = !!rlang::parse_expr(req(input$full_gap))
-            ) %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(
-              stkname = ifelse(!purrr::is_empty(stkcd),
-                zstexplorer::code2name(stkcd), character(0)
-              )
-            ) %>%
-            dplyr::select(c("stkcd", "stkname"), tidyselect::everything())
+          tsbl_focus <- tsbl_vars_stock_raw()
+          id_var <- stock_id_var()
+          id_name <- "stkname"
         },
         "industry" = {
-          tsbl_vars_industry_raw() %>%
-            tsibble::count_gaps(
-              .full = !!rlang::parse_expr(req(input$full_gap))
-            ) %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(
-              indname = ifelse(!purrr::is_empty(indcd),
-                zstexplorer::code2name(indcd), character(0)
-              )
-            ) %>%
-            dplyr::select(c("indcd", "indname"), tidyselect::everything())
+          tsbl_focus <- tsbl_vars_industry_raw()
+          id_var <- industry_id_var()
+          id_name <- "indname"
         }
       )
+
+      # Compute gap info
+      tsbl_focus %>%
+        tsibble::count_gaps(
+          .full = !!rlang::parse_expr(req(input$full_gap))
+        ) %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(!!id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
+          zstexplorer::code2name(.data[[id_var]]), character(0)
+        )) %>%
+        dplyr::select(c(id_var, id_name), tidyselect::everything())
     })
 
 
@@ -300,6 +323,7 @@ ts_gap_tidyverts_app <- function(use_online_data = FALSE) {
 
   # Prepare data
   tsbl_vars <- load_tsbl_vars(use_online_data)
+  tsbl_vars_average <- industry_mean(tsbl_vars)
 
   # Only show some stocks for demonstration
   focus_stocks <- c(
@@ -307,7 +331,12 @@ ts_gap_tidyverts_app <- function(use_online_data = FALSE) {
     "000550", "600031", "000157"
   )
   tsbl_vars <- tsbl_vars %>%
-    dplyr::filter(stkcd %in% focus_stocks)
+    dplyr::filter(.data$stkcd %in% focus_stocks)
+
+  focus_industries <- unique(tsbl_vars$indcd)
+
+  tsbl_vars_average <- tsbl_vars_average %>%
+    dplyr::filter(.data$indcd %in% focus_industries)
 
 
   ui <- fluidPage(
@@ -316,7 +345,8 @@ ts_gap_tidyverts_app <- function(use_online_data = FALSE) {
   server <- function(input, output, session) {
     ts_gap_tidyverts_server(
       "ts_gap_tidyverts_module",
-      tsbl_vars = reactive(tsbl_vars)
+      tsbl_vars = reactive(tsbl_vars),
+      tsbl_vars_average = reactive(tsbl_vars_average)
     )
   }
   shinyApp(ui, server)
