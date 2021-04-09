@@ -6,8 +6,7 @@
 \alias{zstexplorer-package}
 \title{zstexplorer: Explorer for China Stock Market Investment}
 \description{
-An interactive tool to explore data of China stock
-    market.
+An interactive tool to explore data of China stock market.
 }
 \seealso{
 Useful links:

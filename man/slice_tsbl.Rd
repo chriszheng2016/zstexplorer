@@ -9,18 +9,30 @@
 \usage{
 slice_tsbl_ui(id, debug = FALSE)
 
-slice_tsbl_server(id, tsbl_vars, debug = FALSE)
+slice_tsbl_server(
+  id,
+  tsbl_vars,
+  slice_type = c("cross_section", "time_series"),
+  debug = FALSE
+)
 
-slice_tsbl_app(use_online_data = FALSE)
+slice_tsbl_app(
+  use_online_data = FALSE,
+  slice_type = c("cross_section", "time_series"),
+  debug = on_debug()
+)
 }
 \arguments{
 \item{id}{An ID string of module to connecting UI function and Server
 function.}
 
-\item{debug}{A logic to enable/disable output for debug. Default FALSE
-means to disable output of debug.}
+\item{debug}{A logic to enable debug or not, default is on_debug() which
+returns DEBUG environment variable.}
 
 \item{tsbl_vars}{A tsibble of time series to be sliced.}
+
+\item{slice_type}{A character indicator about how to slice data, e.g.,
+"cross_section", "time_series". Default is cross_section.}
 
 \item{use_online_data}{A logical to determine whether to use test data from
 database or not. Default FALSE means to use achieved data for tests.}
@@ -31,7 +43,12 @@ database or not. Default FALSE means to use achieved data for tests.}
 }
 
 \itemize{
-\item Server function return a tsibble sliced by user's filter conditions.
+\item Server function return a list of tsibbles sliced by
+user's filter conditions, which contains following fields:
+\itemize{
+\item slice_vars : a tsibble of variables sliced by user.
+\item slice_vars_average: a tsibble of average of variables sliced by user.
+}
 }
 }
 \description{
@@ -45,13 +62,20 @@ tibble of time series.
 
 User will promote to use following filter conditions to filter:
 \itemize{
-\item \strong{Industry}: one or many industry codes.
-\item \strong{Stock Code}: one or many stock codes.
-\item \strong{Focus Variable}:  one or many variables to focus.
-\item \strong{Date Range}:
+\item \strong{Industry codes}: one or many industry codes.
+\item \strong{Stock codes}: one or many stock codes.
+\item \strong{Variable coes}:  one or many variables to focus.
+\item \strong{Period}: Period type of time series, such as "quarter", "month",
+"week", etc.
+\item \strong{Date range}:
 \itemize{
 \item Single Period:  specify report date.
 \item Multiple Periods: specify start/end date.
+}
+\item \strong{Industry average}: options for computing industry average.
+\itemize{
+\item Average by: a variable used to compute industry average.
+\item Average method: use mean or median to compute industry average.
 }
 }
 }
@@ -73,13 +97,24 @@ ui <- fluidPage(
 
 # Call control server in App server
 server <- function(input, output, session) {
-  load_factors <- slice_tsbl_server("slice_tsbl_module",
-    tsbl_vars = reactive(tsbl_vars)
-  )
+
+  # Slice tsibble of variables by timeseries and show result in debug mode
+  slice_result <- slice_tsbl_server("slice_tsbl_module",
+    tsbl_vars = reactive(tsbl_vars),
+    slice_type = "time_series",
+    debug = TRUE
+    )
+
+ # A tsibble of variables sliced by user
+ slice_tsbl_vars <- slice_result$slice_vars
+
+ # A tsibble of industry average of variables sliced by user
+ slice_vars_average <-  slice_result$slice_vars_average
 }
 
 # Run testing App for integration testing
-slice_tsbl_app(tsbl_vars)
+slice_tsbl_app( use_online_data = FALSE,
+                slice_type = "time_series",
 }
 
 }

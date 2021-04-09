@@ -9,15 +9,13 @@
 \usage{
 explore_factor_ui(id)
 
-explore_factor_server(id, factors_info)
+explore_factor_server(id)
 
 explore_factor_app(use_online_data = FALSE)
 }
 \arguments{
 \item{id}{An ID string of module to connecting UI function and Server
 function.}
-
-\item{factors_info}{A data frame of factor information for user to choose.}
 
 \item{use_online_data}{A logical to determine whether to use test data from
 database or not. Default FALSE means to use achieved data for tests.}
@@ -55,9 +53,7 @@ ui <- fluidPage(
 
 # Call control server in App server
 server <- function(input, output, session) {
-  explore_factor_server("explore_factor_module",
-    factors_info = reactive(factors_info)
-  )
+  explore_factor_server("explore_factor_module")
 }
 
 # Run testing App for integration testing

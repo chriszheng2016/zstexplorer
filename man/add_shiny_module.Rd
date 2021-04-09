@@ -7,6 +7,8 @@
 add_shiny_module(
   name,
   type = c("source", "test"),
+  source_template = "mod_template.R",
+  test_template = "test-mod_template.R",
   ignore = FALSE,
   open = TRUE,
   package = pkgload::pkg_name()
@@ -20,6 +22,12 @@ add_shiny_module(
 \item source: produce module source file as "mod_abc.R".
 \item test: produce module test file as "test-mod_abc.R".
 }}
+
+\item{source_template}{A character of R source template, default is
+"mod_template.R".}
+
+\item{test_template}{A character of R source template, default is
+"test-mod_template.R".}
 
 \item{ignore}{A logical to indicate whether the produced file to be ignored
 by git.}
