@@ -1088,15 +1088,16 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Draw the plot
       p <- tsbl_focus %>%
         ggplot2::ggplot(aes(
-          x = .data$date, y = .data$value,
+          x = .data$date,
           group = .data[[id_var]],
         )) +
         ggplot2::geom_col(
           aes(
+            y = .data$value,
             fill = .data$key, color = "",
             text = paste0(
               "value:",
-              prettyNum(.data$seq_growth, big.mark = ",")
+              prettyNum(.data$value, big.mark = ",")
             )
           ),
           position = ggplot2::position_dodge(),
