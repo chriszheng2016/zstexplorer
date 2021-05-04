@@ -13,13 +13,12 @@ global_data_setting <- list(
 #' @examples
 #' \dontrun{
 #'
-#'  # Method A
-#'  stock_db <- stock_db()
-#'  factors_info <- zstmodelr::get_stock_info(stock_db)
+#' # Method A
+#' stock_db <- stock_db()
+#' factors_info <- zstmodelr::get_stock_info(stock_db)
 #'
-#'  # Method B
-#'  factors_info <- zstmodelr::get_stock_info(stock_db())
-#'
+#' # Method B
+#' factors_info <- zstmodelr::get_stock_info(stock_db())
 #' }
 #'
 #' @noRd
@@ -44,7 +43,7 @@ stock_db <- function() {
 #' Translate codes to names
 #'
 #' It support translation between code and names for stock, industry, factor,
-#' industry.
+#' industry, and mixed codes among them.
 #'
 #' @param codes A character or vector of codes to match.
 #'  a code could be a regular expression for matching in non-exact way.
@@ -57,37 +56,55 @@ stock_db <- function() {
 #' @examples
 #' \dontrun{
 #'
-#'  # Exact matching
-#'  code2name(c("600031", "600030"))
+#' # Exact matching
+#' code2name(c("600031", "600030"))
 #'
-#'  # Non-exact matching
-#'  code2name(c("60003", "60004"))
+#' # Non-exact matching
+#' code2name(c("60003", "60004"))
 #'
-#'  # Regular expression matching
-#'  code2name(c("031$"))
+#' # Regular expression matching
+#' code2name(c("031$"))
+#'
+#' # Mixed codes to names
+#' code2name(c("600031", "C28", "GPM", "f050101b"))
 #'
 #' }
 #'
 #' @noRd
 code2name <- function(codes, exact_match = FALSE) {
-  suppressMessages({
-    # Fetch factors information from database
-    stock_db <- stock_db()
 
-
+  # Function to translate a code to name
+  .single_code2name <- function(code, stock_db, exact_match) {
     type_list <- c("stock", "industry", "factor", "indicator")
     success <- FALSE
     index <- 1
     while ((!success) && (index <= length(type_list))) {
       # Match code to name
-      names <- zstmodelr::code2name(stock_db, code = codes,
-                                    exact_match = exact_match, type = type_list[index])
-      success <- !all(is.na(names))
+      name <- zstmodelr::code2name(
+        stock_db,
+        code = code,
+        exact_match = exact_match,
+        type = type_list[index]
+      )
+      success <- !all(is.na(name))
       index <- index + 1
     }
+
+    name
+  }
+
+  # Main function
+  suppressMessages({
+    stock_db <- stock_db()
   })
 
-  return(names)
+  # Translate multiple codes to names
+  names <- purrr::map(
+    codes,
+    .f = ~ .single_code2name(.x, stock_db = stock_db, exact_match = exact_match)
+  ) %>% purrr::flatten_chr()
+
+  names
 }
 
 
@@ -106,34 +123,53 @@ code2name <- function(codes, exact_match = FALSE) {
 #' @examples
 #' \dontrun{
 #'
-#'  # Exact matching
-#'  name2code(c("Gross profit margin", "Operating profit margin"))
+#' # Exact matching
+#' name2code(c("Gross profit margin", "Operating profit margin"))
 #'
-#'  # Non-exact matching
-#'  name2code(c("Gross", "Operating"))
+#' # Non-exact matching
+#' name2code(c("Gross", "Operating"))
 #'
-#'  # Regular expression matching
-#'  name2code("margin$")
+#' # Regular expression matching
+#' name2code("margin$")
+#'
+#' # Mixed names to codes
+#' names <- code2name(c("600031", "C28", "GPM", "f050101b"))
+#' codes <- name2code(names)
 #'
 #' }
 #' @noRd
 name2code <- function(names, exact_match = FALSE) {
-  suppressMessages({
-    # Fetch factors information from database
-    stock_db <- stock_db()
 
-
+  # Function to translate a name to code
+  .single_name2code <- function(name, stock_db, exact_match) {
     type_list <- c("stock", "industry", "factor", "indicator")
     success <- FALSE
     index <- 1
     while ((!success) && (index <= length(type_list))) {
       # Match name to code
-      codes <- zstmodelr::name2code(stock_db, name = names,
-                                    exact_match = exact_match, type = type_list[index])
-      success <- !all(is.na(codes))
+      code <- zstmodelr::name2code(
+        stock_db,
+        name = name,
+        exact_match = exact_match, type = type_list[index]
+      )
+      success <- !all(is.na(code))
       index <- index + 1
     }
+
+    code
+  }
+
+  # Main function
+  suppressMessages({
+    stock_db <- stock_db()
   })
+
+  # Translate multiple names to codes
+  codes <- purrr::map(
+    names,
+    .f = ~ .single_name2code(.x, stock_db = stock_db, exact_match = exact_match)
+  )%>%
+  purrr::flatten_chr()
 
   return(codes)
 }

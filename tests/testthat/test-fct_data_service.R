@@ -46,6 +46,10 @@ test_that("code2name/name2code, with various arguments", {
     expect_codes <- c("f050101b", "f050102b")
     expect_equal(name2code(code2name(expect_codes)), expect_codes)
 
+    # mixed code/name of stock,industry,factor,indicator
+    expect_codes <- c("600031", "C28", "GPM", "f050101b")
+    expect_equal(name2code(code2name(expect_codes)), expect_codes)
+
     # non-exact match
     expect_gte(length(name2code(c("格力"))), 1)
     expect_gte(length(code2name(c("CR"))), 1)
@@ -80,6 +84,10 @@ test_that("code2name/name2code, with various arguments", {
       name2code(code2name(expect_codes, exact_match = TRUE), exact_match = TRUE),
       expect_codes
     )
+
+    # mixed code/name of stock,industry,factor,indicator
+    expect_codes <- c("600031", "C28", "GPM", "f050101b")
+    expect_equal(name2code(code2name(expect_codes)), expect_codes)
 
     # exact match
     expect_equal(length(name2code(c("格力"), exact_match = TRUE)), 1)
