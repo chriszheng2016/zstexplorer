@@ -27,7 +27,10 @@
 #' Default is current package returned by [pkgload::pkg_name()].
 #'
 #' @return A logical vector indicating if file was modified.
+#'
 #' @export
+#'
+#' @family utils_dev
 #'
 #' @examples
 #' \dontrun{
@@ -100,6 +103,9 @@ add_shiny_module <- function(name,
 #' @param test_template A character of R source template, default is
 #'  "test-mod_template.R".
 #' @return A logical vector indicating if target files created successfully.
+#'
+#' @family utils_dev
+#'
 #' @examples
 #' \dontrun{
 #'
@@ -208,7 +214,23 @@ add_ts_module <- function(name,
   )
 }
 
-# Enable environment variable for debug
+#' Turn on/off debug mode
+#'
+#' You can put some debug code in your app for debugging. When app is running in
+#' debug mode, all debug code will be activated to show debug messages or
+#' store data for debug, etc. When app is running in non-debug mode, all
+#' debug code will do nothing.
+#'
+#' @param quiet A logic to show message or not.
+#'
+#' @family utils_dev
+#'
+#' @name debug_mode
+NULL
+
+# Enable debug mode
+#' @describeIn debug_mode Enable debug mode.
+#' @export
 enable_debug <- function(quiet = FALSE) {
   Sys.setenv(APP_DEBUG = "TRUE")
   if (!quiet) {
@@ -219,7 +241,9 @@ enable_debug <- function(quiet = FALSE) {
   }
 }
 
-# Enable environment variable for debug
+# Disable debug mode
+#' @describeIn debug_mode Disable debug mode.
+#' @export
 disable_debug <- function(quiet = FALSE) {
   Sys.setenv(APP_DEBUG = "FALSE")
   if (!quiet) {
@@ -231,6 +255,91 @@ disable_debug <- function(quiet = FALSE) {
 }
 
 # Judge whether debug is enable or not
+#' @describeIn debug_mode Judge whether debug is enable or not.
+#' @export
 on_debug <- function() {
   isTRUE(as.logical(Sys.getenv("APP_DEBUG")))
+}
+
+
+#' Save data for debug
+#'
+#' Save data in RDS file for debug if [on_debug()] is TRUE.
+#'
+#' If on_debug() is TRUE, save_debug_data will save data  and return the path
+#' of saved file, otherwise it will save nothing and return NULL.
+#'
+#' The saved data is located in app/temp directory with name like
+#' \emph{"outputfile_(YYYY-MM-DD).RDS"}. It will overwrite existed file if
+#' overwrite is TRUE, otherwise it will create a new file with a name with serial
+#' numbers, like \emph{"outputfile_(YYYY-MM-DD)_1.RDS"}.
+#'
+#'
+#' @param data A R obj to save.
+#' @param output_file A character of name of output file
+#' @param overwrite A logical to overwrite existed output_file
+#' or not. Default FALSE means not to overwrite existed output file.
+#'
+#' @return A character of path of output file saved or NULL.
+#'
+#' @family utils_dev
+#'
+#' @examples
+#' \dontrun{
+#'
+#' # Step1, put save_debug_data() at lines where to save data for debug
+#' result <- foo()
+#' save_debug_data(result, output_file = "result_data")
+#'
+#' # Step2, activate debug mode if you want to store data for debug
+#' enable_debug()
+#'
+#' # Step3, deactivate debug mode if you want run app normally
+#' disable_debug()
+#'
+#' }
+#' @export
+save_debug_data <- function(data, output_file, overwrite = FALSE) {
+
+  #Validate
+
+  if(on_debug()) {
+    temp_dir <- app_sys("app/temp")
+    output_file_name <- glue::glue({"{output_file}({Sys.Date()}).RDS"})
+
+    # Compose file name for output file
+    existed_out_files_count <- length(
+      fs::dir_ls(temp_dir, glob = glue::glue("*{output_file}*.RDS"))
+    )
+
+    if (!overwrite) {
+      if (existed_out_files_count > 0) {
+        output_file_name <- glue::glue(
+          "{fs::path_ext_remove(output_file_name)}\\
+          _{existed_out_files_count}\\
+          .{fs::path_ext(output_file_name)}"
+        )
+      }
+    }
+
+    output_file <- fs::path(temp_dir, output_file_name)
+
+    # Save output data in output file
+    if (NROW(data) > 0) {
+      saveRDS(data, file = output_file)
+      msg <- glue::glue("Save output data in {output_file} successfully.")
+    } else {
+      msg <- glue::glue("No output data to save.")
+    }
+
+    if(shiny::isRunning()){
+      shiny::showNotification(msg)
+    }else{
+      rlang::inform(msg)
+    }
+  } else {
+    output_file <- NULL
+  }
+
+  output_file
 }

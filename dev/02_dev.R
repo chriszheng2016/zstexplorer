@@ -71,6 +71,7 @@ devtools::load_all()
 enable_debug()  # Enable environment variable for debug
 disable_debug() # disable environment variable for debug
 on_debug() # Judge whether debug is enable or not
+save_debug_data(output_data, output_file) # Save data for debug in app/temp dir
 
 
 ## Add internal datasets ----
