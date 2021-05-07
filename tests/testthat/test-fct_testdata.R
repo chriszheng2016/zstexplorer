@@ -91,6 +91,83 @@ test_that("tsbl2csbl, with various arguments", {
   expect_true(all(expect_fields %in% actual_fields))
 })
 
+test_that("load_stock_return, with various arguments", {
+  period_type_args <- c("month", "quarter", "year")
+  stock_codes <- c(
+    "000651", "000333", "600066",
+    "000550", "600031", "000157"
+  )
+  use_online_data_args <- c(TRUE, FALSE)
+
+  # load_stock_return on default arguments  ====
+  tsbl_return <- load_stock_return()
+  expect_fields <- c("date", "stkcd", "indcd", "period", "return")
+  actual_fields <- names(tsbl_return)
+  expect_true(all(expect_fields %in% actual_fields))
+  expect_true(all(tsbl_return$period %in% c("month")))
+  expect_true(
+    zstmodelr::is_periodic_dates(tsbl_return$date, freq_rule = "month")
+  )
+  expect_true(all(tsbl_return$stkcd %in% stock_codes))
+
+  # load_stock_return on various arguments  ====
+  for (period_type in period_type_args) {
+    for (use_online_data in use_online_data_args) {
+      suppressMessages({
+        tsbl_return <- load_stock_return(
+          use_online_data = use_online_data,
+          period_type = period_type,
+          stock_codes = stock_codes
+        )
+      })
+
+      expect_fields <- c("date", "stkcd", "indcd", "period", "return")
+      actual_fields <- names(tsbl_return)
+      expect_true(all(expect_fields %in% actual_fields))
+      expect_true(all(tsbl_return$period %in% c(period_type)))
+      expect_true(
+        zstmodelr::is_periodic_dates(tsbl_return$date, freq_rule = period_type)
+      )
+      expect_true(all(tsbl_return$stkcd %in% stock_codes))
+    }
+  }
+})
+
+test_that("load_market_return, with various arguments", {
+  period_type_args <- c("month", "quarter", "year")
+  use_online_data_args <- c(TRUE, FALSE)
+
+  # load_market_return on default arguments  ====
+  tsbl_return <- load_market_return()
+  expect_fields <- c("date", "period", "return")
+  actual_fields <- names(tsbl_return)
+  expect_true(all(expect_fields %in% actual_fields))
+  expect_true(all(tsbl_return$period %in% c("month")))
+  expect_true(
+    zstmodelr::is_periodic_dates(tsbl_return$date, freq_rule = "month")
+  )
+
+  # load_market_return on various arguments  ====
+  for (period_type in period_type_args) {
+    for (use_online_data in use_online_data_args) {
+      suppressMessages({
+        tsbl_return <- load_market_return(
+          use_online_data = use_online_data,
+          period_type = period_type
+        )
+      })
+
+      expect_fields <- c("date", "period", "return")
+      actual_fields <- names(tsbl_return)
+      expect_true(all(expect_fields %in% actual_fields))
+      expect_true(all(tsbl_return$period %in% c(period_type)))
+      expect_true(
+        zstmodelr::is_periodic_dates(tsbl_return$date, freq_rule = period_type)
+      )
+    }
+  }
+})
+
 test_that("aggregate_tsbl_vars, with various arguments", {
 
   # aggregate_tsbl_vars on default arguments  ====
