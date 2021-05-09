@@ -454,6 +454,7 @@ load_data_server <- function(id) {
 
     # Load variables
     load_vars <- eventReactive(input$load_vars, {
+
       vars_list <- stringr::str_split(req(input$select_vars),
         pattern = "\\s*,\\s*|\\s+"
       )[[1]]
@@ -562,6 +563,7 @@ load_data_server <- function(id) {
 
     # Date range choosed by user
     select_date_range <- reactive({
+
       start_date <- input$output_date_range[1]
       end_date <- input$output_date_range[2]
 
@@ -835,6 +837,7 @@ load_data_server <- function(id) {
 
     # Output data of all datasets of vars
     all_dataset_output <- eventReactive(input$output_data, {
+
       vars_dataset <- load_data$vars_dataset
 
       # Only output enabled datasets
