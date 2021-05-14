@@ -4,7 +4,7 @@
 #'
 #' @details
 #'  The module is an UI for user to display plots of clusters
-#'  by [`factoextra`][factoextra] package.
+#'  by `factoextra` package.
 #'
 #' @name cs_cluster_factoextra
 #'
@@ -450,7 +450,7 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
       result <- NULL
       switch(req(input$clust_algorithm),
         "K-Means:kmeans()" = {
-          result <- kmeans(df_cluster(),
+          result <- stats::kmeans(df_cluster(),
             centers = req(input$cluster_k),
             nstart = 25
           )
@@ -530,14 +530,14 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
       )
 
       cluster_mapping <- ds_cluster_res %>%
-        dplyr::select(indcd, cluster) %>%
+        dplyr::select(c("indcd", "cluster")) %>%
         tibble::rownames_to_column(var = "stkcd") %>%
         dplyr::mutate(
-          indname = zstexplorer:::code2name(indcd),
-          stkname = zstexplorer:::code2name(stkcd),
-          cluster = as.factor(cluster)
+          indname = code2name(.data$indcd),
+          stkname = code2name(.data$stkcd),
+          cluster = as.factor(.data$cluster)
         ) %>%
-        dplyr::select(stkcd, stkname, indcd, indname, cluster)
+        dplyr::select(c("stkcd", "stkname", "indcd", "indname", "cluster"))
 
       cluster_mapping
     })
@@ -549,7 +549,7 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
         "K-Means:kmeans()" = {
           factoextra::fviz_nbclust(
             df_cluster(),
-            FUNcluster = kmeans,
+            FUNcluster = stats::kmeans,
             method = fviz_nbclust_method
           )
         },
@@ -571,7 +571,7 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
       )
 
       nbclust_plot <- nbclust_plot +
-        geom_vline(xintercept = req(input$cluster_k), linetype = 2, color = "red")
+        ggplot2::geom_vline(xintercept = req(input$cluster_k), linetype = 2, color = "red")
 
       nbclust_plot
     })
@@ -783,7 +783,7 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
         order = TRUE,
         show_labels = FALSE,
         lab_size = 6
-      ) + labs(
+      ) + ggplot2::labs(
         # title = "Distance Matrix",
         subtitle = glue::glue("metric:{metric}")
       )
@@ -794,7 +794,7 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
       metric <- req(input$dist_metric)
       method <- req(input$nbclust_method)
       factoextra::fviz_nbclust(nbclust_res()) +
-         labs(subtitle = glue::glue("metric:{metric}, method:{method}"))
+         ggplot2::labs(subtitle = glue::glue("metric:{metric}, method:{method}"))
     })
 
     # >> Clustering output ----
@@ -817,7 +817,7 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
         data = df_cluster(),
         ellipse.type = "convex",
         geom = "point", pointsize = 1,
-        ggtheme = theme_minimal()
+        ggtheme = ggplot2::theme_minimal()
       )
 
       plot
@@ -849,12 +849,12 @@ cs_cluster_factoextra_server <- function(id, csbl_vars) {
     output$mapping_from_clusters_table <- DT::renderDataTable({
 
       cluster_mapping_from <- cluster_mapping() %>%
-        dplyr::nest_by(cluster) %>%
+        dplyr::nest_by(.data$cluster) %>%
         dplyr::mutate(
-          indcds = list(sort(unique(data$indcd))),
-          indnames = list(sort(unique(data$indname))),
-          stkcds = list(sort(unique(data$stkcd))),
-          stknames = list(sort(unique(data$stkname)))
+          indcds = list(sort(unique(.data$data$indcd))),
+          indnames = list(sort(unique(.data$data$indname))),
+          stkcds = list(sort(unique(.data$data$stkcd))),
+          stknames = list(sort(unique(.data$data$stkname)))
         ) %>%
         dplyr::select(-c("data", "indcds", "stkcds"))
 

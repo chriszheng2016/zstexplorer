@@ -302,6 +302,7 @@ load_data_ui <- function(id) {
   )
 }
 
+
 #' Server function of load_data
 #'
 #'
@@ -454,7 +455,6 @@ load_data_server <- function(id) {
 
     # Load variables
     load_vars <- eventReactive(input$load_vars, {
-
       vars_list <- stringr::str_split(req(input$select_vars),
         pattern = "\\s*,\\s*|\\s+"
       )[[1]]
@@ -506,12 +506,15 @@ load_data_server <- function(id) {
         # Turn into tsibble
         tsbl_vars <-
           tbl_vars %>%
-          dplyr::select(c("date", "period", "stkcd", "indcd"), everything()) %>%
+          dplyr::select(
+            c("date", "period", "stkcd", "indcd"),
+            dplyr::everything()
+          ) %>%
           dplyr::filter(!(is.na(.data[["date"]]))
           && (!is.na(.data[["stkcd"]]))
           && (!is.na(.data[["indcd"]]))) %>%
           tsibble::as_tsibble(
-            index = date,
+            index = .data$date,
             key = c("period", "stkcd")
           )
       })
@@ -563,7 +566,6 @@ load_data_server <- function(id) {
 
     # Date range choosed by user
     select_date_range <- reactive({
-
       start_date <- input$output_date_range[1]
       end_date <- input$output_date_range[2]
 
@@ -837,7 +839,6 @@ load_data_server <- function(id) {
 
     # Output data of all datasets of vars
     all_dataset_output <- eventReactive(input$output_data, {
-
       vars_dataset <- load_data$vars_dataset
 
       # Only output enabled datasets
@@ -865,7 +866,7 @@ load_data_server <- function(id) {
         unified_period = input$output_unified_period
       )
 
-     save_debug_data(output_data, output_file = "all_dataset_output")
+      save_debug_data(output_data, output_file = "all_dataset_output")
 
       return(output_data)
     })

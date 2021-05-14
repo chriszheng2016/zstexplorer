@@ -332,7 +332,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         variable_codes,
         "(", code2name(variable_codes, exact_match = TRUE), ")"
       )
-      variable_codes <- setNames(variable_codes, variable_names)
+      variable_codes <- stats::setNames(variable_codes, variable_names)
 
       variable_codes
     })
@@ -345,7 +345,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         code2name(industry_codes, exact_match = TRUE),
         "(", industry_codes, ")"
       )
-      industry_codes <- setNames(industry_codes, industry_names)
+      industry_codes <- stats::setNames(industry_codes, industry_names)
 
       industry_codes
     })
@@ -358,7 +358,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         code2name(stock_codes, exact_match = TRUE),
         "(", stock_codes, ")"
       )
-      stock_codes <- setNames(stock_codes, stock_names)
+      stock_codes <- stats::setNames(stock_codes, stock_names)
 
       stock_codes
     })
@@ -378,7 +378,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         code2name(series_codes, exact_match = TRUE),
         "(", series_codes, ")"
       )
-      series_codes <- setNames(series_codes, series_names)
+      series_codes <- stats::setNames(series_codes, series_names)
 
       series_codes
     })
@@ -395,7 +395,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
           code2name(series_codes, exact_match = TRUE),
           "(", series_codes, ")"
         )
-        series_codes <- setNames(series_codes, series_names)
+        series_codes <- stats::setNames(series_codes, series_names)
       }
 
       series_codes
@@ -431,7 +431,7 @@ ts_feat_cor_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         dplyr::arrange(.data$variable, .data[[id_var]]) %>%
         dplyr::rowwise() %>%
         dplyr::mutate(id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
-          zstexplorer::code2name(.data[[id_var]]), character(0)
+          code2name(.data[[id_var]]), character(0)
         )) %>%
         dplyr::select(
           c("variable", id_var, id_name),
@@ -1224,7 +1224,7 @@ ts_feat_cor_tidyverts_app <- function(use_online_data = FALSE) {
   )
 
   tsbl_vars <- tsbl_vars %>%
-    dplyr::filter(stkcd %in% focus_stocks)
+    dplyr::filter(.data$stkcd %in% focus_stocks)
 
   focus_industries <- unique(tsbl_vars$indcd)
 

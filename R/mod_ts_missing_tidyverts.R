@@ -351,7 +351,7 @@ ts_missing_tidyverts_app <- function(use_online_data = FALSE) {
     "000550", "600031", "000157"
   )
   tsbl_vars <- tsbl_vars %>%
-    dplyr::filter(stkcd %in% focus_stocks)
+    dplyr::filter(.data$stkcd %in% focus_stocks)
 
   focus_industries <- unique(tsbl_vars$indcd)
 

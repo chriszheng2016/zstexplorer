@@ -253,7 +253,7 @@ load_market_return <- function(use_online_data = FALSE,
       )
     }
     tbl_return <- tbl_return %>%
-      dplyr::rename(return = market_index)
+      dplyr::rename(return = .data$market_index)
 
     # Add period fields
     tbl_return <- tbl_return %>%
@@ -317,7 +317,7 @@ tsbl2csbl <- function(tsbl_vars) {
 #' @param tsbl_vars A tsibble of time series vars.
 #' @param by A character of key field.
 #' @param .fun A function to aggregate numeric variables.
-#' @param ...  Params to .fun.
+#' @param ...  Arguments passed on to .fun.
 #'
 #' @return A tsibble aggregated by new key
 #' @export
