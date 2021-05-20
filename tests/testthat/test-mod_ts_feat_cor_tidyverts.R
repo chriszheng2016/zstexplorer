@@ -1,4 +1,4 @@
-ts # Tests for module of ts_feat_cor_tidyverts  ----
+# Tests for module of ts_feat_cor_tidyverts  ----
 
 # context("Tests for module of ts_feat_cor_tidyverts")
 

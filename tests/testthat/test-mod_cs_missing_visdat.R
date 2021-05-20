@@ -42,6 +42,11 @@ test_that("cs_missing_visdat_server - reactives and output updates", {
 })
 
 test_that("cs_missing_visdat_app - Module App works", {
+
+  skip_on_cran()
+  skip_on_ci()
+  skip_on_covr()
+
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 
