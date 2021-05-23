@@ -32,7 +32,8 @@ stock_db <- function() {
     )
     zstmodelr::open_stock_db(stock_db)
     zstmodelr::init_stock_db(stock_db)
-    global_data_setting$stock_db <<- stock_db
+    # global_data_setting$stock_db <<- stock_db
+    assign("global_data_setting$stock_db", value = stock_db, inherits = TRUE)
   } else {
     stock_db <- global_data_setting$stock_db
   }
