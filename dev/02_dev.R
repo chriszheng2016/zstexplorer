@@ -1,21 +1,49 @@
+#' ---
+#' title: "DEV SCRIPT: 03_dev.R"
+#' date:  "`r Sys.Date()`"
+#' author: Chris Zheng
+#' email: chrizheng@vip.sina.com.cn
+#' output:
+#'   html_document:
+#'      fig_caption: yes
+#'      number_sections: yes
+#'      theme: cerulean
+#'      highlight: pygments
+#' ---
+
+#/*
 # Building a Prod-Ready, Robust Shiny Application.
-#
-# README: each step of the dev files is optional, and you don't have to
-# fill every dev scripts before getting started.
-# 01_start.R should be filled at start.
-# 02_dev.R should be used to keep track of your development during the project.
-# 03_deploy.R should be used once you need to deploy your app.
-#
-#
+#*/
+
+#' **README**: each step of the dev files is optional, and you don't have to
+#' fill every dev scripts before getting started.
+#'
+#' * 01_start.R should be filled at start.
+#'
+#' * 02_dev.R should be used to keep track of your development during the project.
+#'
+#' * 03_deploy.R should be used once you need to deploy your app.
+#'
+
+#/*
 ###################################
 #### CURRENT FILE: DEV SCRIPT #####
 ###################################
+#*/
 
-# Engineering
 
-## Dependencies ----
+#' # Develop app
+
+#+ develop_app, eval=FALSE
+
+## Add package to dependency ----
 ## Add one line by package you want to add as dependency
-usethis::use_package("thinkr")
+usethis::use_package("package")
+usethis::use_tidy_description()
+
+## Add internal datasets ----
+## If you have data in your package
+usethis::use_data_raw(name = "my_dataset", open = FALSE)
 
 ## Add modules ----
 ## Create a module infrastructure in R/
@@ -27,7 +55,7 @@ golem::add_module(name = "name_of_module2") # Name of the module
 golem::add_fct("helpers")
 golem::add_utils("helpers")
 
-## External resources
+## Add external resources ----
 ## Creates .js and .css files at inst/app/www
 golem::add_js_file("script")
 golem::add_js_handler("handlers")
@@ -73,15 +101,6 @@ disable_debug() # disable environment variable for debug
 on_debug() # Judge whether debug is enable or not
 save_debug_data(output_data, output_file) # Save data for debug in app/temp dir
 
-
-## Add internal datasets ----
-## If you have data in your package
-usethis::use_data_raw(name = "my_dataset", open = FALSE)
-
-## Add module to dependency ----
-usethis::use_package("package")
-usethis::use_tidy_description()
-
 ## Style codes ----
 usethis::use_tidy_style()
 
@@ -98,6 +117,7 @@ plotCol(nearRcolor("skyblue", dist=.1))
 usethis::use_test("app")
 devtools::wd("tests/testthat")
 testthat::test_file("test-app.R") # test a file
+devtools::test_file_coverage("test-app.R") # test a file coverage
 
 # Test a file which contains "skip_on_cran()/skip_on_ci()/skip_on_covr()"
 # Method A:
@@ -113,36 +133,43 @@ testthat::test_file("test-app.R")
 
 devtools::test() # test package
 
-# Document ----
-#
-# Update function doc
+## Document ----
+
+## Update function doc
 devtools::document()
 ?fun_abc
 
-# Check spelling in doc
+## Check spelling in doc
 usethis::use_spell_check() # set up spelling check in doc
 devtools::document() # update all doc
 devtools::spell_check() # check spelling in doc
 spelling::update_wordlist() # accept new words if need
 
-# Vignette
+## Edit vignette
 usethis::use_vignette("zstexplorer")
 devtools::build_vignettes()
 
 ## Check before merging ----
 
-# Test package
+## Test package
 devtools::test()
 
-# Update doc and check spelling
+## Test coverage
+devtools::test_coverage()
+
+## Style package
+## Styles source code according to the tidyverse style guide.
+usethis::use_tidy_style() ## It will overwrite files!
+
+## Update doc and check spelling
 devtools::document()
 usethis::use_spell_check() # Set up spelling check in doc
 devtools::spell_check()
 
-# Check doc
+## Check doc
 devtools::check_man()
 
-# R CMD Check
+## R CMD Check
 result <- devtools::check(
   cran = FALSE, args = c("--timings", "--no-tests"),
   check_dir = "check"
@@ -154,20 +181,9 @@ cat(result$notes)
 # Update document of pkgdown
 devtools::build_site(quiet = FALSE)
 
-## Code coverage ----
-devtools::test_coverage()
-usethis::use_coverage()
 
-## Pkgdown site ----
-usethis::use_pkgdown()
-devtools::build_site()
-
-## Setup CI if need ----
-usethis::use_github()
-usethis::use_tidy_github_actions()
-usethis::use_travis()
-usethis::use_appveyor()
-
+#/*
 # You're now set! ----
 # go to dev/03_deploy.R
 rstudioapi::navigateToFile("dev/03_deploy.R")
+#*/
