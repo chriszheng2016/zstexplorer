@@ -13,25 +13,26 @@
 
 #/*
 # Building a Prod-Ready, Robust Shiny Application.
-#*/
-
-#' **README**: each step of the dev files is optional, and you don't have to
-#' fill every dev scripts before getting started.
-#'
-#' * 01_start.R should be filled at start.
-#'
-#' * 02_dev.R should be used to keep track of your development during the project.
-#'
-#' * 03_deploy.R should be used once you need to deploy your app.
-#'
-
-#/*
+#
+# **README**: each step of the dev files is optional, and you don't have to
+# fill every dev scripts before getting started.
+#
+# * 01_start.R should be filled at start.
+#
+# * 02_dev.R should be used to keep track of your development during the project.
+#
+# * 03_deploy.R should be used once you need to deploy your app.
+#
+# * run_dev.R should be used to run your app in production/debug mode
+#
+#
 ########################################
 #### CURRENT FILE: ON START SCRIPT #####
 ########################################
 #*/
 
 #' # Setup for R package project
+
 #+ setup_r_pkg, eval=FALSE
 devtools::load_all(".") # load pkg in development
 
@@ -125,7 +126,8 @@ usethis::use_travis()
 usethis::use_appveyor()
 
 
-#' # Setup for shiny application project
+#' # Setup for shiny app project
+
 #+ setup_shiny_app, eval=FALSE
 
 ## Set {golem} options ----
