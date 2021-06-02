@@ -3,6 +3,8 @@
 
 #context("Tests for module of data_dictionary")
 
+#Skip tests if stock db is not ready
+skip_if_stock_db_not_ready()
 
 # Set up test environment
 
@@ -43,6 +45,7 @@ test_that("data_dictionary_app - Module App works", {
   skip_on_ci()
   skip_on_covr()
 
+  withr::local_tempdir("test_data_dictionary_app")
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 

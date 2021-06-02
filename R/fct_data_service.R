@@ -1,9 +1,4 @@
 
-# Global variable for setting
-global_data_setting <- list(
-  stock_db = NULL
-)
-
 #' Get singleton of stock database
 #'
 #' Get the singleton of stock database of the App for database operation.
@@ -25,17 +20,16 @@ global_data_setting <- list(
 stock_db <- function() {
 
   # Open single instance of stock database
-  if (is.null(global_data_setting$stock_db)) {
+  if (is.null(.pkg_globals$stock_db)) {
     stock_db <- zstmodelr::stock_db(
       zstmodelr::gta_db,
       get_golem_config("database_dsn")
     )
     zstmodelr::open_stock_db(stock_db)
     zstmodelr::init_stock_db(stock_db)
-    # global_data_setting$stock_db <<- stock_db
-    assign("global_data_setting$stock_db", value = stock_db, inherits = TRUE)
+    .pkg_globals$stock_db <- stock_db
   } else {
-    stock_db <- global_data_setting$stock_db
+    stock_db <- .pkg_globals$stock_db
   }
 
   invisible(stock_db)

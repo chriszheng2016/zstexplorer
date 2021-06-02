@@ -1,21 +1,15 @@
 # context("Tests for functions about data service")
 
-# Test database is ready ?
-dsn <- get_golem_config("database_dsn")
-stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, dsn)
-suppressMessages(db_ready <- zstmodelr::open_stock_db(stock_db))
-withr::defer({
-  suppressMessages(zstmodelr::close_stock_db(stock_db))
-})
-skip_if_not(db_ready,
-  message = sprintf("DSN(%s) is not ready, skip all tests for data service", dsn)
-)
+#Skip tests if stock db is not ready
+skip_if_stock_db_not_ready()
 
 test_that("stock_db, with various arguments", {
 
   # stock_db with default arguments ====
 
   suppressMessages({
+
+    #Firs time call stock_db()
     stock_db <- stock_db()
     expect_true(!is.null(stock_db))
     expect_s4_class(stock_db, class = "gta_db")
@@ -24,6 +18,11 @@ test_that("stock_db, with various arguments", {
     expect_gt(length(stock_db$industry_name_list), 0)
     expect_gt(length(stock_db$factor_name_list), 0)
     expect_gt(length(stock_db$indicator_name_list), 0)
+
+    # Return same stock db by calling stock_db() repeatedly
+    stock_db2 <- stock_db()
+    expect_equal(stock_db, stock_db2)
+
   })
 })
 

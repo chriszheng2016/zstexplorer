@@ -157,7 +157,7 @@ devtools::build_vignettes()
 devtools::test()
 
 ## Test coverage
-devtools::test_coverage()
+devtools::test_coverage(quiet = FALSE, clean = FALSE)
 
 ## Style package
 ## Styles source code according to the tidyverse style guide.

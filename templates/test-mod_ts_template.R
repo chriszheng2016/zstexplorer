@@ -60,6 +60,7 @@ test_that("{{module_name}}_app - Module App works", {
   skip_on_ci()
   skip_on_covr()
 
+  withr::local_tempdir("test_{{module_name}}_app")
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 

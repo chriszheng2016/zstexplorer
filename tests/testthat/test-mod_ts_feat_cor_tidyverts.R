@@ -2,6 +2,8 @@
 
 # context("Tests for module of ts_feat_cor_tidyverts")
 
+#Skip tests if stock db is not ready
+skip_if_stock_db_not_ready()
 
 # Set up test environment
 
@@ -59,6 +61,7 @@ test_that("ts_feat_cor_tidyverts_app - Module App works", {
   skip_on_ci()
   skip_on_covr()
 
+  withr::local_tempdir("test_ts_feat_cor_tidyverts_app")
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 

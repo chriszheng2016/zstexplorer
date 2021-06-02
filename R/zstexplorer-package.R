@@ -21,3 +21,25 @@ if (getRversion() >= "2.15.1") {
 ## usethis namespace: start
 ## usethis namespace: end
 NULL
+
+# Global vars of pkg
+.pkg_globals <- rlang::new_environment(
+  list(
+    stock_db = NULL
+  )
+)
+
+.onAttach <- function(libname, pkgname) {
+  packageStartupMessage("Welcome to zstexplorer by Chris Zheng")
+}
+
+.onLoad <- function(libname, pkgname) {
+
+}
+
+.onUnload <- function(libpath) {
+  # Close stock db
+  if(!is.null(.pkg_globals$stock_db)){
+    zstmodelr::close_stock_db(.pkg_globals$stock_db)
+  }
+}
