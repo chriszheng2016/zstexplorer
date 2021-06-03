@@ -120,6 +120,7 @@ test_that("load_stock_return, with various arguments", {
   # load_stock_return on various arguments  ====
   for (period_type in period_type_args) {
     for (use_online_data in use_online_data_args) {
+      if(use_online_data) skip_if_stock_db_not_ready()
       suppressMessages({
         tsbl_return <- load_stock_return(
           use_online_data = use_online_data,
@@ -157,6 +158,7 @@ test_that("load_market_return, with various arguments", {
   # load_market_return on various arguments  ====
   for (period_type in period_type_args) {
     for (use_online_data in use_online_data_args) {
+      if(use_online_data) skip_if_stock_db_not_ready()
       suppressMessages({
         tsbl_return <- load_market_return(
           use_online_data = use_online_data,
