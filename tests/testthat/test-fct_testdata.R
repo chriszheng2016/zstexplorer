@@ -198,7 +198,7 @@ test_that("aggregate_tsbl_vars, with various arguments", {
   expect_true(all(tsibble::key_vars(tsbl_vars_aggregate) %in% c("indcd", "period")))
 
   # Data without period field
-  tsbl_vars_no_period <- tsbl_vars %>%
+  tsbl_vars_no_period <- tsbl_vars_with_period %>%
     dplyr::select(-c("period"))
   tsbl_vars_aggregate <- aggregate_tsbl_vars(
     tsbl_vars = tsbl_vars_no_period,
