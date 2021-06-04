@@ -7,8 +7,8 @@
 get_pca_formula(pca_res, pc_name_prefix = NULL, ncp = Inf, digits = 3)
 }
 \arguments{
-\item{pca_res}{An object of class PCA \link{FactoMineR};
-prcomp and princomp \link{stats}; pca, dudi \link{adea4}; epPCA \link{ExPosition}.}
+\item{pca_res}{An object of class PCA (\code{\link[FactoMineR:FactoMineR-package]{FactoMineR}});
+prcomp and princomp((\code{\link[stats:stats-package]{stats}}); pca, dudi('adea4\verb{); epPCA([}ExPosition`]::\link[ExPosition:ExPosition-package]{ExPosition::ExPosition}).}
 
 \item{pc_name_prefix}{A character as name prefix of primary components in
 results, e.g PC for PC1...PCn. Default NULL means use original name of

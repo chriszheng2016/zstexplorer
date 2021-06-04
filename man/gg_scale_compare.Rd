@@ -35,11 +35,8 @@ default is base_id.}
 \item{compare_label}{A character of label for comparing series to display
 in legend. default is compare_id.}
 }
-\value{
-
-}
 \description{
-This is a warrper of \code{\link[ggplot2:scale_manual]{ggplot2::scale_fill_manual()}} and
+This is a wrapper of \code{\link[ggplot2:scale_manual]{ggplot2::scale_fill_manual()}} and
 \code{\link[ggplot2:scale_manual]{ggplot2::scale_color_manual()}} to set two colors for comparing series.
 }
 \examples{
