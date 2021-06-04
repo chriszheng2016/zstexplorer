@@ -8,13 +8,14 @@ $run_dev.*
 ^README\.Rmd$
 ^.*\.html$
 ^CODE_OF_CONDUCT\.md$
+^\.git$
 ^\.github$
 ^app\.R$
 ^rsconnect$
 ^codecov\.yml$
 check
 ^study$
-^\.git$
+^$templates
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
