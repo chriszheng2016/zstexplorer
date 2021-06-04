@@ -28,7 +28,7 @@ Get equation formula for loading of PCA results in MathJax formats which can
 be display in browser.
 }
 \examples{
-\donttest{
+\dontrun{
 
 # Display formula in uiOutput(ns("pca_result_formula"))
 # Server function

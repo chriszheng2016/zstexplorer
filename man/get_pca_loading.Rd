@@ -24,7 +24,7 @@ A matrix of loading or rotation of PCA results.
 Get loading/rotation of PCA results
 }
 \examples{
-\donttest{
+\dontrun{
 
 # Result from prcomp
 pca_res_prcomp <- prcomp(iris[, -5], scale = TRUE)

@@ -19,7 +19,7 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #'
 #' # Result from prcomp
 #' pca_res_prcomp <- prcomp(iris[, -5], scale = TRUE)
@@ -92,7 +92,7 @@ get_pca_loading <- function(pca_res,
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #'
 #' # Display formula in uiOutput(ns("pca_result_formula"))
 #' # Server function
