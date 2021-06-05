@@ -5,8 +5,8 @@
 #' Get loading/rotation of PCA results
 #'
 #' @param pca_res An object of class PCA ([`FactoMineR`][FactoMineR::FactoMineR]);
-#' prcomp and princomp(([`stats`][stats::stats]); pca, dudi('adea4`);
-#' epPCA([`ExPosition`]::[ExPosition::ExPosition]).
+#' prcomp and princomp(([`stats`][stats::stats]); pca, dudi(`adea4`);
+#' epPCA([`ExPosition`][ExPosition::ExPosition-package]).
 #'
 #' @param pc_name_prefix A character as name prefix of primary components in
 #' results, e.g PC for PC1...PCn. Default NULL means use original name of
