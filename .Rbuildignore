@@ -15,7 +15,7 @@ $run_dev.*
 ^codecov\.yml$
 check
 ^study$
-^$templates
+^templates
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
