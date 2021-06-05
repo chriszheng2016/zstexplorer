@@ -40,7 +40,8 @@ PerformanceAnalytics package.
 }
 \section{Functions}{
 \itemize{
-\item \code{cs_dist_PerformanceAnalytics_ui}: UI function of cs_dist_PerformanceAnalytics.
+\item \code{cs_dist_PerformanceAnalytics_ui}: UI function of
+cs_dist_PerformanceAnalytics.
 
 \item \code{cs_dist_PerformanceAnalytics_server}: Server function of
 cs_dist_PerformanceAnalytics.
@@ -57,7 +58,9 @@ ui <- fluidPage(
 
 # Call control server in App server
 server <- function(input, output, session) {
-  cs_dist_PerformanceAnalytics <- cs_dist_PerformanceAnalytics_server("cs_dist_PerformanceAnalytics_module")
+  cs_dist_PerformanceAnalytics <- cs_dist_PerformanceAnalytics_server(
+      "cs_dist_PerformanceAnalytics_module"
+  )
 }
 
 # Run testing App for integration testing
