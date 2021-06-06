@@ -11,7 +11,7 @@
 #'      highlight: pygments
 #' ---
 
-#/*
+# /*
 # Building a Prod-Ready, Robust Shiny Application.
 #
 #
@@ -31,7 +31,7 @@
 ###################################
 #### CURRENT FILE: DEV SCRIPT #####
 ###################################
-#*/
+#* /
 
 
 #' # Develop shiny app
@@ -66,7 +66,7 @@ golem::add_css_file("custom")
 ## Add customized shiny module for zstexplorer package ----
 
 ## Create general shiny module for zstexplorer
-#Create source file for module of "xyz" with name of "mod_xyz.R"
+# Create source file for module of "xyz" with name of "mod_xyz.R"
 add_shiny_module("xyz")
 # Try integration test of module
 devtools::load_all()
@@ -98,7 +98,7 @@ devtools::test_file("tests/testthat/test-mod_ts_xyz.R")
 
 ## Enable/disable debug for zstexplorer ----
 devtools::load_all()
-enable_debug()  # Enable environment variable for debug
+enable_debug() # Enable environment variable for debug
 disable_debug() # disable environment variable for debug
 on_debug() # Judge whether debug is enable or not
 save_debug_data(output_data, output_file) # Save data for debug in app/temp dir
@@ -111,7 +111,7 @@ usethis::use_tidy_style()
 # Returns the built-in color names which R knows about.
 colors()
 # Display similar colors
-plotCol(nearRcolor("skyblue", dist=.1))
+plotCol(nearRcolor("skyblue", dist = .1))
 
 
 ## Tests ----
@@ -124,9 +124,11 @@ devtools::test_file_coverage("test-app.R") # test a file coverage
 # Test a file which contains "skip_on_cran()/skip_on_ci()/skip_on_covr()"
 # Method A:
 withr::with_envvar(
-  new = c("NOT_CRAN" = "true",
-          "CI" = "false",
-          "R_COVR" = "false"),
+  new = c(
+    "NOT_CRAN" = "true",
+    "CI" = "false",
+    "R_COVR" = "false"
+  ),
   testthat::test_file("test-app.R")
 )
 # Method B:
@@ -134,6 +136,19 @@ Sys.setenv("NOT_CRAN" = "true")
 testthat::test_file("test-app.R")
 
 devtools::test() # test package
+
+# Simulate test in environment without stock db
+Sys.setenv("NO_STOCK_DB" = "true")
+testthat::test_file("test-app.R")
+
+withr::with_envvar(
+  new = c(
+    "NO_STOCK_DB" = "true"
+  ),
+  devtools::test() # test package
+)
+
+
 
 ## Document ----
 
@@ -180,12 +195,26 @@ cat(result$errors)
 cat(result$warnings)
 cat(result$notes)
 
-# Update document of pkgdown
+
+## Update document of pkgdown
 devtools::build_site(quiet = FALSE)
 
+## Simulate R-CMD-check on Github Actions
+# Turn off stock db connection
+withr::with_envvar(new = c("NO_STOCK_DB" = "true"), {
+  result <- rcmdcheck::rcmdcheck(
+    args = c("--no-manual", "--as-cran"),
+    error_on = "warning",
+    check_dir = "check"
+  )
+})
 
-#/*
+cat(result$errors)
+cat(result$warnings)
+cat(result$notes)
+
+# /*
 # You're now set! ----
 # go to dev/03_deploy.R
 rstudioapi::navigateToFile("dev/03_deploy.R")
-#*/
+#* /
