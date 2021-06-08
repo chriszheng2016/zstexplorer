@@ -141,7 +141,7 @@ load_stock_return <- function(use_online_data = FALSE,
           freq_rule = "quarter",
           agg_fun = ~ (prod(1 + .x, na.rm = TRUE) - 1),
           date_index_fields = "date",
-          key_fields = "stkcd", parallel = TRUE
+          key_fields = "stkcd"
         )
     } else {
       # Directly fetch data from database
@@ -240,8 +240,7 @@ load_market_return <- function(use_online_data = FALSE,
         zstmodelr::ts_resample(
           freq_rule = "quarter",
           agg_fun = ~ (prod(1 + .x, na.rm = TRUE) - 1),
-          date_index_field = "date",
-          parallel = TRUE
+          date_index_field = "date"
         )
     } else {
       # Directly fetch data from database

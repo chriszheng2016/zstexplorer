@@ -3,14 +3,7 @@
 # context("Tests for auxiliary functions about testing data")
 
 # Enable parallel process for test
-if (is.null(zstmodelr::parallel_status()$cluster)) {
-  suppressMessages(zstmodelr::enable_parallel())
-  withr::defer({
-    suppressMessages({
-      zstmodelr::disable_parallel()
-    })
-  })
-}
+zstmodelr::local_parallel("ON")
 
 test_that("load_factors_info, with various arguments", {
   suppressMessages({
