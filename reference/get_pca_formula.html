@@ -129,8 +129,9 @@ be display in browser.</p>
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>pca_res</th>
-      <td><p>An object of class PCA FactoMineR;
-prcomp and princomp <a href='https://rdrr.io/r/stats/stats-package.html'>stats</a>; pca, dudi adea4; epPCA ExPosition.</p></td>
+      <td><p>An object of class PCA (<code><a href='https://rdrr.io/pkg/FactoMineR/man/FactoMineR-package.html'>FactoMineR</a></code>);
+prcomp and princomp((<code><a href='https://rdrr.io/r/stats/stats-package.html'>stats</a></code>); pca, dudi(<code>adea4</code>);
+epPCA(<code>ExPosition</code>).</p></td>
     </tr>
     <tr>
       <th>pc_name_prefix</th>
@@ -155,7 +156,7 @@ formula.</p></td>
     <p>A vector of Character of loading formula of Primary Components</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'># \donttest{</span>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 
 <span class='co'># Display formula in uiOutput(ns("pca_result_formula"))</span>
 <span class='co'># Server function</span>
@@ -171,7 +172,7 @@ formula.</p></td>
     <span class='va'>pca_formula_mathJax</span>
   <span class='op'>)</span>
 <span class='op'>}</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; <span class='error'>Error in renderUI({    pca_res &lt;- prcomp(iris[, -5], scale = TRUE)    pca_formula &lt;- get_pca_formula(pca_res)    pca_formula_mathJax &lt;- purrr::map(pca_formula, .f = helpText)    withMathJax(pca_formula_mathJax)}): could not find function "renderUI"</span></div><div class='input'><span class='co'># }</span>
+<span class='op'>}</span>
 
 </div></pre>
   </div>

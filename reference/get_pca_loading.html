@@ -127,8 +127,9 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>pca_res</th>
-      <td><p>An object of class PCA FactoMineR;
-prcomp and princomp <a href='https://rdrr.io/r/stats/stats-package.html'>stats</a>; pca, dudi adea4; epPCA ExPosition.</p></td>
+      <td><p>An object of class PCA (<code><a href='https://rdrr.io/pkg/FactoMineR/man/FactoMineR-package.html'>FactoMineR</a></code>);
+prcomp and princomp((<code><a href='https://rdrr.io/r/stats/stats-package.html'>stats</a></code>); pca, dudi(<code>adea4</code>);
+epPCA(<code>ExPosition</code>).</p></td>
     </tr>
     <tr>
       <th>pc_name_prefix</th>
@@ -148,7 +149,7 @@ primary components.</p></td>
     <p>A matrix of loading or rotation of PCA results.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'># \donttest{</span>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 
 <span class='co'># Result from prcomp</span>
 <span class='va'>pca_res_prcomp</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/prcomp.html'>prcomp</a></span><span class='op'>(</span><span class='va'>iris</span><span class='op'>[</span>, <span class='op'>-</span><span class='fl'>5</span><span class='op'>]</span>, scale <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
@@ -161,7 +162,7 @@ primary components.</p></td>
 <span class='co'># Result from FactoMineR::PCA</span>
 <span class='va'>pca_res_PCA</span> <span class='op'>&lt;-</span> <span class='fu'>FactoMineR</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/FactoMineR/man/PCA.html'>PCA</a></span><span class='op'>(</span><span class='va'>iris</span><span class='op'>[</span>, <span class='op'>-</span><span class='fl'>5</span><span class='op'>]</span>, ncp <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>ncol</a></span><span class='op'>(</span><span class='va'>iris</span><span class='op'>[</span>, <span class='op'>-</span><span class='fl'>5</span><span class='op'>]</span><span class='op'>)</span>, graph <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
 <span class='va'>pca_loading</span> <span class='op'>&lt;-</span> <span class='fu'>get_pca_loading</span><span class='op'>(</span><span class='va'>pca_res_PCA</span><span class='op'>)</span>
-<span class='co'># }</span>
+<span class='op'>}</span>
 
 </div></pre>
   </div>

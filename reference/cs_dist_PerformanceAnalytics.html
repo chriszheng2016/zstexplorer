@@ -164,7 +164,8 @@ PerformanceAnalytics package.</p>
 
     
 <ul>
-<li><p><code>cs_dist_PerformanceAnalytics_ui</code>: UI function of cs_dist_PerformanceAnalytics.</p></li>
+<li><p><code>cs_dist_PerformanceAnalytics_ui</code>: UI function of
+cs_dist_PerformanceAnalytics.</p></li>
 <li><p><code>cs_dist_PerformanceAnalytics_server</code>: Server function of
 cs_dist_PerformanceAnalytics.</p></li>
 <li><p><code>cs_dist_PerformanceAnalytics_app</code>: Testing App of cs_dist_PerformanceAnalytics.</p></li>
@@ -179,7 +180,9 @@ cs_dist_PerformanceAnalytics.</p></li>
 
 <span class='co'># Call control server in App server</span>
 <span class='va'>server</span> <span class='op'>&lt;-</span> <span class='kw'>function</span><span class='op'>(</span><span class='va'>input</span>, <span class='va'>output</span>, <span class='va'>session</span><span class='op'>)</span> <span class='op'>{</span>
-  <span class='va'>cs_dist_PerformanceAnalytics</span> <span class='op'>&lt;-</span> <span class='fu'>cs_dist_PerformanceAnalytics_server</span><span class='op'>(</span><span class='st'>"cs_dist_PerformanceAnalytics_module"</span><span class='op'>)</span>
+  <span class='va'>cs_dist_PerformanceAnalytics</span> <span class='op'>&lt;-</span> <span class='fu'>cs_dist_PerformanceAnalytics_server</span><span class='op'>(</span>
+      <span class='st'>"cs_dist_PerformanceAnalytics_module"</span>
+  <span class='op'>)</span>
 <span class='op'>}</span>
 
 <span class='co'># Run testing App for integration testing</span>
