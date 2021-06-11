@@ -20,7 +20,9 @@
 #'
 #' # Call control server in App server
 #' server <- function(input, output, session) {
-#'   cs_dist_PerformanceAnalytics <- cs_dist_PerformanceAnalytics_server("cs_dist_PerformanceAnalytics_module")
+#'   cs_dist_PerformanceAnalytics <- cs_dist_PerformanceAnalytics_server(
+#'       "cs_dist_PerformanceAnalytics_module"
+#'   )
 #' }
 #'
 #' # Run testing App for integration testing
@@ -33,7 +35,8 @@ NULL
 #'
 #' @return * UI function doesn't return value.
 #'
-#' @describeIn cs_dist_PerformanceAnalytics  UI function of cs_dist_PerformanceAnalytics.
+#' @describeIn cs_dist_PerformanceAnalytics  UI function of
+#'    cs_dist_PerformanceAnalytics.
 #' @importFrom shiny NS tagList
 cs_dist_PerformanceAnalytics_ui <- function(id) {
   ns <- NS(id)

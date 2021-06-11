@@ -77,6 +77,7 @@ Suggests:
     spelling,
     testthat,
     withr
+Config/testthat/parallel: false
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US

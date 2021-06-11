@@ -246,7 +246,7 @@ slice_tsbl_server <- function(id, tsbl_vars,
         "(", code2name(variable_codes, exact_match = TRUE), ")"
       )
 
-      variable_codes <- setNames(variable_codes, variable_names)
+      variable_codes <- stats::setNames(variable_codes, variable_names)
 
       variable_codes
     })
@@ -259,7 +259,7 @@ slice_tsbl_server <- function(id, tsbl_vars,
         code2name(industry_codes, exact_match = TRUE),
         "(", industry_codes, ")"
       )
-      industry_codes <- setNames(industry_codes, industry_names)
+      industry_codes <- stats::setNames(industry_codes, industry_names)
 
       industry_codes
     })
@@ -278,7 +278,7 @@ slice_tsbl_server <- function(id, tsbl_vars,
         code2name(stock_codes, exact_match = TRUE),
         "(", stock_codes, ")"
       )
-      stock_codes <- setNames(stock_codes, stock_names)
+      stock_codes <- stats::setNames(stock_codes, stock_names)
 
       stock_codes
     })

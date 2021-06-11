@@ -50,7 +50,12 @@ explore_factor_ui <- function(id) {
 
         sidebarMenu(
           id = ns("side_menu_tabs"),
-          menuItem("Prepare", tabName = "prepare_data", icon = icon("dashboard")),
+          menuItem("Prepare", icon = icon("dashboard"),
+            startExpanded = TRUE,
+            menuSubItem("Load data",
+              tabName = "load_data"
+            )
+          ),
           menuItem("Analyze",
             tabName = "analyze_data", icon = icon("bar-chart-o"),
             startExpanded = TRUE,
@@ -70,10 +75,12 @@ explore_factor_ui <- function(id) {
       dashboardBody(
         tabItems(
           tabItem(
-            tabName = "prepare_data",
-            tabsetPanel(
-              tabPanel("Load data", load_data_ui(ns("load_data_module")))
-            )
+            # tabName = "prepare_data",
+            # tabsetPanel(
+            #   tabPanel("Load data", load_data_ui(ns("load_data_module")))
+            # )
+            tabName = "load_data",
+            load_data_ui(ns("load_data_module"))
           ),
           tabItem(
             tabName = "cross_section_analysis",
@@ -153,6 +160,7 @@ explore_factor_server <- function(id) {
 #'
 #' @describeIn explore_factor  Testing App of exploring factors.
 explore_factor_app <- function(use_online_data = FALSE) {
+  zstmodelr::enable_parallel()
   ui <- fluidPage(
     explore_factor_ui("explore_factor_module")
   )

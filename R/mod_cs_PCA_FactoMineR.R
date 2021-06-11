@@ -5,7 +5,7 @@
 #' @details
 #'  The module is an UI for user to display plots of PCA
 #'  by [`FactoMineR`][FactoMineR::FactoMineR] and
-#'  [`factoextra`][factoextra] package.
+#'  `factoextra` package.
 #'
 #' @name cs_PCA_FactoMineR
 #'
@@ -621,9 +621,9 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         dplyr::select(-c("date", "period")) %>%
         # Use median for numeric field of multiple period series of stock
         # Use mode numbers for non-numeric filed of multiple period series of stock
-        dplyr::group_by(stkcd) %>%
+        dplyr::group_by(.data$stkcd) %>%
         dplyr::summarise(
-          indcd = names(which.max(table(indcd))),
+          indcd = names(which.max(table(.data$indcd))),
           dplyr::across(where(is.numeric), median),
           .groups = "drop"
         ) %>%
@@ -876,15 +876,15 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
       cluster_result_hcpc <- hcpc_res()$data.clust %>%
         tibble::rownames_to_column(var = "stkcd") %>%
         dplyr::mutate(
-          indcd = as.character(indcd),
-          indname = zstexplorer:::code2name(indcd),
-          stkname = zstexplorer:::code2name(stkcd),
-          cluster = as.factor(clust)
+          indcd = as.character(.data$indcd),
+          indname = code2name(.data$indcd),
+          stkname = code2name(.data$stkcd),
+          cluster = as.factor(.data$clust)
         ) %>%
         dplyr::select(
           c("cluster", "stkcd", "stkname", "indcd", "indname"),
           -c("clust"),
-          everything()
+          tidyselect::everything()
         )
 
       cluster_result_hcpc
@@ -1179,7 +1179,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         geom = input$inertia_fviz_geom,
         addlabels = TRUE
       ) +
-        labs(subtitle = "compute by PCA()")
+        ggplot2::labs(subtitle = "compute by PCA()")
     })
 
     output$inertia_table <- renderTable({
@@ -1195,7 +1195,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         duration = NULL
       )
 
-      inerital_res_string <- capture.output({
+      inerital_res_string <- utils::capture.output({
         invisible(
           best_ncp <- FactoInvestigate::inertiaDistrib(
             pca_res(),
@@ -1264,7 +1264,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
             col.var = "contrib",
             alpha.var = "cos2",
             cex = 0.5,
-            gradient.cols = colorRampPalette(c("blue", "red"), alpha = TRUE)(12),
+            gradient.cols = grDevices::colorRampPalette(c("blue", "red"), alpha = TRUE)(12),
             label.select = focus_vars()$drawn,
           )
         },
@@ -1281,15 +1281,15 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         }
       )
 
-      p <- p + theme_minimal()
+      p <- p + ggplot2::theme_minimal()
 
       if (!input$plot_show_legend) {
-        p <- p + theme(legend.position = "none")
+        p <- p + ggplot2::theme(legend.position = "none")
       } else {
-        p <- p + theme(legend.position = "right")
+        p <- p + ggplot2::theme(legend.position = "right")
       }
 
-      p <- p + labs(
+      p <- p + ggplot2::labs(
         title = "Varables factor map",
         subtitle = focus_vars()$what.drawn
       )
@@ -1338,8 +1338,13 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
           # Find vars of top n cos2
           top_cos2_var <- var$cos2 %>%
             tibble::as_tibble(rownames = "id") %>%
-            dplyr::slice_max(order_by = Dim.1 + Dim.2 + Dim.3 + Dim.4, n = 10) %>%
-            dplyr::arrange(desc(dplyr::across(starts_with("Dim")))) %>%
+            dplyr::slice_max(
+              order_by = .data$Dim.1 + .data$Dim.2 + .data$Dim.3 + .data$Dim.4,
+              n = 10
+            ) %>%
+            dplyr::arrange(
+              dplyr::desc(dplyr::across(tidyselect::starts_with("Dim")))
+            ) %>%
             tibble::column_to_rownames(var = "id") %>%
             as.matrix()
 
@@ -1351,8 +1356,13 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
           # Find vars of top n contributions
           top_contrib_var <- var$contrib %>%
             tibble::as_tibble(rownames = "id") %>%
-            dplyr::slice_max(order_by = Dim.1 + Dim.2 + Dim.3 + Dim.4, n = 10) %>%
-            dplyr::arrange(desc(dplyr::across(starts_with("Dim")))) %>%
+            dplyr::slice_max(
+              order_by = .data$Dim.1 + .data$Dim.2 + .data$Dim.3 + .data$Dim.4,
+              n = 10
+            ) %>%
+            dplyr::arrange(
+              dplyr::desc(dplyr::across(tidyselect::starts_with("Dim")))
+            ) %>%
             tibble::column_to_rownames(var = "id") %>%
             as.matrix()
 
@@ -1503,7 +1513,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
                 xlims <- range(pca_res()$quali.sup$coord[, glue::glue("Dim.{pc_x}")]) * 1.5
                 ylims <- range(pca_res()$quali.sup$coord[, glue::glue("Dim.{pc_y}")]) * 1.5
 
-                p <- p + xlim(xlims) + ylim(ylims)
+                p <- p + ggplot2::xlim(xlims) + ggplot2::ylim(ylims)
               }
             }
           }
@@ -1543,15 +1553,15 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         },
       )
 
-      p <- p + theme_minimal()
+      p <- p + ggplot2::theme_minimal()
 
       if (!input$plot_show_legend) {
-        p <- p + theme(legend.position = "none")
+        p <- p + ggplot2::theme(legend.position = "none")
       } else {
-        p <- p + theme(legend.position = "right")
+        p <- p + ggplot2::theme(legend.position = "right")
       }
 
-      p <- p + labs(
+      p <- p + ggplot2::labs(
         title = "Individuals factor map",
         subtitle = focus_inds()$what.drawn
       )
@@ -1588,7 +1598,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         }
       )
 
-      p <- p + theme(axis.text.x = element_text(angle = -90))
+      p <- p + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = -90))
 
       p
     })
@@ -1602,8 +1612,13 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
           # Find inds of top n cos2
           top_cos2_ind <- ind$cos2 %>%
             tibble::as_tibble(rownames = "id") %>%
-            dplyr::slice_max(order_by = Dim.1 + Dim.2 + Dim.3 + Dim.4, n = 10) %>%
-            dplyr::arrange(desc(dplyr::across(starts_with("Dim")))) %>%
+            dplyr::slice_max(
+              order_by = .data$Dim.1 + .data$Dim.2 + .data$Dim.3 + .data$Dim.4,
+              n = 10
+            ) %>%
+            dplyr::arrange(
+              dplyr::desc(dplyr::across(tidyselect::starts_with("Dim")))
+            ) %>%
             tibble::column_to_rownames(var = "id") %>%
             as.matrix()
 
@@ -1615,8 +1630,13 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
           # Find vars of top n contributions
           top_contrib_ind <- ind$contrib %>%
             tibble::as_tibble(rownames = "id") %>%
-            dplyr::slice_max(order_by = Dim.1 + Dim.2 + Dim.3 + Dim.4, n = 10) %>%
-            dplyr::arrange(desc(dplyr::across(starts_with("Dim")))) %>%
+            dplyr::slice_max(
+              order_by = .data$Dim.1 + .data$Dim.2 + .data$Dim.3 + .data$Dim.4,
+              n = 10
+              ) %>%
+            dplyr::arrange(
+              dplyr::desc(dplyr::across(tidyselect::starts_with("Dim")))
+            ) %>%
             tibble::column_to_rownames(var = "id") %>%
             as.matrix()
 
@@ -1741,7 +1761,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         # Setting for vars
         col.var = "contrib",
         alpha.var = "cos2",
-        gradient.cols = colorRampPalette(c("blue", "red"), alpha = TRUE)(12),
+        gradient.cols = grDevices::colorRampPalette(c("blue", "red"), alpha = TRUE)(12),
 
         # Common setting
         repel = FALSE,
@@ -1794,20 +1814,20 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
             xlims <- range(pca_res()$quali.sup$coord[, glue::glue("Dim.{pc_x}")]) * 1.5
             ylims <- range(pca_res()$quali.sup$coord[, glue::glue("Dim.{pc_y}")]) * 1.5
 
-            p <- p + xlim(xlims) + ylim(ylims)
+            p <- p + ggplot2::xlim(xlims) + ggplot2::ylim(ylims)
           }
         }
 
-        p <- p + theme_minimal()
+        p <- p + ggplot2::theme_minimal()
       }
 
       if (!input$plot_show_legend) {
-        p <- p + theme(legend.position = "none")
+        p <- p + ggplot2::theme(legend.position = "none")
       } else {
-        p <- p + theme(legend.position = "right")
+        p <- p + ggplot2::theme(legend.position = "right")
       }
 
-      p <- p + labs(
+      p <- p + ggplot2::labs(
         title = "Biplot map(PCA)",
         subtitle = glue::glue("{focus_vars()$what.drawn}\n{focus_inds()$what.drawn}")
       )
@@ -1816,7 +1836,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
     })
 
     output$plane_joint_factor_desc <- renderUI({
-      dim_desc_res_string <- capture.output({
+      dim_desc_res_string <- utils::capture.output({
         invisible(
           FactoInvestigate::description(pca_res(), dim = pc_axes())
         )
@@ -1899,7 +1919,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
                 label.select = label.select,
                 labelsize = 10,
                 palette = "aaas", # Color palette see ?ggpubr::ggpar
-                ggtheme = theme_minimal(),
+                ggtheme = ggplot2::theme_minimal(),
                 main = "Map of individuals clusters by HCPC"
               )
             }
@@ -1949,7 +1969,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         }
       )
 
-      p <- p + theme_minimal()
+      p <- p + ggplot2::theme_minimal()
 
       p
     })
@@ -1959,7 +1979,7 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
         duration = NULL
       )
 
-      class_res_string <- capture.output({
+      class_res_string <- utils::capture.output({
         invisible(
           class_res <- FactoInvestigate::classif(pca_res(), graph = FALSE)
         )
@@ -2031,15 +2051,15 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
 
       df_clust_rep_inds <- data_clust %>%
         dplyr::filter(.data$stkcd %in% rep_inds_hcpc()) %>%
-        dplyr::arrange(clust) %>%
+        dplyr::arrange(.data$clust) %>%
         dplyr::mutate(
-          indname = zstexplorer:::code2name(as.character(indcd)),
-          stkname = zstexplorer:::code2name(stkcd)
+          indname = code2name(as.character(.data$indcd)),
+          stkname = code2name(.data$stkcd)
         ) %>%
-        dplyr::rename(cluster = clust) %>%
+        dplyr::rename(cluster = .data$clust) %>%
         dplyr::select(
           c("cluster", "stkcd", "stkname", "indcd", "indname"),
-          everything()
+          tidyselect::everything()
         )
 
       numeric_vars <- zstmodelr::expect_type_fields(
@@ -2069,12 +2089,12 @@ cs_PCA_FactoMineR_server <- function(id, csbl_vars) {
     output$hcpc_cluster_table_mapping <- DT::renderDataTable({
       cluster_mapping_hcpc <-
         cluster_result_hcpc() %>%
-        dplyr::nest_by(cluster) %>%
+        dplyr::nest_by(.data$cluster) %>%
         dplyr::mutate(
-          indcds = list(sort(unique(data$indcd))),
-          indnames = list(sort(unique(data$indname))),
-          stkcds = list(sort(unique(data$stkcd))),
-          stknames = list(sort(unique(data$stkname)))
+          indcds = list(sort(unique(.data$data$indcd))),
+          indnames = list(sort(unique(.data$data$indname))),
+          stkcds = list(sort(unique(.data$data$stkcd))),
+          stknames = list(sort(unique(.data$data$stkname)))
         ) %>%
         dplyr::select(-c("data", "indcds", "stkcds"))
 

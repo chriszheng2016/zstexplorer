@@ -1,6 +1,8 @@
 # Tests for module of cs_cluster_factoextra  ----
-#context("Tests for module of cs_cluster_factoextra")
+# context("Tests for module of cs_cluster_factoextra")
 
+#Skip tests if stock db is not ready
+skip_if_stock_db_not_ready()
 
 # Set up test environment
 
@@ -209,7 +211,7 @@ test_that("cs_cluster_factoextra_server - reactives and output updates", {
         "euclidean", "maximum", "manhattan",
         "canberra", "binary", "minkowski"
       )
-      pvhc_method = c(
+      pvhc_method <- c(
         "ward.D", "ward.D2", "single", "complete", "average",
         "mcquitty", "median", "centroid"
       )
@@ -241,7 +243,6 @@ test_that("cs_cluster_factoextra_server - reactives and output updates", {
           }),
           .groups = "keep"
         )
-
     }
   )
 })
@@ -251,6 +252,7 @@ test_that("cs_cluster_factoextra_app - Module App works", {
   skip_on_ci()
   skip_on_covr()
 
+  withr::local_tempdir("test_cs_cluster_factoextra_app")
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 

@@ -3,7 +3,7 @@
 #
 #' Set scale of filling or color for comparison in plot of ggplot2
 #'
-#' This is a warrper of [ggplot2::scale_fill_manual()] and
+#' This is a wrapper of [ggplot2::scale_fill_manual()] and
 #' [ggplot2::scale_color_manual()] to set two colors for comparing series.
 #'
 #' @param type  A character of setting type, "fill" for
@@ -19,8 +19,6 @@
 #' in legend. default is compare_id.
 #'
 #' @family stats_plotly
-
-#' @return
 #' @examples
 #' \dontrun{
 #'
@@ -63,14 +61,14 @@ gg_scale_compare <- function(type = c("fill", "color"),
   type <- match.arg(type)
   switch(type,
     "fill" = {
-      scale_fill_manual(
+      ggplot2::scale_fill_manual(
         name = name,
         values = values,
         labels = labels,
       )
     },
     "color" = {
-      scale_color_manual(
+      ggplot2::scale_color_manual(
         name = name,
         values = values,
         labels = labels,
@@ -102,7 +100,7 @@ NULL
 #'
 #' @family stats_plotly
 #'
-#' @return A plotly ojbect.
+#' @return A plotly object.
 #' @describeIn stats_plotly frequency bar chart for a discrete variable
 #' in data frame.
 #' @export
@@ -133,7 +131,7 @@ freqbar_plotly <- function(ds_vars,
       # Original plot
       p <- ds_vars %>%
         plotly::plot_ly(
-          x = as.formula(paste0("~", var_name)),
+          x = stats::as.formula(paste0("~", var_name)),
           name = var_name,
           source = source_id
         ) %>%
@@ -157,18 +155,18 @@ freqbar_plotly <- function(ds_vars,
     },
     "ggplot" = {
       p <- ds_vars %>%
-        ggplot(aes(x = .data[[var_name]])) +
+        ggplot2::ggplot(ggplot2::aes(x = .data[[var_name]])) +
         gg_scale_compare(
           type = "fill",
           base_id = "Origin", compare_id = "Select"
         ) +
-        labs(y = NULL)
+        ggplot2::labs(y = NULL)
 
       # Add original plot
       p <- p +
-        geom_bar(aes(fill = "Origin"), color = NA) +
-        theme(
-          axis.text.x = element_text(angle = -90)
+        ggplot2::geom_bar(ggplot2::aes(fill = "Origin"), color = NA) +
+        ggplot2::theme(
+          axis.text.x = ggplot2::element_text(angle = -90)
         )
 
       # Add comparing plot
@@ -177,9 +175,9 @@ freqbar_plotly <- function(ds_vars,
         (NROW(ds_vars_compare) != NROW(ds_vars))
       ) {
         p <- p +
-          geom_bar(
+          ggplot2::geom_bar(
             data = ds_vars_compare,
-            aes(fill = "Select"), color = NA
+            ggplot2::aes(fill = "Select"), color = NA
           )
       }
 
@@ -220,7 +218,7 @@ boxplot_plotly <- function(ds_vars,
       # Original plot
       p <- ds_vars %>%
         plotly::plot_ly(
-          x = as.formula(paste0("~", var_name)),
+          x = stats::as.formula(paste0("~", var_name)),
           source = source_id,
           alpha = 0.1, boxpoints = "suspectedoutliers"
         ) %>%
@@ -247,7 +245,7 @@ boxplot_plotly <- function(ds_vars,
         dplyr::mutate(var = "Origin")
 
       p <- ds_vars %>%
-        ggplot(aes(y = .data[[var_name]], x = var)) +
+        ggplot2::ggplot(ggplot2::aes(y = .data[[var_name]], x = .data$var)) +
         gg_scale_compare(
           type = "fill",
           base_id = "Origin", compare_id = "Select"
@@ -256,12 +254,12 @@ boxplot_plotly <- function(ds_vars,
           type = "color",
           base_id = "Origin", compare_id = "Select"
         ) +
-        labs(x = NULL)
+        ggplot2::labs(x = NULL)
 
       # Add original plot
       p <- p +
-        geom_boxplot(
-          aes(color = "Origin"),
+        ggplot2::geom_boxplot(
+          ggplot2::aes(color = "Origin"),
           outlier.fill = "Origin",
           outlier.alpha = 0.5
         )
@@ -275,13 +273,13 @@ boxplot_plotly <- function(ds_vars,
           dplyr::mutate(var = "Select")
 
         p <- p +
-          geom_boxplot(
+          ggplot2::geom_boxplot(
             data = ds_vars_compare,
-            aes(color = "Select")
+            ggplot2::aes(color = "Select")
           )
       }
 
-      p <- p + coord_flip()
+      p <- p + ggplot2::coord_flip()
 
 
       p <- plotly::ggplotly(p, source = source_id)
@@ -317,7 +315,7 @@ hist_plotly <- function(ds_vars,
 
   # Function to compute bins width for histogram
   binwidth_fun <- function(x) {
-    2 * IQR(x) / (length(x)^(1 / 3))
+    2 * stats::IQR(x) / (length(x)^(1 / 3))
   }
 
   plot_method <- match.arg(plot_method)
@@ -326,7 +324,7 @@ hist_plotly <- function(ds_vars,
       # Original plot
       p <- ds_vars %>%
         plotly::plot_ly(
-          x = as.formula(paste0("~", var_name)),
+          x = stats::as.formula(paste0("~", var_name)),
           source = source_id
         ) %>%
         plotly::add_histogram(name = "Origin")
@@ -349,17 +347,17 @@ hist_plotly <- function(ds_vars,
     },
     "ggplot" = {
       p <- ds_vars %>%
-        ggplot(aes(x = .data[[var_name]])) +
+        ggplot2::ggplot(ggplot2::aes(x = .data[[var_name]])) +
         gg_scale_compare(
           type = "fill",
           base_id = "Origin", compare_id = "Select"
         ) +
-        labs(y = NULL)
+        ggplot2::labs(y = NULL)
 
       # Add original plot
       p <- p +
-        geom_histogram(
-          aes(fill = "Origin"),
+        ggplot2::geom_histogram(
+          ggplot2::aes(fill = "Origin"),
           color = NA,
           binwidth = binwidth_fun
         )
@@ -370,9 +368,9 @@ hist_plotly <- function(ds_vars,
         (NROW(ds_vars_compare) != NROW(ds_vars))
       ) {
         p <- p +
-          geom_histogram(
+          ggplot2::geom_histogram(
             data = ds_vars_compare,
-            aes(fill = "Select"), color = NA,
+            ggplot2::aes(fill = "Select"), color = NA,
             binwidth = binwidth_fun
           )
       }
@@ -410,7 +408,7 @@ density_plotly <- function(ds_vars,
 
   # distribution for plotting reference line
   ds_origin_reference <- tibble::tibble(
-    !!var_name := rnorm(
+    !!var_name := stats::rnorm(
       n = NROW(ds_vars[[var_name]]),
       mean = mean(ds_vars[[var_name]], na.rm = TRUE),
       sd = sd(ds_vars[[var_name]], na.rm = TRUE)
@@ -419,7 +417,7 @@ density_plotly <- function(ds_vars,
 
   ds_compare_reference <- if (!is.null(ds_vars_compare)) {
     tibble::tibble(
-      !!var_name := rnorm(
+      !!var_name := stats::rnorm(
         n = NROW(ds_vars_compare[[var_name]]),
         mean = mean(ds_vars_compare[[var_name]], na.rm = TRUE),
         sd = sd(ds_vars_compare[[var_name]], na.rm = TRUE)
@@ -434,8 +432,8 @@ density_plotly <- function(ds_vars,
   plotly_chart <- switch(plot_method,
     "plot_ly" = {
       # Original plot
-      fit_origin <- density(na.omit(ds_vars[[var_name]]))
-      fit_origin_reference <- density(ds_origin_reference[[var_name]])
+      fit_origin <- stats::density(na.omit(ds_vars[[var_name]]))
+      fit_origin_reference <- stats::density(ds_origin_reference[[var_name]])
       p <- plotly::plot_ly(
         source = source_id
       ) %>%
@@ -456,8 +454,8 @@ density_plotly <- function(ds_vars,
         (NROW(ds_vars_compare) > 0) &&
         (NROW(ds_vars_compare) != NROW(ds_vars))
       ) {
-        fit_compare <- density(na.omit(ds_vars_compare[[var_name]]))
-        fit_compare_reference <- density(ds_compare_reference[[var_name]])
+        fit_compare <- stats::density(na.omit(ds_vars_compare[[var_name]]))
+        fit_compare_reference <- stats::density(ds_compare_reference[[var_name]])
 
         p <- p %>%
           plotly::add_lines(
@@ -478,23 +476,23 @@ density_plotly <- function(ds_vars,
     },
     "ggplot" = {
       p <- ds_vars %>%
-        ggplot(aes(x = .data[[var_name]])) +
-        geom_vline(xintercept = 0, size = 0.2) +
+        ggplot2::ggplot(ggplot2::aes(x = .data[[var_name]])) +
+        ggplot2::geom_vline(xintercept = 0, size = 0.2) +
         gg_scale_compare(
           type = "color",
           base_id = "Origin", compare_id = "Select"
         ) +
-        labs(y = NULL)
+        ggplot2::labs(y = NULL)
 
       # Add original plot
       p <- p +
-        geom_density(
-          aes(color = "Origin"),
+        ggplot2::geom_density(
+          ggplot2::aes(color = "Origin"),
           fill = NA
         ) +
-        geom_density(
+        ggplot2::geom_density(
           data = ds_origin_reference,
-          aes(color = "Origin"), fill = NA,
+          ggplot2::aes(color = "Origin"), fill = NA,
           linetype = "dotted"
         )
 
@@ -504,13 +502,13 @@ density_plotly <- function(ds_vars,
         (NROW(ds_vars_compare) != NROW(ds_vars))
       ) {
         p <- p +
-          geom_density(
+          ggplot2::geom_density(
             data = ds_vars_compare,
-            aes(color = "Select"), fill = NA
+            ggplot2::aes(color = "Select"), fill = NA
           ) +
-          geom_density(
+          ggplot2::geom_density(
             data = ds_compare_reference,
-            aes(color = "Select"), fill = NA,
+            ggplot2::aes(color = "Select"), fill = NA,
             linetype = "dotted"
           )
       }
@@ -553,7 +551,7 @@ qqplot_plotly <- function(ds_vars,
       # rlang::abort("plotly doesn't have implementation for qq plot.")
 
       # Original plot
-      qq_origin <- qqnorm(ds_vars[[var_name]], plot.it = FALSE)
+      qq_origin <- stats::qqnorm(ds_vars[[var_name]], plot.it = FALSE)
 
       p <- plotly::plot_ly(
         source = source_id,
@@ -570,7 +568,7 @@ qqplot_plotly <- function(ds_vars,
         (NROW(ds_vars_compare) > 0) &&
         (NROW(ds_vars_compare) != NROW(ds_vars))
       ) {
-        qq_compare <- qqnorm(ds_vars_compare[[var_name]], plot.it = FALSE)
+        qq_compare <- stats::qqnorm(ds_vars_compare[[var_name]], plot.it = FALSE)
         p <- p %>%
           plotly::add_markers(
             x = qq_compare$x, y = qq_compare$y,
@@ -581,7 +579,7 @@ qqplot_plotly <- function(ds_vars,
     },
     "ggplot" = {
       p <- ds_vars %>%
-        ggplot(aes(sample = .data[[var_name]])) +
+        ggplot2::ggplot(ggplot2::aes(sample = .data[[var_name]])) +
         gg_scale_compare(
           type = "fill",
           base_id = "Origin", compare_id = "Select"
@@ -590,15 +588,15 @@ qqplot_plotly <- function(ds_vars,
           type = "color",
           base_id = "Origin", compare_id = "Select"
         ) +
-        labs(y = NULL)
+        ggplot2::labs(y = NULL)
 
       # Add original plot
       p <- p +
-        stat_qq(
-          aes(fill = "Origin"),
+        ggplot2::stat_qq(
+          ggplot2::aes(fill = "Origin"),
           color = NA, alpha = 0.5
         ) +
-        stat_qq_line(aes(color = "Origin"), show.legend = FALSE)
+        ggplot2::stat_qq_line(ggplot2::aes(color = "Origin"), show.legend = FALSE)
 
       # Add comparing plot
       if (!is.null(ds_vars_compare) &&
@@ -606,13 +604,13 @@ qqplot_plotly <- function(ds_vars,
         (NROW(ds_vars_compare) != NROW(ds_vars))
       ) {
         p <- p +
-          stat_qq(
+          ggplot2::stat_qq(
             data = ds_vars_compare,
-            aes(fill = "Select"), color = NA, alpha = 0.5
+            ggplot2::aes(fill = "Select"), color = NA, alpha = 0.5
           ) +
-          stat_qq_line(
+          ggplot2::stat_qq_line(
             data = ds_vars_compare,
-            aes(color = "Select"), show.legend = FALSE
+            ggplot2::aes(color = "Select"), show.legend = FALSE
           )
       }
 
@@ -661,7 +659,7 @@ scatter_plotly <- function(ds_vars,
   plotly_chart <- switch(plot_method,
     "plot_ly" = {
       # Original plot
-      fit_origin <- loess(as.formula(paste0(y_var_name, "~", x_var_name)),
+      fit_origin <- stats::loess(stats::as.formula(paste0(y_var_name, "~", x_var_name)),
         data = ds_vars
       )
       ds_fit_origin <- data.frame(
@@ -670,8 +668,8 @@ scatter_plotly <- function(ds_vars,
       )
       p <- ds_vars %>%
         plotly::plot_ly(
-          x = as.formula(paste0("~", x_var_name)),
-          y = as.formula(paste0("~", y_var_name)),
+          x = stats::as.formula(paste0("~", x_var_name)),
+          y = stats::as.formula(paste0("~", y_var_name)),
           source = source_id
         ) %>%
         plotly::add_markers(
@@ -691,7 +689,7 @@ scatter_plotly <- function(ds_vars,
         (NROW(ds_vars_compare) > 0) &&
         (NROW(ds_vars_compare) != NROW(ds_vars))
       ) {
-        fit_compare <- loess(as.formula(paste0(y_var_name, "~", x_var_name)),
+        fit_compare <- stats::loess(stats::as.formula(paste0(y_var_name, "~", x_var_name)),
           data = ds_vars_compare
         )
 
@@ -721,7 +719,7 @@ scatter_plotly <- function(ds_vars,
     },
     "ggplot" = {
       p <- ds_vars %>%
-        ggplot(aes(
+        ggplot2::ggplot(ggplot2::aes(
           x = .data[[x_var_name]],
           y = .data[[y_var_name]]
         )) +
@@ -733,21 +731,21 @@ scatter_plotly <- function(ds_vars,
           type = "color",
           base_id = "Origin", compare_id = "Select"
         ) +
-        labs(y = NULL)
+        ggplot2::labs(y = NULL)
 
       # Add original plot
       p <- p +
-        geom_point(
+        ggplot2::geom_point(
           na.rm = TRUE,
-          aes(fill = "Origin"),
+          ggplot2::aes(fill = "Origin"),
           color = NA,
           alpha = 0.5
         ) +
-        geom_smooth(
+        ggplot2::geom_smooth(
           formula = y ~ x,
           na.rm = TRUE,
           method = "loess", se = FALSE,
-          aes(color = "Origin"),
+          ggplot2::aes(color = "Origin"),
           show.legend = FALSE,
           linetype = "dotdash",
           size = 0.5
@@ -760,18 +758,18 @@ scatter_plotly <- function(ds_vars,
         (NROW(ds_vars_compare) != NROW(ds_vars))
       ) {
         p <- p +
-          geom_point(
+          ggplot2::geom_point(
             data = ds_vars_compare,
             na.rm = TRUE,
-            aes(fill = "Select"), color = NA,
+            ggplot2::aes(fill = "Select"), color = NA,
             alpha = 0.5
           ) +
-          geom_smooth(
+          ggplot2::geom_smooth(
             formula = y ~ x,
             data = ds_vars_compare,
             na.rm = TRUE,
             method = "loess", se = FALSE,
-            aes(color = "Select"),
+            ggplot2::aes(color = "Select"),
             show.legend = FALSE,
             linetype = "dotdash",
             size = 0.5
@@ -826,7 +824,7 @@ combochart_plotly <- function(ds_vars,
     assertive::assert_all_are_true(discrete_var_name %in% names(ds_vars_compare))
   }
 
-  # Whether to ploting compare
+  # Whether to plot compare
   plot_vars_compare <- FALSE
   if (!is.null(ds_vars_compare) &&
     (NROW(ds_vars_compare) > 0) &&
@@ -864,7 +862,7 @@ combochart_plotly <- function(ds_vars,
     ), .groups = "drop") %>%
     dplyr::mutate(
       raw_rank = dplyr::min_rank(.data[[continuous_var_name]]),
-      rank = max(.data$raw_rank, na.rm = TRUE) - raw_rank + 1,
+      rank = max(.data$raw_rank, na.rm = TRUE) - .data$raw_rank + 1,
       levels = ifelse(.data$rank <= top_levels,
         .data[[discrete_var_name]],
         "Other"
@@ -922,20 +920,20 @@ combochart_plotly <- function(ds_vars,
 
       # Dataset for bar of mean
       ds_vars_levels <- ds_vars_levels %>%
-        dplyr::group_by(levels) %>%
+        dplyr::group_by(.data$levels) %>%
         dplyr::summarise(dplyr::across(where(is.numeric),
           .fns = mean, na.rm = TRUE
         ))
 
       ds_vars_overall <- ds_vars_overall %>%
-        dplyr::group_by(var) %>%
+        dplyr::group_by(.data$var) %>%
         dplyr::summarise(dplyr::across(where(is.numeric),
           .fns = mean, na.rm = TRUE
         ))
 
       if (!is.null(ds_vars_compare)) {
         ds_vars_compare <- ds_vars_compare %>%
-          dplyr::group_by(var) %>%
+          dplyr::group_by(.data$var) %>%
           dplyr::summarise(dplyr::across(where(is.numeric),
             .fns = mean, na.rm = TRUE
           ))
@@ -962,20 +960,20 @@ combochart_plotly <- function(ds_vars,
 
       # Dataset for bar of median
       ds_vars_levels <- ds_vars_levels %>%
-        dplyr::group_by(levels) %>%
+        dplyr::group_by(.data$levels) %>%
         dplyr::summarise(dplyr::across(where(is.numeric),
           .fns = median, na.rm = TRUE
         ))
 
       ds_vars_overall <- ds_vars_overall %>%
-        dplyr::group_by(var) %>%
+        dplyr::group_by(.data$var) %>%
         dplyr::summarise(dplyr::across(where(is.numeric),
           .fns = median, na.rm = TRUE
         ))
 
       if (!is.null(ds_vars_compare)) {
         ds_vars_compare <- ds_vars_compare %>%
-          dplyr::group_by(var) %>%
+          dplyr::group_by(.data$var) %>%
           dplyr::summarise(dplyr::across(where(is.numeric),
             .fns = median, na.rm = TRUE
           ))
@@ -989,7 +987,7 @@ combochart_plotly <- function(ds_vars,
 
       # Add base plot
       p <- plotly_plot_ly(
-        x = as.formula(paste0("~", continuous_var_name)),
+        x = stats::as.formula(paste0("~", continuous_var_name)),
         source = source_id
       )
 
@@ -1031,14 +1029,14 @@ combochart_plotly <- function(ds_vars,
     },
     "ggplot" = {
 
-      # Reason to use vertical plot + coord_flip():
+      # Reason to use vertical plot + ggplot2::coord_flip():
       # If we use horizontal plot directly(x = continuous_var_name
       # y = levels/var), it will fail to plot when we turn it into plotly plot.
       # So we have to work around it by turning vertical plot to horizontal plot.
 
       # Add base plot
       p <- ds_vars_levels %>%
-        ggplot_ggplot(aes(y = .data[[continuous_var_name]])) +
+        ggplot_ggplot(ggplot2::aes(y = .data[[continuous_var_name]])) +
         gg_scale_compare(
           type = "fill",
           base_id = "Origin", compare_id = "Select"
@@ -1047,18 +1045,18 @@ combochart_plotly <- function(ds_vars,
           type = "color",
           base_id = "Origin", compare_id = "Select"
         ) +
-        labs(x = NULL)
+        ggplot2::labs(x = NULL)
 
       # Add original plot
       p <- p +
         # Original plot of data with different levels
         ggplot_geom_plot(
-          aes(x = levels, color = "Origin"),
+          ggplot2::aes(x = .data$levels, color = "Origin"),
           data = ds_vars_levels
         ) +
         # Original plot of overall data
         ggplot_geom_plot(
-          aes(x = var, color = "Origin"),
+          ggplot2::aes(x = .data$var, color = "Origin"),
           data = ds_vars_overall
         )
       ordered_scale <- c(levels(ds_vars_levels$levels), "Overall")
@@ -1067,7 +1065,7 @@ combochart_plotly <- function(ds_vars,
       if (plot_vars_compare) {
         p <- p +
           ggplot_geom_plot(
-            aes(x = var, color = "Select"),
+            ggplot2::aes(x = .data$var, color = "Select"),
             data = ds_vars_compare
           )
         ordered_scale <- c(ordered_scale, "Select")
@@ -1075,11 +1073,11 @@ combochart_plotly <- function(ds_vars,
 
       # Fix scale of x-axis to right order
       p <- p +
-        scale_x_discrete(limits = ordered_scale)
+        ggplot2::scale_x_discrete(limits = ordered_scale)
 
       # Turn vertical plot to horizontal plot
       p <- p +
-        coord_flip()
+        ggplot2::coord_flip()
 
       p <- plotly::ggplotly(p, source = source_id)
     }

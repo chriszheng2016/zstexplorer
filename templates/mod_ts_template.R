@@ -304,7 +304,7 @@ NULL
   )
 
   tsbl_vars <- tsbl_vars %>%
-    dplyr::filter(stkcd %in% focus_stocks)
+    dplyr::filter(.data$stkcd %in% focus_stocks)
 
   focus_industries <- unique(tsbl_vars$indcd)
 

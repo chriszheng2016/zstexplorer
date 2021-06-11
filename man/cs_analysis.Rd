@@ -31,7 +31,7 @@ database or not. Default FALSE means to use achieved data for tests.}
 }
 
 \itemize{
-\item Server function dosen't return value.
+\item Server function doesn't return value.
 }
 }
 \description{

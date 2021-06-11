@@ -2,11 +2,8 @@
 
 # context("Tests for auxiliary functions about testing data")
 
-# Test database is ready ?
-dsn <- get_golem_config("database_dsn")
-stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, dsn)
-suppressMessages(db_ready <- zstmodelr::open_stock_db(stock_db))
-suppressMessages(zstmodelr::close_stock_db(stock_db))
+# Enable parallel process for test
+zstmodelr::local_parallel("ON")
 
 test_that("load_factors_info, with various arguments", {
   suppressMessages({
@@ -22,7 +19,8 @@ test_that("load_factors_info, with various arguments", {
 
 
     # load_factors_info on various arguments  ====
-    skip_if_not(db_ready, "skip due to database is not ready")
+    # Skip tests if stock db is not ready
+    skip_if_stock_db_not_ready()
     factors_info <- load_factors_info(use_online_data = TRUE)
     expect_s3_class(factors_info, c("tbl_df", "data.frame"))
     expect_fields <- c(
@@ -47,7 +45,8 @@ test_that("load_tsbl_vars, with various arguments", {
     expect_true(all(tsibble::key_vars(tsbl_vars) %in% c("stkcd", "period")))
 
     # load_tsbl_vars on various arguments  ====
-    skip_if_not(db_ready, "skip due to database is not ready")
+    # Skip tests if stock db is not ready
+    skip_if_stock_db_not_ready()
     tsbl_vars <- load_tsbl_vars(use_online_data = TRUE)
     expect_s3_class(tsbl_vars, c("tbl_ts", "data.frame"))
     expect_fields <- c("date", "period", "stkcd", "indcd")
@@ -68,7 +67,8 @@ test_that("load_csbl_vars, with various arguments", {
     expect_true(all(expect_fields %in% actual_fields))
 
     # load_tsbl_vars on various arguments  ====
-    skip_if_not(db_ready, "skip due to database is not ready")
+    # Skip tests if stock db is not ready
+    skip_if_stock_db_not_ready()
     csbl_vars <- load_csbl_vars(use_online_data = TRUE)
     expect_s3_class(csbl_vars, c("tbl_df", "data.frame"))
     expect_fields <- c("id", "indcd", "QR", "CR", "ICR", "CFOR", "TDR", "CFCR")
@@ -91,20 +91,121 @@ test_that("tsbl2csbl, with various arguments", {
   expect_true(all(expect_fields %in% actual_fields))
 })
 
+test_that("load_stock_return, with various arguments", {
+  period_type_args <- c("month", "quarter", "year")
+  stock_codes <- c(
+    "000651", "000333", "600066",
+    "000550", "600031", "000157"
+  )
+  use_online_data_args <- c(TRUE, FALSE)
+
+  # load_stock_return on default arguments  ====
+  tsbl_return <- load_stock_return()
+  expect_fields <- c("date", "stkcd", "indcd", "period", "return")
+  actual_fields <- names(tsbl_return)
+  expect_true(all(expect_fields %in% actual_fields))
+  expect_true(all(tsbl_return$period %in% c("month")))
+  expect_true(
+    zstmodelr::is_periodic_dates(tsbl_return$date, freq_rule = "month")
+  )
+  expect_true(all(tsbl_return$stkcd %in% stock_codes))
+
+  # load_stock_return on various arguments  ====
+  for (period_type in period_type_args) {
+    for (use_online_data in use_online_data_args) {
+      if(use_online_data) skip_if_stock_db_not_ready()
+      suppressMessages({
+        tsbl_return <- load_stock_return(
+          use_online_data = use_online_data,
+          period_type = period_type,
+          stock_codes = stock_codes
+        )
+      })
+
+      expect_fields <- c("date", "stkcd", "indcd", "period", "return")
+      actual_fields <- names(tsbl_return)
+      expect_true(all(expect_fields %in% actual_fields))
+      expect_true(all(tsbl_return$period %in% c(period_type)))
+      expect_true(
+        zstmodelr::is_periodic_dates(tsbl_return$date, freq_rule = period_type)
+      )
+      expect_true(all(tsbl_return$stkcd %in% stock_codes))
+    }
+  }
+})
+
+test_that("load_market_return, with various arguments", {
+  period_type_args <- c("month", "quarter", "year")
+  use_online_data_args <- c(TRUE, FALSE)
+
+  # load_market_return on default arguments  ====
+  tsbl_return <- load_market_return()
+  expect_fields <- c("date", "period", "return")
+  actual_fields <- names(tsbl_return)
+  expect_true(all(expect_fields %in% actual_fields))
+  expect_true(all(tsbl_return$period %in% c("month")))
+  expect_true(
+    zstmodelr::is_periodic_dates(tsbl_return$date, freq_rule = "month")
+  )
+
+  # load_market_return on various arguments  ====
+  for (period_type in period_type_args) {
+    for (use_online_data in use_online_data_args) {
+      if(use_online_data) skip_if_stock_db_not_ready()
+      suppressMessages({
+        tsbl_return <- load_market_return(
+          use_online_data = use_online_data,
+          period_type = period_type
+        )
+      })
+
+      expect_fields <- c("date", "period", "return")
+      actual_fields <- names(tsbl_return)
+      expect_true(all(expect_fields %in% actual_fields))
+      expect_true(all(tsbl_return$period %in% c(period_type)))
+      expect_true(
+        zstmodelr::is_periodic_dates(tsbl_return$date, freq_rule = period_type)
+      )
+    }
+  }
+})
+
 test_that("aggregate_tsbl_vars, with various arguments", {
 
   # aggregate_tsbl_vars on default arguments  ====
-  tsbl_vars <- readRDS("data/tsbl_vars.rds")
-  tsbl_vars_aggregate <- aggregate_tsbl_vars(tsbl_vars = tsbl_vars, by = "indcd")
+
+  # Data with period field
+  tsbl_vars_with_period <- readRDS("data/tsbl_vars.rds")
+  tsbl_vars_aggregate <- aggregate_tsbl_vars(
+    tsbl_vars = tsbl_vars_with_period,
+    by = "indcd"
+  )
   expect_s3_class(tsbl_vars_aggregate, c("tbl_ts", "data.frame"))
   expect_fields <- c(
     c("date", "period", "indcd"),
-    setdiff(names(tsbl_vars), c("date", "period", "stkcd", "indcd"))
+    setdiff(names(tsbl_vars_with_period), c("date", "period", "stkcd", "indcd"))
   )
   actual_fields <- names(tsbl_vars_aggregate)
   expect_true(all(expect_fields %in% actual_fields))
   expect_equal(tsibble::index_var(tsbl_vars_aggregate), "date")
   expect_true(all(tsibble::key_vars(tsbl_vars_aggregate) %in% c("indcd", "period")))
+
+  # Data without period field
+  tsbl_vars_no_period <- tsbl_vars_with_period %>%
+    dplyr::select(-c("period"))
+  tsbl_vars_aggregate <- aggregate_tsbl_vars(
+    tsbl_vars = tsbl_vars_no_period,
+    by = "indcd"
+  )
+  expect_s3_class(tsbl_vars_aggregate, c("tbl_ts", "data.frame"))
+  expect_fields <- c(
+    c("date", "indcd"),
+    setdiff(names(tsbl_vars_no_period), c("date", "stkcd", "indcd"))
+  )
+  actual_fields <- names(tsbl_vars_aggregate)
+  expect_true(all(expect_fields %in% actual_fields))
+  expect_equal(tsibble::index_var(tsbl_vars_aggregate), "date")
+  expect_true(all(tsibble::key_vars(tsbl_vars_aggregate) %in% c("indcd")))
 })
 
 test_that("industry_median/industry_mean, with various arguments", {

@@ -19,7 +19,7 @@ industry_mean(tsbl_vars)
 
 \item{.fun}{A function to aggregate numeric variables.}
 
-\item{...}{Params to .fun.}
+\item{...}{Arguments passed on to .fun.}
 }
 \value{
 A tsibble aggregated by new key

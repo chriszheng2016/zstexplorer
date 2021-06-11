@@ -91,7 +91,7 @@ ts_analysis_ui <- function(id) {
 #'  means to disable output of debug.
 #'
 #' @describeIn ts_analysis  Server function of ts_analysis.
-#' @return * Server function dosen't return value.
+#' @return * Server function doesn't return value.
 ts_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns

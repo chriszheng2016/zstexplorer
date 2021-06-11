@@ -291,7 +291,7 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         dplyr::arrange(.data$variable, .data[[id_var]]) %>%
         dplyr::rowwise() %>%
         dplyr::mutate(id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
-          zstexplorer::code2name(.data[[id_var]]), character(0)
+          code2name(.data[[id_var]]), character(0)
         )) %>%
         dplyr::select(
           c("variable", id_var, id_name),
@@ -852,12 +852,12 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
 
       # Draw the plot
       p <- tsbl_focus %>%
-        ggplot2::ggplot(aes(
+        ggplot2::ggplot(ggplot2::aes(
           x = .data$date, y = .data$value,
           fill = .data$key, color = .data$key
         )) +
         ggplot2::geom_col(position = ggplot2::position_dodge()) +
-        ggplot2::geom_line(aes(y = .data$average),
+        ggplot2::geom_line(ggplot2::aes(y = .data$average),
           alpha = 0.5,
           linetype = "twodash"
         ) +
@@ -918,12 +918,12 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
 
       # Draw the plot
       p <- tsbl_focus %>%
-        ggplot2::ggplot(aes(
+        ggplot2::ggplot(ggplot2::aes(
           x = .data$date, y = .data$growth,
           fill = .data$key, color = .data$key
         )) +
         ggplot2::geom_col(position = ggplot2::position_dodge()) +
-        ggplot2::geom_line(aes(y = .data$average),
+        ggplot2::geom_line(ggplot2::aes(y = .data$average),
           alpha = 0.5,
           linetype = "twodash"
         ) +
@@ -998,12 +998,12 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
 
       # Draw the plot
       p <- tsbl_focus %>%
-        ggplot2::ggplot(aes(
+        ggplot2::ggplot(ggplot2::aes(
           x = .data$date, y = .data$growth,
           fill = .data$key, color = .data$key
         )) +
         ggplot2::geom_col(position = ggplot2::position_dodge()) +
-        ggplot2::geom_line(aes(y = .data$average),
+        ggplot2::geom_line(ggplot2::aes(y = .data$average),
           alpha = 0.5,
           linetype = "twodash"
         ) +
@@ -1087,12 +1087,12 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
 
       # Draw the plot
       p <- tsbl_focus %>%
-        ggplot2::ggplot(aes(
+        ggplot2::ggplot(ggplot2::aes(
           x = .data$date,
           group = .data[[id_var]],
         )) +
         ggplot2::geom_col(
-          aes(
+          ggplot2::aes(
             y = .data$value,
             fill = .data$key, color = "",
             text = paste0(
@@ -1103,7 +1103,7 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
           position = ggplot2::position_dodge(),
         ) +
         ggplot2::geom_line(
-          aes(
+          ggplot2::aes(
             y = .data$scaled_seq_growth,
             text = paste0(
               "seq_growth:",
@@ -1115,7 +1115,7 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
           size = 1
         ) +
         ggplot2::geom_line(
-          aes(
+          ggplot2::aes(
             y = .data$scaled_yoy_growth,
             text = paste0(
               "yoy_growth:",
@@ -1209,8 +1209,9 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         p <- tsbl_focus %>%
           ggplot2::ggplot(ggplot2::aes(x = .data$value)) +
           ggplot2::geom_histogram(
-            ggplot2::aes(y = ggplot2::after_stat(density)),
-            alpha = 0.5
+            ggplot2::aes(y = ggplot2::after_stat(.data$density)),
+            alpha = 0.5,
+            bins = 30
           ) +
           ggplot2::geom_density(ggplot2::aes(color = "Kernel Estimates")) +
           ggplot2::geom_rug(alpha = 0.1) +
@@ -1323,7 +1324,7 @@ ts_feat_basic_tidyverts_app <- function(use_online_data = FALSE) {
   )
 
   tsbl_vars <- tsbl_vars %>%
-    dplyr::filter(stkcd %in% focus_stocks)
+    dplyr::filter(.data$stkcd %in% focus_stocks)
 
   focus_industries <- unique(tsbl_vars$indcd)
 

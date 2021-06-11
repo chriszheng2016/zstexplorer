@@ -168,7 +168,7 @@ ts_gap_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         ) %>%
         dplyr::rowwise() %>%
         dplyr::mutate(!!id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
-          zstexplorer::code2name(.data[[id_var]]), character(0)
+          code2name(.data[[id_var]]), character(0)
         )) %>%
         dplyr::select(c(id_var, id_name), tidyselect::everything())
     })
@@ -197,7 +197,7 @@ ts_gap_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         ) %>%
         dplyr::rowwise() %>%
         dplyr::mutate(!!id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
-          zstexplorer::code2name(.data[[id_var]]), character(0)
+          code2name(.data[[id_var]]), character(0)
         )) %>%
         dplyr::select(c(id_var, id_name), tidyselect::everything())
     })
@@ -226,7 +226,7 @@ ts_gap_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         ) %>%
         dplyr::rowwise() %>%
         dplyr::mutate(!!id_name := ifelse(!purrr::is_empty(.data[[id_var]]),
-          zstexplorer::code2name(.data[[id_var]]), character(0)
+          code2name(.data[[id_var]]), character(0)
         )) %>%
         dplyr::select(c(id_var, id_name), tidyselect::everything())
     })
@@ -273,8 +273,8 @@ ts_gap_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
     output$count_gaps_table <- DT::renderDataTable({
       tsbl_vars_focus_count_gaps() %>%
         dplyr::mutate(
-          .from = format(.from),
-          .to = format(.to)
+          .from = format(.data$.from),
+          .to = format(.data$.to)
         ) %>%
         DT::datatable(
           filter = "top",
@@ -295,20 +295,20 @@ ts_gap_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       p <- switch(input$ts_type,
         "stock" = {
           tsbl_vars_focus_count_gaps() %>%
-            ggplot(aes(x = stkcd, colour = stkcd))
+            ggplot2::ggplot(ggplot2::aes(x = .data$stkcd, colour = .data$stkcd))
         },
         "industry" = {
           tsbl_vars_focus_count_gaps() %>%
-            ggplot(aes(x = indcd, colour = indcd))
+            ggplot2::ggplot(ggplot2::aes(x = .data$indcd, colour = .data$indcd))
         }
       )
 
-      p + geom_linerange(aes(ymin = .from, ymax = .to)) +
-        geom_point(aes(y = .from)) +
-        geom_point(aes(y = .to)) +
-        coord_flip() +
-        theme(legend.position = "none") +
-        labs(title = "Gaps(Implict Missingnes) in time series")
+      p + ggplot2::geom_linerange(ggplot2::aes(ymin = .data$.from, ymax = .data$.to)) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$.from)) +
+        ggplot2::geom_point(ggplot2::aes(y = .data$.to)) +
+        ggplot2::coord_flip() +
+        ggplot2::theme(legend.position = "none") +
+        ggplot2::labs(title = "Gaps(Implict Missingnes) in time series")
     })
   })
 }
