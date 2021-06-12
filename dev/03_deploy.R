@@ -1,27 +1,49 @@
+#' ---
+#' title: "DEPLOY SCRIPT: 03_deploy.R"
+#' date:  "`r Sys.Date()`"
+#' author: Chris Zheng
+#' email: chrizheng@vip.sina.com.cn
+#' output:
+#'   html_document:
+#'      fig_caption: yes
+#'      number_sections: yes
+#'      theme: cerulean
+#'      highlight: pygments
+#' ---
+
+#/*
 # Building a Prod-Ready, Robust Shiny Application.
 #
-# README: each step of the dev files is optional, and you don't have to
+#
+# **README**: each step of the dev files is optional, and you don't have to
 # fill every dev scripts before getting started.
-# 01_start.R should be filled at start.
-# 02_dev.R should be used to keep track of your development during the project.
-# 03_deploy.R should be used once you need to deploy your app.
+#
+# * 01_start.R should be filled at start.
+#
+# * 02_dev.R should be used to keep track of your development during the project.
+#
+# * 03_deploy.R should be used once you need to deploy your app.
+#
+# * run_dev.R should be used to run your app in production/debug mode
 #
 #
 ######################################
 #### CURRENT FILE: DEPLOY SCRIPT #####
 ######################################
+#*/
 
-# Test your app
+#' # Test shiny app for deploy
 
+#+ test_app_develop, eval = FALSE
 ## Run checks ----
 ## Check the package before sending to prod
 devtools::check()
 rhub::check_for_cran()
 
 
+#' # Deploy shiny app
 
-# Deploy
-
+#+ deploy_app, eval = FALSE
 ## Install local ----
 devtools::install()
 

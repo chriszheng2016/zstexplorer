@@ -189,40 +189,40 @@ cs_cor_correlationfunnel_server <- function(id, csbl_vars) {
       correlation_plot <- vars_correlation() %>%
         correlationfunnel::plot_correlation_funnel() +
         # add reference line
-        geom_vline(
+        ggplot2::geom_vline(
           xintercept = c(-input$reference_level, input$reference_level),
           color = "blue",
           linetype = "dotted"
         ) +
-        geom_text(
-          aes(
+        ggplot2::geom_text(
+          ggplot2::aes(
             x = -input$reference_level, y = 0,
             label = input$reference_level
           ),
           color = "blue", size = 3, vjust = -0.5
         ) +
-        geom_text(
-          aes(
+        ggplot2::geom_text(
+          ggplot2::aes(
             x = input$reference_level, y = 0,
             label = input$reference_level
           ),
           color = "blue", size = 3, vjust = -0.5
         ) +
         # mark target variable and level
-        geom_hline(
+        ggplot2::geom_hline(
           yintercept = req(input$target_var),
           color = "red", linetype = "longdash",
           size = 1, alpha = 0.3
         ) +
-        geom_point(aes(x = 1, y = req(input$target_var)),
+        ggplot2::geom_point(ggplot2::aes(x = 1, y = req(input$target_var)),
           color = "red", shape = 18, size = 3
         ) +
         # mark limit point of each feature
-        geom_point(aes(x = max, y = feature),
+        ggplot2::geom_point(ggplot2::aes(x = .data$max, y = .data$feature),
           data = vars_correlation_limit,
           color = "orange", shape = 3, size = 3
         ) +
-        geom_point(aes(x = min, y = feature),
+        ggplot2::geom_point(ggplot2::aes(x =.data$min, y = .data$feature),
           data = vars_correlation_limit,
           color = "lightblue", shape = 3, size = 3
         )

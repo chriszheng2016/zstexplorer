@@ -14,34 +14,32 @@ Depends:
     R (>= 3.5.0)
 Imports: 
     assertive,
-    attempt,
     cluster,
-    clustertend,
+    clValid,
     colourpicker,
     config,
     correlationfunnel,
     corrplot,
-    crosstalk,
     DataExplorer,
     dplyr,
     DT,
-    fable,
-    fable.prophet,
     fabletools,
     factoextra,
+    FactoInvestigate,
+    FactoMineR,
     fBasics,
     feasts,
-    formattable,
-    fpc,
+    forcats,
     fs,
-    ggh4x,
     GGally,
+    ggh4x,
     ggplot2,
     glue,
     golem,
     here,
     Hmisc,
     htmltools,
+    lubridate,
     magrittr,
     mice,
     missMDA,
@@ -53,6 +51,7 @@ Imports:
     purrr,
     pvclust,
     qqplotr,
+    readr,
     rlang,
     scales,
     shiny,
@@ -60,15 +59,16 @@ Imports:
     shinyjs,
     skimr,
     slider,
+    stringr,
     tibble,
     tidyquant,
     tidyr,
-    tsibble,
+    tidyselect,
     tsibble,
     usethis,
     VIM,
     visdat,
-    zstmodelr
+    zstmodelr (>= 0.0.0.9000)
 Suggests: 
     covr,
     mockery,
@@ -77,9 +77,12 @@ Suggests:
     spelling,
     testthat,
     withr
+Config/testthat/parallel: false
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+Remotes:  
+    chriszheng2016/zstmodelr@develop

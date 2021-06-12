@@ -36,7 +36,7 @@ A shiny module for cs_cluster_factoextra.
 }
 \details{
 The module is an UI for user to display plots of clusters
-by \code{\link{factoextra}} package.
+by \code{factoextra} package.
 }
 \section{Functions}{
 \itemize{

@@ -7,8 +7,9 @@
 get_pca_loading(pca_res, pc_name_prefix = NULL, ncp = Inf)
 }
 \arguments{
-\item{pca_res}{An object of class PCA \link{FactoMineR};
-prcomp and princomp \link{stats}; pca, dudi \link{adea4}; epPCA \link{ExPosition}.}
+\item{pca_res}{An object of class PCA (\code{\link[FactoMineR:FactoMineR-package]{FactoMineR}});
+prcomp and princomp((\code{\link[stats:stats-package]{stats}}); pca, dudi(\code{adea4});
+epPCA(\code{\link[ExPosition:ExPosition-package]{ExPosition}}).}
 
 \item{pc_name_prefix}{A character as name prefix of primary components in
 results, e.g PC for PC1...PCn. Default NULL means use original name of
@@ -24,7 +25,7 @@ A matrix of loading or rotation of PCA results.
 Get loading/rotation of PCA results
 }
 \examples{
-\donttest{
+\dontrun{
 
 # Result from prcomp
 pca_res_prcomp <- prcomp(iris[, -5], scale = TRUE)

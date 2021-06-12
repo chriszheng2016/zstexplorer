@@ -3,6 +3,9 @@
 
 # context("Tests for module of slice_tsbl")
 
+#Skip tests if stock db is not ready
+skip_if_stock_db_not_ready()
+
 # Set up test environment
 
 tsbl_vars <- readRDS("data/tsbl_vars.rds")
@@ -138,6 +141,7 @@ test_that("slice_tsbl_app - Module App works", {
   skip_on_ci()
   skip_on_covr()
 
+  withr::local_tempdir("test_slice_tsbl_app")
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 
@@ -148,16 +152,26 @@ test_that("slice_tsbl_app - Module App works", {
 
     # Load test App
     suppressWarnings({
-      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 300)
+      app <- shinytest::ShinyDriver$new(".", loadTimeout = 1000 * 500)
     })
     # slice_tsbl_app with typical user inputs ====
+    # select_indcd <- c("C38")
+    # select_stkcd <- c("000651")
+    # select_period <- c("quarter")
+    # select_vars <- c("CR")
+    # select_date_type <- "multi_period"
+    # select_start_date <- "2018-12-31"
+    # select_end_date <- "2019-12-31"
+
     select_indcd <- c("C38")
     select_stkcd <- c("000651")
+    select_vars <- c("indcd", "CR")
     select_period <- c("quarter")
-    select_vars <- c("CR")
     select_date_type <- "multi_period"
     select_start_date <- "2018-12-31"
     select_end_date <- "2019-12-31"
+    average_by <- "indcd"
+    average_method <- "median"
 
     app$setInputs(
       `slice_tsbl_module-indcd` = select_indcd,
@@ -166,9 +180,12 @@ test_that("slice_tsbl_app - Module App works", {
       `slice_tsbl_module-period` = select_period,
       `slice_tsbl_module-start_date` = select_start_date,
       `slice_tsbl_module-end_date` = select_end_date,
-      # `slice_tsbl_module-apply_filter` = "click",
-      timeout_ = 1000 * 10
+      `slice_tsbl_module-average_by` = average_by,
+      `slice_tsbl_module-average_method` = average_method,
+      `slice_tsbl_module-apply_filter` = "click",
+      timeout_ = 1000 * 100
     )
+    # expect_snapshot_value(app$getAllValues(), style = "json2")
     expect_snapshot_value(app$getAllValues(), style = "serialize")
 
     app$stop()

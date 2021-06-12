@@ -2,6 +2,8 @@
 
 #context("Tests for module of cs_PCA_FactoMineR")
 
+#Skip tests if stock db is not ready
+skip_if_stock_db_not_ready()
 
 # Set up test environment
 
@@ -45,6 +47,7 @@ test_that("cs_PCA_FactoMineR_app - Module App works", {
   skip_on_ci()
   skip_on_covr()
 
+  withr::local_tempdir("test_cs_PCA_FactoMineR_app")
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 

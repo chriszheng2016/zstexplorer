@@ -294,11 +294,11 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     output$miss_shadow_plot <- renderPlot({
       req(input$target_var, input$shadow_var)
       csbl_vars_shadow() %>%
-        ggplot(aes(
+        ggplot2::ggplot(ggplot2::aes(
           x = .data[[input$target_var]],
           fill = .data[[input$shadow_var]]
         )) +
-        geom_density(alpha = 0.5)
+        ggplot2::geom_density(alpha = 0.5)
     })
 
     ## Missing points plot ----
@@ -307,7 +307,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
 
       req(input$x_var, input$y_var)
       csbl_vars_focus() %>%
-        ggplot(aes(x = .data[[input$x_var]], y = .data[[input$y_var]])) +
+        ggplot2::ggplot(ggplot2::aes(x = .data[[input$x_var]], y = .data[[input$y_var]])) +
         naniar::geom_miss_point()
 
     })
@@ -327,7 +327,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
     output$miss_vars_byfct_plot <- renderPlot({
       csbl_vars_focus() %>%
         naniar::gg_miss_fct(fct = .data[[req(input$miss_across_fct)]]) +
-        theme(axis.text.x = element_text(angle = 90))
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
     })
 
     ##  Missing cases plot ----
@@ -335,7 +335,7 @@ cs_missing_naniar_server <- function(id, csbl_vars) {
       req(input$plot_miss_cases)
       csbl_vars_focus() %>%
         naniar::gg_miss_case(order_cases = TRUE) +
-        labs(x = "Number of Cases")
+        ggplot2::labs(x = "Number of Cases")
     })
 
     output$miss_case_table <- renderTable({

@@ -192,7 +192,7 @@ cs_analysis_ui <- function(id, debug = FALSE) {
 #'  means to disable output of debug.
 #'
 #' @describeIn cs_analysis  Server function of cs_analysis.
-#' @return * Server function dosen't return value.
+#' @return * Server function doesn't return value.
 cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -291,7 +291,7 @@ cs_analysis_server <- function(id, tsbl_vars, debug = FALSE) {
       continuous_vars <- slice_csbl_vars() %>%
         dplyr::select(where(is.numeric)) %>%
         tidyr::pivot_longer(
-          cols = everything(),
+          cols = tidyselect::everything(),
           names_to = "variable", values_to = "value"
         )
 

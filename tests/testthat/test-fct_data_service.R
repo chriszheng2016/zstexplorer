@@ -1,19 +1,15 @@
 # context("Tests for functions about data service")
 
-# Test database is ready ?
-dsn <- get_golem_config("database_dsn")
-stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, dsn)
-suppressMessages(db_ready <- zstmodelr::open_stock_db(stock_db))
-suppressMessages(zstmodelr::close_stock_db(stock_db))
-skip_if_not(db_ready,
-  message = sprintf("DSN(%s) is not ready, skip all tests for data service", dsn)
-)
+#Skip tests if stock db is not ready
+skip_if_stock_db_not_ready()
 
 test_that("stock_db, with various arguments", {
 
   # stock_db with default arguments ====
 
   suppressMessages({
+
+    #Firs time call stock_db()
     stock_db <- stock_db()
     expect_true(!is.null(stock_db))
     expect_s4_class(stock_db, class = "gta_db")
@@ -22,6 +18,11 @@ test_that("stock_db, with various arguments", {
     expect_gt(length(stock_db$industry_name_list), 0)
     expect_gt(length(stock_db$factor_name_list), 0)
     expect_gt(length(stock_db$indicator_name_list), 0)
+
+    # Return same stock db by calling stock_db() repeatedly
+    stock_db2 <- stock_db()
+    expect_equal(stock_db, stock_db2)
+
   })
 })
 
@@ -46,8 +47,12 @@ test_that("code2name/name2code, with various arguments", {
     expect_codes <- c("f050101b", "f050102b")
     expect_equal(name2code(code2name(expect_codes)), expect_codes)
 
+    # mixed code/name of stock,industry,factor,indicator
+    expect_codes <- c("600031", "C28", "GPM", "f050101b")
+    expect_equal(name2code(code2name(expect_codes)), expect_codes)
+
     # non-exact match
-    expect_gte(length(name2code(c("格力"))), 1)
+    #expect_gte(length(name2code(c("格力"))), 1)
     expect_gte(length(code2name(c("CR"))), 1)
   })
 
@@ -80,6 +85,10 @@ test_that("code2name/name2code, with various arguments", {
       name2code(code2name(expect_codes, exact_match = TRUE), exact_match = TRUE),
       expect_codes
     )
+
+    # mixed code/name of stock,industry,factor,indicator
+    expect_codes <- c("600031", "C28", "GPM", "f050101b")
+    expect_equal(name2code(code2name(expect_codes)), expect_codes)
 
     # exact match
     expect_equal(length(name2code(c("格力"), exact_match = TRUE)), 1)

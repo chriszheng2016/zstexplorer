@@ -4,8 +4,9 @@
 
 #' Get loading/rotation of PCA results
 #'
-#' @param pca_res An object of class PCA [FactoMineR];
-#' prcomp and princomp [stats]; pca, dudi [adea4]; epPCA [ExPosition].
+#' @param pca_res An object of class PCA ([`FactoMineR`][FactoMineR::FactoMineR]);
+#' prcomp and princomp(([`stats`][stats::stats]); pca, dudi(`adea4`);
+#' epPCA([`ExPosition`][ExPosition::ExPosition-package]).
 #'
 #' @param pc_name_prefix A character as name prefix of primary components in
 #' results, e.g PC for PC1...PCn. Default NULL means use original name of
@@ -18,7 +19,7 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #'
 #' # Result from prcomp
 #' pca_res_prcomp <- prcomp(iris[, -5], scale = TRUE)
@@ -91,7 +92,7 @@ get_pca_loading <- function(pca_res,
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #'
 #' # Display formula in uiOutput(ns("pca_result_formula"))
 #' # Server function
@@ -168,7 +169,7 @@ get_pca_formula <- function(pca_res,
   pca_formula <- df_pca_loading %>%
     dplyr::nest_by(.data$PC) %>%
     dplyr::summarise(
-      formula = pc_formula_func(data, pc_name = .data$PC),
+      formula = pc_formula_func(.data$data, pc_name = .data$PC),
       .groups = "keep"
     ) %>%
     dplyr::pull(.data$formula)

@@ -3,14 +3,9 @@
 
 #context("Tests for module of explore_factor")
 
-dsn <- get_golem_config("database_dsn")
-stock_db <- zstmodelr::stock_db(zstmodelr::gta_db, dsn)
-suppressMessages(db_ready <- zstmodelr::open_stock_db(stock_db))
-# Skip tests if test dsn is not ready
-skip_if_not(db_ready,
-  message = sprintf("DSN(%s) is not ready, skip all tests for explore_factors", dsn)
-)
-suppressMessages(zstmodelr::close_stock_db(stock_db))
+#Skip tests if stock db is not ready
+skip_if_stock_db_not_ready()
+
 
 # Set up test environment
 # use fixed data(instead of dynamic data from database) for testing, which make
@@ -26,6 +21,7 @@ test_that("explore_factor_app - Module App works", {
   skip_on_ci()
   skip_on_covr()
 
+  withr::local_tempdir("test_explore_factor_app")
   test_app_file <- "app.R"
   withr::with_file(test_app_file, {
 

@@ -178,7 +178,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
         source = "continuous_boxplot"
       )
       if (!is.null(evt)) {
-        selection <- between(
+        selection <- dplyr::between(
           origin_data[[isolate(input$continuous_var)]],
           evt$x[[1]], evt$x[[2]]
         )
@@ -195,7 +195,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
         source = "continuous_hist"
       )
       if (!is.null(evt)) {
-        selection <- between(
+        selection <- dplyr::between(
           origin_data[[isolate(input$continuous_var)]],
           evt$x[[1]], evt$x[[2]]
         )
@@ -212,7 +212,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
         source = "continuous_density"
       )
       if (!is.null(evt)) {
-        selection <- between(
+        selection <- dplyr::between(
           origin_data[[isolate(input$continuous_var)]],
           evt$x[[1]], evt$x[[2]]
         )
@@ -230,7 +230,7 @@ cs_dist_plotly_server <- function(id, csbl_vars) {
       )
       if (!is.null(evt)) {
 
-        selection <- between(
+        selection <- dplyr::between(
           origin_data[[isolate(input$continuous_var)]],
           evt$y[[1]], evt$y[[2]]
         )

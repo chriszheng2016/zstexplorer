@@ -7,8 +7,9 @@
 get_pca_formula(pca_res, pc_name_prefix = NULL, ncp = Inf, digits = 3)
 }
 \arguments{
-\item{pca_res}{An object of class PCA \link{FactoMineR};
-prcomp and princomp \link{stats}; pca, dudi \link{adea4}; epPCA \link{ExPosition}.}
+\item{pca_res}{An object of class PCA (\code{\link[FactoMineR:FactoMineR-package]{FactoMineR}});
+prcomp and princomp((\code{\link[stats:stats-package]{stats}}); pca, dudi(\code{adea4});
+epPCA(\code{\link[ExPosition:ExPosition-package]{ExPosition}}).}
 
 \item{pc_name_prefix}{A character as name prefix of primary components in
 results, e.g PC for PC1...PCn. Default NULL means use original name of
@@ -28,7 +29,7 @@ Get equation formula for loading of PCA results in MathJax formats which can
 be display in browser.
 }
 \examples{
-\donttest{
+\dontrun{
 
 # Display formula in uiOutput(ns("pca_result_formula"))
 # Server function

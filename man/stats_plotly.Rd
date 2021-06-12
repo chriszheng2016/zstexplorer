@@ -102,7 +102,7 @@ with top 5 most frequencies will be dispaly.}
 "boxplot", "bar_mean", "bar_median", default boxplot means use boxplot.}
 }
 \value{
-A plotly ojbect.
+A plotly object.
 }
 \description{
 Plot statistic chart interactively by \code{\link[plotly:plotly]{plotly}} package,

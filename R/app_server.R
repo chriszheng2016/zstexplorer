@@ -2,7 +2,7 @@
 #'
 #' @param input,output,session Internal parameters for {shiny}.
 #'     DO NOT REMOVE.
-#' @import shiny ggplot2
+#' @import shiny
 #'
 #' @noRd
 app_server <- function(input, output, session) {
@@ -21,9 +21,7 @@ app_server <- function(input, output, session) {
 
   switch(app_module,
     "explore_factor" = {
-      explore_factor_server("explore_factor_module",
-        factors_info = reactive(factors_info)
-      )
+      explore_factor_server("explore_factor_module")
     }
   )
 }

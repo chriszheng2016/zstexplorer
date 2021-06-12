@@ -196,11 +196,11 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
       )
 
       if (!is.null(evt)) {
-        selection_x <- between(
+        selection_x <- dplyr::between(
           origin_data[[isolate(input$continuous_var_x)]],
           evt$x[[1]], evt$x[[2]]
         )
-        selection_y <- between(
+        selection_y <- dplyr::between(
           origin_data[[isolate(input$continuous_var_y)]],
           evt$y[[1]], evt$y[[2]]
         )
@@ -219,7 +219,7 @@ cs_cor_plotly_server <- function(id, csbl_vars) {
         source = "continuous_combochart"
       )
       if (!is.null(evt)) {
-        selection <- between(
+        selection <- dplyr::between(
           origin_data[[isolate(input$continuous_var_x)]],
           evt$x[[1]], evt$x[[2]]
         )

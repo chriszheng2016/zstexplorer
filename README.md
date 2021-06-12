@@ -7,6 +7,9 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![Codecov test
+coverage](https://codecov.io/gh/chriszheng2016/zstexplorer/branch/master/graph/badge.svg)](https://codecov.io/gh/chriszheng2016/zstexplorer?branch=master)
+[![R-CMD-check](https://github.com/chriszheng2016/zstexplorer/workflows/R-CMD-check/badge.svg)](https://github.com/chriszheng2016/zstexplorer/actions)
 <!-- badges: end -->
 
 The goal of zstexplorer is to …
@@ -51,7 +54,7 @@ You can also embed plots, for example:
 <img src="man/figures/README-pressure-1.png" width="100%" />
 
 In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub\!
+files, so they display on GitHub!
 
 ## Code of Conduct
 

@@ -37,7 +37,7 @@ A shiny module for cs_PCA_FactoMineR.
 \details{
 The module is an UI for user to display plots of PCA
 by \code{\link[FactoMineR:FactoMineR-package]{FactoMineR}} and
-\code{\link{factoextra}} package.
+\code{factoextra} package.
 }
 \section{Functions}{
 \itemize{
