@@ -1,5 +1,5 @@
 #' ---
-#' title: "DEPLOY SCRIPT: 03_devply.R"
+#' title: "START SCRIPT: 01_start.R"
 #' date:  "`r Sys.Date()`"
 #' author: Chris Zheng
 #' email: chrizheng@vip.sina.com.cn
@@ -31,7 +31,7 @@
 ########################################
 #*/
 
-#' # Setup for R package project
+#' # Setup R package project
 
 #+ setup_r_pkg, eval=FALSE
 devtools::load_all(".") # load pkg in development
@@ -126,7 +126,7 @@ usethis::use_travis()
 usethis::use_appveyor()
 
 
-#' # Setup for shiny app project
+#' # Setup shiny app project
 
 #+ setup_shiny_app, eval=FALSE
 

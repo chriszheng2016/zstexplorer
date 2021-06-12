@@ -34,7 +34,7 @@
 
 #' # Test shiny app for deploy
 
-#+ test_app_develop, eval = FALSE
+#+ test_app_deploy, eval = FALSE
 ## Run checks ----
 ## Check the package before sending to prod
 devtools::check()

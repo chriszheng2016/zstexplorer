@@ -1,5 +1,5 @@
 #' ---
-#' title: "DEV SCRIPT: 03_dev.R"
+#' title: "DEV SCRIPT: 02_dev.R"
 #' date:  "`r Sys.Date()`"
 #' author: Chris Zheng
 #' email: chrizheng@vip.sina.com.cn
@@ -40,7 +40,11 @@
 
 ## Add package to dependency ----
 ## Add one line by package you want to add as dependency
-usethis::use_package("package")
+usethis::use_package("package") # Use package from cran
+usethis::use_dev_package(
+  "pkgname",
+  remote = "onwer/project@branch"
+) # Use package in development from github
 usethis::use_tidy_description()
 
 ## Add internal datasets ----
@@ -170,7 +174,7 @@ devtools::spell_check() # check spelling in doc
 spelling::update_wordlist() # accept new words if need
 
 ## Edit vignette
-usethis::use_vignette("zstexplorer")
+usethis::use_vignette("pkg_name")
 devtools::build_vignettes()
 
 ## Check before merging ----

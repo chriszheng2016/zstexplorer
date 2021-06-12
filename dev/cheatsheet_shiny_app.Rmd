@@ -43,12 +43,11 @@ It was generated from following R scripts files:
  
  * run_dev.R should be used to run your app in production/debug mode
 
-
-```{r, child=child_rmd_files, echo=TRUE}
-# include child Rmd files
+<!-- include child Rmd files -->
+```{r include_child_rmd, child=child_rmd_files, echo=TRUE}
 ```
 
-```{r, include=FALSE}
+```{r clean_child_rmd, include=FALSE}
    for (child_rmd in child_rmd_files) {
      try(
        unlink(child_rmd)
