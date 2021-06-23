@@ -23,8 +23,9 @@
 #' server <- function(input, output, session) {
 #'   {{module_name}} <- {{module_name}}_server(
 #'   "{{module_name}}_module",
-#'    tsbl_vars = reactive(tsbl_vars)),
+#'    tsbl_vars = reactive(tsbl_vars),
 #'    tsbl_vars_average = reactive(tsbl_vars_average)
+#'   )
 #' }
 #'
 #' # Run testing App for integration testing
