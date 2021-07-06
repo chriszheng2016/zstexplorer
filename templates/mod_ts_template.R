@@ -50,11 +50,18 @@ NULL
         width = 3,
         fluidRow(
           column(
-            offset = 1,
-            width = 10,
+            width = 6,
             actionButton(
               inputId = ns("clear_focus"),
               label = strong("Clear selection"),
+              width = "100%"
+            ),
+          ),
+          column(
+            width = 6,
+            actionButton(
+              inputId = ns("show_focus"),
+              label = strong("Show selection"),
               width = "100%"
             ),
           )
@@ -167,7 +174,7 @@ NULL
       }
     })
 
-    tsbl_focus_stock <- reactive({
+    tsbl_stock <- reactive({
       tsbl_vars_stock_raw() %>%
         dplyr::select(
           c(
@@ -178,8 +185,8 @@ NULL
         )
     })
 
-    long_tsbl_focus_stock <- reactive({
-      tsbl_focus_stock() %>%
+    long_tsbl_stock <- reactive({
+      tsbl_stock() %>%
         tidyr::pivot_longer(
           cols = -c(
             tsibble::index_var(.), tsibble::key_vars(.),
@@ -189,7 +196,7 @@ NULL
         )
     })
 
-    tsbl_focus_industry <- reactive({
+    tsbl_industry <- reactive({
       tsbl_vars_industry_raw() %>%
         dplyr::select(
           c(tsibble::index_var(.), tsibble::key_vars(.)),
@@ -197,18 +204,18 @@ NULL
         )
     })
 
-    long_tsbl_focus_industry <- reactive({
-      tsbl_focus_industry() %>%
+    long_tsbl_industry <- reactive({
+      tsbl_industry() %>%
         tidyr::pivot_longer(
           cols = -c(tsibble::index_var(.), tsibble::key_vars(.)),
           names_to = "variable", values_to = "value"
         )
     })
 
-    long_tsbl_focus <- reactive({
-      long_tsbl_focus_stock() %>%
+    long_tsbl_stock_industry <- reactive({
+      long_tsbl_stock() %>%
         dplyr::left_join(
-          long_tsbl_focus_industry(),
+          long_tsbl_industry(),
           by = c(tsibble::index_var(.), industry_id_var(), "variable"),
           suffix = c("_stock", "_industry")
         ) %>%
@@ -249,25 +256,127 @@ NULL
 
     })
 
-    # Handler for user to clear focus input for stock and industry
-    clear_focus <- function() {
 
-      # Clear selections in table
-      # dt_table <- "feat_stats_table"
-      # proxy <- DT::dataTableProxy(dt_table)
-      # DT::selectRows(proxy, selected = NULL)
+    # Handler to clear selection in DT table
+    clear_dt_select <- function(DT_tableId) {
 
-      # Refresh output
-      # shinyjs::click(id = "update_output")
+      # Clear selection in table
+      proxy <- DT::dataTableProxy(DT_tableId)
+      DT::selectRows(proxy, selected = NULL)
+
+      shinyjs::click(id = DT_tableId)
     }
 
     # Click to clear focus inputs for stock and industry
     observeEvent(input$clear_focus, ignoreInit = TRUE, {
-      clear_focus()
+      # clear_dt_select("stl_stats_table")
     })
 
+    # Handler to show selected data of in DT table
+    show_foucs_data <- function(tsbl_focus) {
+      # if (NROW(tsbl_focus) > 0) {
+      #
+      #   # Define data Modal to show
+      #   data_modal <- modalDialog(
+      #     title = "Original data of selection ",
+      #     tabsetPanel(
+      #       type = "tabs",
+      #       tabPanel(
+      #         title = "Original Data table",
+      #         # Show focus data in table
+      #         DT::renderDataTable({
+      #           tbl_focus <- tsbl_focus %>%
+      #             tibble::as_tibble() %>%
+      #             dplyr::mutate(date = as.character(date))
+      #
+      #           numeric_vars <- zstmodelr::expect_type_fields(
+      #             tbl_focus,
+      #             expect_type = "numeric"
+      #           )
+      #
+      #           tbl_focus %>%
+      #             DT::datatable(
+      #               filter = "top",
+      #               extensions = "Scroller",
+      #               options = list(
+      #                 columnDefs = list(list(className = "dt-center")),
+      #                 pageLength = 10,
+      #                 dom = "ltir",
+      #                 deferRender = TRUE,
+      #                 scrollY = 250,
+      #                 scrollX = TRUE,
+      #                 scroller = TRUE
+      #               )
+      #             ) %>%
+      #             DT::formatRound(columns = numeric_vars, digits = 3)
+      #         }),
+      #       ),
+      #       tabPanel(
+      #         title = "Original Data plot",
+      #         # Show focus data in plot
+      #         plotly::renderPlotly({
+      #           tsbl_focus %>%
+      #             fabletools::autoplot(.data$value_stock) +
+      #             fabletools::autolayer(tsbl_focus,
+      #               .data$value_industry,
+      #               # color = "blue",
+      #               alpha = 0.5,
+      #               linetype = "dotted"
+      #             )
+      #         }),
+      #       )
+      #     ),
+      #
+      #     size = "l",
+      #     easyClose = TRUE
+      #   )
+      #
+      #   # Show data Modal
+      #   showModal(data_modal)
+      # }
+    }
 
+    # Click to show data of focus inputs for stock and industry
+    observeEvent(input$show_focus, ignoreInit = TRUE, {
+      # # Data setting for showing data by stock or industry
+      # switch(input$ts_type,
+      #        "stock" = {
+      #          tsbl_focus <- long_tsbl_stock_industry()
+      #          id_var <- stock_id_var()
+      #        },
+      #        "industry" = {
+      #          tsbl_focus <- long_tsbl_industry()
+      #          id_var <- industry_id_var()
+      #        }
+      # )
+      #
+      #
+      #
+      # # Filter data by user selection
+      # focus_key <- switch(input$ts_feature,
+      #                     "STL Decomposition" = {
+      #                       stl_focus_key()
+      #                     }
+      # )
+      # if (!is.null(focus_key)) {
+      #   tsbl_focus <- tsbl_focus %>%
+      #     dplyr::filter(
+      #       .data[[id_var]] %in% focus_key[[id_var]],
+      #       .data[["variable"]] %in% focus_key[["variable"]]
+      #     )
+      # }
+      #
+      # # Show original data of focus
+      # show_foucs_data(tsbl_focus)
+    })
 
+    # Handler for user to select key codes from table
+    get_dt_select_keys <- function(DT_tableId, ds_info, key_vars) {
+      select_index <- input[[glue::glue("{DT_tableId}_rows_selected")]]
+      select_keys <- ds_info[select_index, key_vars]
+
+      select_keys
+    }
 
     ## Output of features ----
 

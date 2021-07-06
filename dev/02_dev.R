@@ -86,7 +86,7 @@ test_file("tests/testthat/test-mod_xyz.R")
 add_cs_module("xyz")
 # Try integration test of module
 devtools::load_all()
-xyz_cs_app()
+cs_xyz_app()
 # Make sure tests of module is OK
 test_file("tests/testthat/test-mod_cs_xyz.R")
 
@@ -96,7 +96,7 @@ test_file("tests/testthat/test-mod_cs_xyz.R")
 add_ts_module("xyz")
 # Try integration test of module
 devtools::load_all()
-xyz_ts_app()
+ts_xyz_app()
 # Make sure tests of module is OK
 devtools::test_file("tests/testthat/test-mod_ts_xyz.R")
 
