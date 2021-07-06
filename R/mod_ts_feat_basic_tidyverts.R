@@ -50,11 +50,18 @@ ts_feat_basic_tidyverts_ui <- function(id) {
         width = 3,
         fluidRow(
           column(
-            offset = 1,
-            width = 10,
+            width = 6,
             actionButton(
               inputId = ns("clear_focus"),
               label = strong("Clear selection"),
+              width = "100%"
+            ),
+          ),
+          column(
+            width = 6,
+            actionButton(
+              inputId = ns("show_focus"),
+              label = strong("Show selection"),
               width = "100%"
             ),
           )
@@ -75,6 +82,9 @@ ts_feat_basic_tidyverts_ui <- function(id) {
               value = "general_stats_setting",
             ),
             tabPanelBody(
+              value = "distribution_setting",
+            ),
+            tabPanelBody(
               value = "trend_stats_setting",
               checkboxInput(
                 inputId = ns("trend_show_legend"),
@@ -82,7 +92,7 @@ ts_feat_basic_tidyverts_ui <- function(id) {
               ),
             ),
             tabPanelBody(
-              value = "distribution_setting",
+              value = "season_stats_setting",
             )
           )
         ),
@@ -96,6 +106,20 @@ ts_feat_basic_tidyverts_ui <- function(id) {
             "General stats",
             DT::dataTableOutput(ns("general_stats_table")),
             plotOutput(ns("general_stats_plot"), height = "300px")
+          ),
+          tabPanel(
+            "Distribution",
+            DT::dataTableOutput(ns("distribution_stats_table")),
+            box(
+              title = "Density Plot", status = "primary", solidHeader = TRUE,
+              collapsible = TRUE, collapsed = FALSE, width = 6,
+              plotOutput(ns("distribution_density_plot"), height = "300px")
+            ),
+            box(
+              title = "QQ Plot", status = "primary", solidHeader = TRUE,
+              collapsible = TRUE, collapsed = FALSE, width = 6,
+              plotOutput(ns("distribution_qq_plot"), height = "300px")
+            )
           ),
           tabPanel(
             "Trend stats",
@@ -142,17 +166,19 @@ ts_feat_basic_tidyverts_ui <- function(id) {
             ),
           ),
           tabPanel(
-            "Distribution",
-            DT::dataTableOutput(ns("distribution_stats_table")),
+            "Season stats",
+            DT::dataTableOutput(ns("season_stats_table")),
             box(
-              title = "Density Plot", status = "primary", solidHeader = TRUE,
+              title = "Seasonal Comparison Plot", status = "primary",
+              solidHeader = TRUE,
               collapsible = TRUE, collapsed = FALSE, width = 6,
-              plotOutput(ns("distribution_density_plot"), height = "300px")
+              plotOutput(ns("season_compare_plot"), height = "300px")
             ),
             box(
-              title = "QQ Plot", status = "primary", solidHeader = TRUE,
+              title = "Seasonal Subseries Plot", status = "primary",
+              solidHeader = TRUE,
               collapsible = TRUE, collapsed = FALSE, width = 6,
-              plotOutput(ns("distribution_qq_plot"), height = "300px")
+              plotOutput(ns("season_subseries_plot"), height = "300px")
             )
           )
         )
@@ -221,12 +247,12 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
 
     # Focused time series
 
-    tsbl_focus_stock <- reactive({
+    tsbl_stock <- reactive({
       tsbl_vars_stock_raw()
     })
 
-    long_tsbl_focus_stock <- reactive({
-      tsbl_focus_stock() %>%
+    long_tsbl_stock <- reactive({
+      tsbl_stock() %>%
         tidyr::pivot_longer(
           cols = -c(
             tsibble::index_var(.), tsibble::key_vars(.),
@@ -236,22 +262,22 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         )
     })
 
-    tsbl_focus_industry <- reactive({
+    tsbl_industry <- reactive({
       tsbl_vars_industry_raw()
     })
 
-    long_tsbl_focus_industry <- reactive({
-      tsbl_focus_industry() %>%
+    long_tsbl_industry <- reactive({
+      tsbl_industry() %>%
         tidyr::pivot_longer(
           cols = -c(tsibble::index_var(.), tsibble::key_vars(.)),
           names_to = "variable", values_to = "value"
         )
     })
 
-    long_tsbl_focus <- reactive({
-      long_tsbl_focus_stock() %>%
+    long_tsbl_stock_industry <- reactive({
+      long_tsbl_stock() %>%
         dplyr::left_join(
-          long_tsbl_focus_industry(),
+          long_tsbl_industry(),
           by = c(tsibble::index_var(.), industry_id_var(), "variable"),
           suffix = c("_stock", "_industry")
         ) %>%
@@ -270,19 +296,19 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Data setting for computing by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus_stock()
+          tsbl_data <- long_tsbl_stock()
           id_var <- stock_id_var()
           id_name <- "stkname"
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_data <- long_tsbl_industry()
           id_var <- industry_id_var()
           id_name <- "indname"
         }
       )
 
       # Compute result
-      tsbl_focus %>%
+      tsbl_data %>%
         dplyr::group_by(.data[[id_var]], .data$variable) %>%
         fabletools::features(
           .var = .data$value,
@@ -299,7 +325,6 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
         )
     }
 
-
     feats_general_stats <- reactive({
 
       # Function definition for General stats
@@ -314,7 +339,6 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
 
       compute_feats_stats(stats_fun)
     })
-
 
     feats_trend_stats <- reactive({
       avg_growth <- function(x, type = c("arithmetic", "geometric")) {
@@ -348,6 +372,27 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       )
 
       compute_feats_stats(stats_fun)
+    })
+
+    feats_season_stats <- reactive({
+
+      # Data setting for computing by stock or industry
+      switch(input$ts_type,
+        "stock" = {
+          id_var <- stock_id_var()
+        },
+        "industry" = {
+          tsbl_focus <- long_tsbl_industry()
+          id_var <- industry_id_var()
+        }
+      )
+      season_stats <- compute_feats_stats(feasts::feat_stl) %>%
+        dplyr::select(
+          c("variable", id_var, "id_name"),
+          tidyselect::contains("season")
+        )
+
+      season_stats
     })
 
 
@@ -422,37 +467,168 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
             selected = "general_stats_setting"
           )
         },
-        "Trend stats" = {
-          updateTabsetPanel(session,
-            inputId = "setting_tabs",
-            selected = "trend_stats_setting"
-          )
-        },
         "Distribution" = {
           updateTabsetPanel(session,
             inputId = "setting_tabs",
             selected = "distribution_setting"
           )
         },
+        "Trend stats" = {
+          updateTabsetPanel(session,
+            inputId = "setting_tabs",
+            selected = "trend_stats_setting"
+          )
+        },
+        "Season stats" = {
+          updateTabsetPanel(session,
+            inputId = "setting_tabs",
+            selected = "season_stats_setting"
+          )
+        },
       )
     })
 
-    # Handler for user to clear focus input for stock and industry
-    clear_focus <- function() {
+    # Handler to clear selection in DT table
+    clear_dt_select <- function(DT_tableId) {
 
-      # Clear selections in table
-      dt_table <- "general_stats_table"
-      proxy <- DT::dataTableProxy(dt_table)
+      # Clear selection in table
+      proxy <- DT::dataTableProxy(DT_tableId)
       DT::selectRows(proxy, selected = NULL)
+
+      shinyjs::click(id = DT_tableId)
     }
 
     # Click to clear focus inputs for stock and industry
     observeEvent(input$clear_focus, ignoreInit = TRUE, {
-      clear_focus()
+
+      # Clear focus inputs according to features
+      switch(input$ts_feature,
+        "General stats" = {
+          clear_dt_select("general_stats_table")
+        },
+        "Distribution" = {
+          clear_dt_select("distribution_stats_table")
+        },
+        "Trend stats" = {
+          clear_dt_select("trend_stats_table")
+        },
+        "Season stats" = {
+          clear_dt_select("season_stats_table")
+        }
+      )
     })
 
-    # Handler for user to select key codes from table
-    user_select_keys <- function(DT_tableId, ds_info, key_vars) {
+    # Handler to show selected data of in DT table
+    show_foucs_data <- function(tsbl_focus) {
+
+      if (NROW(tsbl_focus) > 0) {
+
+        # Define data Modal to show
+        data_modal <- modalDialog(
+          title = "Original data of selection",
+          tabsetPanel(
+            type = "tabs",
+            tabPanel(
+              title = "Original Data table",
+              # Show focus data in table
+              DT::renderDataTable({
+                tbl_focus <- tsbl_focus %>%
+                  tibble::as_tibble() %>%
+                  dplyr::mutate(date = as.character(date))
+
+                numeric_vars <- zstmodelr::expect_type_fields(
+                  tbl_focus,
+                  expect_type = "numeric"
+                )
+
+                tbl_focus %>%
+                  DT::datatable(
+                    filter = "top",
+                    extensions = "Scroller",
+                    options = list(
+                      columnDefs = list(list(className = "dt-center")),
+                      pageLength = 10,
+                      dom = "ltir",
+                      deferRender = TRUE,
+                      scrollY = 250,
+                      scrollX = TRUE,
+                      scroller = TRUE
+                    )
+                  ) %>%
+                  DT::formatRound(columns = numeric_vars, digits = 3)
+              }),
+            ),
+            tabPanel(
+              title = "Original Data plot",
+              # Show focus data in plot
+              plotly::renderPlotly({
+                tsbl_focus %>%
+                  fabletools::autoplot(.data$value_stock) +
+                  fabletools::autolayer(tsbl_focus,
+                    .data$value_industry,
+                    # color = "blue",
+                    alpha = 0.5,
+                    linetype = "dotted"
+                  )
+              }),
+            )
+          ),
+
+          size = "l",
+          easyClose = TRUE
+        )
+
+        # Show data Modal
+        showModal(data_modal)
+      }
+    }
+
+    # Click to show data of focus inputs for stock and industry
+    observeEvent(input$show_focus, ignoreInit = TRUE, {
+
+      # Data setting for showing data by stock or industry
+      switch(input$ts_type,
+        "stock" = {
+          tsbl_focus <- long_tsbl_stock_industry()
+          id_var <- stock_id_var()
+        },
+        "industry" = {
+          tsbl_focus <- long_tsbl_industry()
+          id_var <- industry_id_var()
+        }
+      )
+
+
+
+      # Filter data by user selection
+      focus_key <- switch(input$ts_feature,
+        "General stats" = {
+          general_stats_focus_key()
+        },
+        "Distribution" = {
+          distribution_stats_focus_key()
+        },
+        "Trend stats" = {
+          trend_stats_focus_key()
+        },
+        "Season stats" = {
+          season_stats_focus_key()
+        }
+      )
+      if (!is.null(focus_key)) {
+        tsbl_focus <- tsbl_focus %>%
+          dplyr::filter(
+            .data[[id_var]] %in% focus_key[[id_var]],
+            .data[["variable"]] %in% focus_key[["variable"]]
+          )
+      }
+
+      # Show original data of focus
+      show_foucs_data(tsbl_focus)
+    })
+
+    # Handler to get selected key codes in DT table
+    get_dt_select_keys <- function(DT_tableId, ds_info, key_vars) {
       select_index <- input[[glue::glue("{DT_tableId}_rows_selected")]]
       select_keys <- ds_info[select_index, key_vars]
 
@@ -461,82 +637,93 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
 
 
     # Get key of user selection in general_stats_table
-    general_stats_focus_key <- eventReactive(input$general_stats_table_cell_clicked,
-      ignoreInit = FALSE,
-      ignoreNULL = FALSE,
-      {
-        if (length(input$general_stats_table_cell_clicked) > 0) {
-          switch(input$ts_type,
-            "stock" = {
-              user_select_keys(
-                DT_tableId = "general_stats_table",
-                ds_info = feats_general_stats(),
-                key_var = c(stock_id_var(), "variable")
-              )
-            },
-            "industry" = {
-              user_select_keys(
-                DT_tableId = "general_stats_table",
-                ds_info = feats_general_stats(),
-                key_var = c(industry_id_var(), "variable")
-              )
-            }
-          )
-        }
+    general_stats_focus_key <- reactive({
+      if (length(input$general_stats_table_cell_clicked) > 0) {
+        switch(input$ts_type,
+          "stock" = {
+            get_dt_select_keys(
+              DT_tableId = "general_stats_table",
+              ds_info = feats_general_stats(),
+              key_var = c(stock_id_var(), "variable")
+            )
+          },
+          "industry" = {
+            get_dt_select_keys(
+              DT_tableId = "general_stats_table",
+              ds_info = feats_general_stats(),
+              key_var = c(industry_id_var(), "variable")
+            )
+          }
+        )
       }
-    )
-
-    # Get key of user selection in trend_stats_table
-    trend_stats_focus_key <- eventReactive(input$trend_stats_table_cell_clicked,
-      ignoreInit = FALSE,
-      ignoreNULL = FALSE,
-      {
-        if (length(input$trend_stats_table_cell_clicked) > 0) {
-          switch(input$ts_type,
-            "stock" = {
-              user_select_keys(
-                DT_tableId = "trend_stats_table",
-                ds_info = feats_trend_stats(),
-                key_var = c(stock_id_var(), "variable")
-              )
-            },
-            "industry" = {
-              user_select_keys(
-                DT_tableId = "trend_stats_table",
-                ds_info = feats_trend_stats(),
-                key_var = c(industry_id_var(), "variable")
-              )
-            }
-          )
-        }
-      }
-    )
+    })
 
     # Get key of user selection in distribution_stats_table
-    distribution_stats_focus_key <- eventReactive(input$distribution_stats_table_cell_clicked,
-      ignoreInit = FALSE,
-      ignoreNULL = FALSE,
-      {
-        if (length(input$distribution_stats_table_cell_clicked) > 0) {
-          switch(input$ts_type,
-            "stock" = {
-              user_select_keys(
-                DT_tableId = "distribution_stats_table",
-                ds_info = feats_distribution_stats(),
-                key_var = c(stock_id_var(), "variable")
-              )
-            },
-            "industry" = {
-              user_select_keys(
-                DT_tableId = "distribution_stats_table",
-                ds_info = feats_distribution_stats(),
-                key_var = c(industry_id_var(), "variable")
-              )
-            }
-          )
-        }
+    distribution_stats_focus_key <- reactive({
+      if (length(input$distribution_stats_table_cell_clicked) > 0) {
+        switch(input$ts_type,
+          "stock" = {
+            get_dt_select_keys(
+              DT_tableId = "distribution_stats_table",
+              ds_info = feats_distribution_stats(),
+              key_var = c(stock_id_var(), "variable")
+            )
+          },
+          "industry" = {
+            get_dt_select_keys(
+              DT_tableId = "distribution_stats_table",
+              ds_info = feats_distribution_stats(),
+              key_var = c(industry_id_var(), "variable")
+            )
+          }
+        )
       }
-    )
+    })
+
+    # Get key of user selection in trend_stats_table
+    trend_stats_focus_key <- reactive({
+      if (length(input$trend_stats_table_cell_clicked) > 0) {
+        switch(input$ts_type,
+          "stock" = {
+            get_dt_select_keys(
+              DT_tableId = "trend_stats_table",
+              ds_info = feats_trend_stats(),
+              key_var = c(stock_id_var(), "variable")
+            )
+          },
+          "industry" = {
+            get_dt_select_keys(
+              DT_tableId = "trend_stats_table",
+              ds_info = feats_trend_stats(),
+              key_var = c(industry_id_var(), "variable")
+            )
+          }
+        )
+      }
+    })
+
+    # Get key of user selection in trend_stats_table
+    season_stats_focus_key <- reactive({
+      if (length(input$season_stats_table_cell_clicked) > 0) {
+        switch(input$ts_type,
+          "stock" = {
+            get_dt_select_keys(
+              DT_tableId = "season_stats_table",
+              ds_info = feats_season_stats(),
+              key_var = c(stock_id_var(), "variable")
+            )
+          },
+          "industry" = {
+            get_dt_select_keys(
+              DT_tableId = "season_stats_table",
+              ds_info = feats_season_stats(),
+              key_var = c(industry_id_var(), "variable")
+            )
+          }
+        )
+      }
+    })
+
 
     ## Output of features ----
 
@@ -557,7 +744,7 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
             pageLength = 10,
             dom = "ltir",
             deferRender = TRUE,
-            scrollY = 270,
+            scrollY = 250,
             scrollX = TRUE,
             scroller = TRUE
           )
@@ -577,11 +764,11 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus()
+          tsbl_focus <- long_tsbl_stock_industry()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
@@ -643,6 +830,163 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       p
     })
 
+
+    # >> Distribution stats output ----
+    output$distribution_stats_table <- DT::renderDataTable({
+      numeric_vars <- zstmodelr::expect_type_fields(
+        feats_distribution_stats(),
+        expect_type = "numeric"
+      )
+
+      feats_distribution_stats() %>%
+        DT::datatable(
+          filter = "top",
+          extensions = "Scroller",
+          options = list(
+            columnDefs = list(list(className = "dt-center")),
+            pageLength = 10,
+            dom = "ltir",
+            deferRender = TRUE,
+            scrollY = 250,
+            scrollX = TRUE,
+            scroller = TRUE
+          )
+        ) %>%
+        DT::formatRound(columns = numeric_vars, digits = 3)
+    })
+
+    output$distribution_density_plot <- renderPlot({
+
+      # Prompt user to choose at least one series for plot
+      validate(
+        need(NROW(distribution_stats_focus_key()) > 0,
+          message = "Please choose at least one series in above table to show plot."
+        )
+      )
+
+      # Data setting for plot by stock or industry
+      switch(input$ts_type,
+        "stock" = {
+          tsbl_focus <- long_tsbl_stock()
+          id_var <- stock_id_var()
+        },
+        "industry" = {
+          tsbl_focus <- long_tsbl_industry()
+          id_var <- industry_id_var()
+        }
+      )
+
+      # Filter data by user selection
+      focus_key <- distribution_stats_focus_key()
+
+      if (!is.null(focus_key)) {
+        tsbl_focus <- tsbl_focus %>%
+          dplyr::filter(
+            .data[[id_var]] %in% focus_key[[id_var]],
+            .data[["variable"]] %in% focus_key[["variable"]]
+          )
+      }
+
+      # Plot stats
+      if (NROW(tsbl_focus) > 0) {
+        p <- tsbl_focus %>%
+          ggplot2::ggplot(ggplot2::aes(x = .data$value)) +
+          ggplot2::geom_histogram(
+            ggplot2::aes(y = ggplot2::after_stat(.data$density)),
+            alpha = 0.5,
+            bins = 30
+          ) +
+          ggplot2::geom_density(ggplot2::aes(color = "Kernel Estimates")) +
+          ggplot2::geom_rug(alpha = 0.1) +
+
+          # Add theoretical distribution with same mean/sd as a reference
+          ggh4x::stat_theodensity(ggplot2::aes(color = "Theoretical"),
+            distri = "norm"
+          ) +
+
+          # Add distribution summary: mean/median
+          ggplot2::stat_summary(
+            ggplot2::aes(x = 1, y = .data$value, linetype = "mean"),
+            fun.data = ~ data.frame(xintercept = mean(.x, na.rm = TRUE)),
+            geom = "vline", color = "blue"
+          ) +
+          ggplot2::stat_summary(
+            ggplot2::aes(x = 1, y = .data$value, linetype = "median"),
+            fun.data = ~ data.frame(xintercept = median(.x, na.rm = TRUE)),
+            geom = "vline", color = "darkgreen"
+          ) +
+          ggplot2::facet_grid(
+            cols = ggplot2::vars(.data[["variable"]]),
+            rows = ggplot2::vars(.data[[id_var]]),
+            scales = "free"
+          )
+
+        p <- p +
+          ggplot2::labs(x = NULL, y = NULL) +
+          ggplot2::theme_light() +
+          ggplot2::theme(legend.position = "bottom")
+      } else {
+        p <- NULL
+      }
+
+      p
+    })
+
+    output$distribution_qq_plot <- renderPlot({
+
+      # Prompt user to choose at least one series for plot
+      validate(
+        need(NROW(distribution_stats_focus_key()) > 0,
+          message = "Please choose at least one series in above table to show plot."
+        )
+      )
+
+      # Data setting for plot by stock or industry
+      switch(input$ts_type,
+        "stock" = {
+          tsbl_focus <- long_tsbl_stock()
+          id_var <- stock_id_var()
+        },
+        "industry" = {
+          tsbl_focus <- long_tsbl_industry()
+          id_var <- industry_id_var()
+        }
+      )
+
+      # Filter data by user selection
+      focus_key <- distribution_stats_focus_key()
+      if (!is.null(focus_key)) {
+        tsbl_focus <- tsbl_focus %>%
+          dplyr::filter(
+            .data[[id_var]] %in% focus_key[[id_var]],
+            .data[["variable"]] %in% focus_key[["variable"]]
+          )
+      }
+
+      # Plot stats
+      if (NROW(tsbl_focus) > 0) {
+        p <- tsbl_focus %>%
+          ggplot2::ggplot(ggplot2::aes(sample = .data$value)) +
+          qqplotr::stat_qq_band(alpha = 0.5) +
+          qqplotr::stat_qq_line() +
+          qqplotr::stat_qq_point() +
+          ggplot2::facet_grid(
+            cols = ggplot2::vars(.data[["variable"]]),
+            rows = ggplot2::vars(.data[[id_var]]),
+            scales = "free"
+          )
+
+        p <- p +
+          ggplot2::labs(x = NULL, y = NULL) +
+          ggplot2::theme_light()
+      } else {
+        p <- NULL
+      }
+
+      p
+    })
+
+
     # >> Trend stats output ----
     output$trend_stats_table <- DT::renderDataTable({
       numeric_vars <- zstmodelr::expect_type_fields(
@@ -659,7 +1003,7 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
             pageLength = 10,
             dom = "ltir",
             deferRender = TRUE,
-            scrollY = 270,
+            scrollY = 250,
             scrollX = TRUE,
             scroller = TRUE
           )
@@ -684,11 +1028,11 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus()
+          tsbl_focus <- long_tsbl_stock_industry()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
@@ -759,11 +1103,11 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus()
+          tsbl_focus <- long_tsbl_stock_industry()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
@@ -823,11 +1167,11 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus_stock()
+          tsbl_focus <- long_tsbl_stock()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
@@ -886,11 +1230,11 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus_stock()
+          tsbl_focus <- long_tsbl_stock()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
@@ -952,11 +1296,11 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus_stock()
+          tsbl_focus <- long_tsbl_stock()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
@@ -1032,11 +1376,11 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus_stock()
+          tsbl_focus <- long_tsbl_stock()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
@@ -1148,14 +1492,15 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       p
     })
 
-    # >> Distribution stats output ----
-    output$distribution_stats_table <- DT::renderDataTable({
+
+    # >> Season stats output ----
+    output$season_stats_table <- DT::renderDataTable({
       numeric_vars <- zstmodelr::expect_type_fields(
-        feats_distribution_stats(),
+        feats_season_stats(),
         expect_type = "numeric"
       )
 
-      feats_distribution_stats() %>%
+      stats_table <- feats_season_stats() %>%
         DT::datatable(
           filter = "top",
           extensions = "Scroller",
@@ -1164,38 +1509,43 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
             pageLength = 10,
             dom = "ltir",
             deferRender = TRUE,
-            scrollY = 270,
+            scrollY = 250,
             scrollX = TRUE,
             scroller = TRUE
           )
-        ) %>%
-        DT::formatRound(columns = numeric_vars, digits = 3)
+        )
+
+      if (length(numeric_vars) > 0) {
+        stats_table <- stats_table %>%
+          DT::formatRound(columns = numeric_vars, digits = 3)
+      }
+
+      stats_table
     })
 
-    output$distribution_density_plot <- renderPlot({
+    output$season_compare_plot <- renderPlot({
 
       # Prompt user to choose at least one series for plot
       validate(
-        need(NROW(distribution_stats_focus_key()) > 0,
-          message = "Please choose at least one series in above table to show plot."
+        need(NROW(season_stats_focus_key()) > 0,
+          message = "Please choose at least one series in above table to show plots."
         )
       )
 
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus_stock()
+          tsbl_focus <- long_tsbl_stock()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
 
       # Filter data by user selection
-      focus_key <- distribution_stats_focus_key()
-
+      focus_key <- season_stats_focus_key()
       if (!is.null(focus_key)) {
         tsbl_focus <- tsbl_focus %>%
           dplyr::filter(
@@ -1204,43 +1554,10 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
           )
       }
 
-      # Plot stats
+      # Plot STL components plot
       if (NROW(tsbl_focus) > 0) {
         p <- tsbl_focus %>%
-          ggplot2::ggplot(ggplot2::aes(x = .data$value)) +
-          ggplot2::geom_histogram(
-            ggplot2::aes(y = ggplot2::after_stat(.data$density)),
-            alpha = 0.5,
-            bins = 30
-          ) +
-          ggplot2::geom_density(ggplot2::aes(color = "Kernel Estimates")) +
-          ggplot2::geom_rug(alpha = 0.1) +
-
-          # Add theoretical distribution with same mean/sd as a reference
-          ggh4x::stat_theodensity(ggplot2::aes(color = "Theoretical"),
-            distri = "norm"
-          ) +
-
-          # Add distribution summary: mean/median
-          ggplot2::stat_summary(
-            ggplot2::aes(x = 1, y = .data$value, linetype = "mean"),
-            fun.data = ~ data.frame(xintercept = mean(.x, na.rm = TRUE)),
-            geom = "vline", color = "blue"
-          ) +
-          ggplot2::stat_summary(
-            ggplot2::aes(x = 1, y = .data$value, linetype = "median"),
-            fun.data = ~ data.frame(xintercept = median(.x, na.rm = TRUE)),
-            geom = "vline", color = "darkgreen"
-          ) +
-          ggplot2::facet_grid(
-            cols = ggplot2::vars(.data[["variable"]]),
-            rows = ggplot2::vars(.data[[id_var]]),
-            scales = "free"
-          )
-
-        p <- p +
-          ggplot2::labs(x = NULL, y = NULL) +
-          ggplot2::theme_light() +
+          feasts::gg_season(y = .data$value) +
           ggplot2::theme(legend.position = "bottom")
       } else {
         p <- NULL
@@ -1249,29 +1566,28 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
       p
     })
 
-    output$distribution_qq_plot <- renderPlot({
-
+    output$season_subseries_plot <- renderPlot({
       # Prompt user to choose at least one series for plot
       validate(
-        need(NROW(distribution_stats_focus_key()) > 0,
-          message = "Please choose at least one series in above table to show plot."
+        need(NROW(season_stats_focus_key()) > 0,
+          message = "Please choose at least one series in above table to show plots."
         )
       )
 
       # Data setting for plot by stock or industry
       switch(input$ts_type,
         "stock" = {
-          tsbl_focus <- long_tsbl_focus_stock()
+          tsbl_focus <- long_tsbl_stock()
           id_var <- stock_id_var()
         },
         "industry" = {
-          tsbl_focus <- long_tsbl_focus_industry()
+          tsbl_focus <- long_tsbl_industry()
           id_var <- industry_id_var()
         }
       )
 
       # Filter data by user selection
-      focus_key <- distribution_stats_focus_key()
+      focus_key <- season_stats_focus_key()
       if (!is.null(focus_key)) {
         tsbl_focus <- tsbl_focus %>%
           dplyr::filter(
@@ -1280,22 +1596,11 @@ ts_feat_basic_tidyverts_server <- function(id, tsbl_vars, tsbl_vars_average) {
           )
       }
 
-      # Plot stats
+      # Plot STL components plot
       if (NROW(tsbl_focus) > 0) {
         p <- tsbl_focus %>%
-          ggplot2::ggplot(ggplot2::aes(sample = .data$value)) +
-          qqplotr::stat_qq_band(alpha = 0.5) +
-          qqplotr::stat_qq_line() +
-          qqplotr::stat_qq_point() +
-          ggplot2::facet_grid(
-            cols = ggplot2::vars(.data[["variable"]]),
-            rows = ggplot2::vars(.data[[id_var]]),
-            scales = "free"
-          )
-
-        p <- p +
-          ggplot2::labs(x = NULL, y = NULL) +
-          ggplot2::theme_light()
+          feasts::gg_subseries(y = .data$value) +
+          ggplot2::theme(legend.position = "bottom")
       } else {
         p <- NULL
       }
