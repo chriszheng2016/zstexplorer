@@ -113,7 +113,7 @@ test_that("load_stock_return, with various arguments", {
   # load_stock_return on various arguments  ====
   for (period_type in period_type_args) {
     for (use_online_data in use_online_data_args) {
-      if(use_online_data) skip_if_stock_db_not_ready()
+      if (use_online_data) skip_if_stock_db_not_ready()
       suppressMessages({
         tsbl_return <- load_stock_return(
           use_online_data = use_online_data,
@@ -151,7 +151,7 @@ test_that("load_market_return, with various arguments", {
   # load_market_return on various arguments  ====
   for (period_type in period_type_args) {
     for (use_online_data in use_online_data_args) {
-      if(use_online_data) skip_if_stock_db_not_ready()
+      if (use_online_data) skip_if_stock_db_not_ready()
       suppressMessages({
         tsbl_return <- load_market_return(
           use_online_data = use_online_data,
@@ -273,5 +273,91 @@ test_that("periodize_index, with various arguments", {
         expect_true(tsibble::is_yearweek(tsbl_vars_result$date))
       }
     )
+  }
+})
+
+test_that("tidy_tsbl, with various arguments", {
+
+  # Setup test dataset
+  start_date <- "2015-01-01"
+  end_date <- "2016-12-31"
+
+  date <- seq(as.Date(start_date), as.Date(end_date), by = "quarter")
+  date <- lubridate::ceiling_date(date, unit = "quarter") - 1
+  date_long <- date
+  date_short <- date[2:(length(date) - 1)]
+
+  tbl_long <- tibble::tibble(
+    date = date_long, period = "quarter",
+    stkcd = "000001", indcd = "ind01",
+    value = rep(c(1, NA), length.out = length(date_long))
+  )
+  tbl_short <- tibble::tibble(
+    date = date_short, period = "quarter",
+    stkcd = "000002", indcd = "ind02",
+    value = rep(c(2, NA), length.out = length(date_short))
+  )
+  tsbl_vars <- tbl_long %>%
+    dplyr::bind_rows(tbl_short) %>%
+    tsibble::as_tsibble(index = "date", key = "stkcd") %>%
+    periodize_index()
+
+  # tidy_tsbl on default arguments  ====
+  tidy_tsbl <- tidy_tsbl(tsbl_vars)
+  expect_true(NROW(tsibble::count_gaps(tidy_tsbl, .full = FALSE)) == 0)
+  expect_true(sum(is.na(tidy_tsbl)) == 0)
+
+  # tidy_tsbl on various arguments  ====
+  fill_gaps_arg <- c("individual", "full", "start", "end")
+  fill_nas_arg <- c("down", "up", "downup", "updown", "keep")
+
+  for (fill_gaps in fill_gaps_arg) {
+    for (fill_nas in fill_nas_arg) {
+
+      # Tidy tsbl_vars
+      tidy_tsbl_vars <- tidy_tsbl(tsbl_vars,
+        fill_gaps = fill_gaps,
+        fill_nas = fill_nas
+      )
+
+      # Check gaps in result
+      gas_count <- switch (fill_nas,
+        "individual" = {
+          tsibble::count_gaps(tidy_tsbl_vars,.full = FALSE)
+         },
+        "full" = {
+          tsibble::count_gaps(tidy_tsbl_vars,.full = TRUE)
+        },
+        "start" = {
+          tsibble::count_gaps(tidy_tsbl_vars,.full = start())
+        },
+        "end" = {
+          tsibble::count_gaps(tidy_tsbl_vars,.full = end())
+        }
+      )
+      expect_true(NROW(gas_count)==0)
+
+      # Check NAs in result
+      if(fill_nas=="keep") {
+        if(fill_gaps == "individual") {
+          # There should be equal NAs in tidy_tsbl_vas than tsbl_vars
+          expect_true(
+            sum(is.na(tidy_tsbl_vars$value)) == sum(is.na(tsbl_vars$value))
+          )
+        } else {
+          # There should be more NAs in tidy_tsbl_vas than tsbl_vars
+          expect_true(
+            sum(is.na(tidy_tsbl_vars$value)) >= sum(is.na(tsbl_vars$value))
+          )
+        }
+
+      } else {
+        # There should be less NAs in tidy_tsbl_vas than tsbl_vars
+        expect_true(
+          sum(is.na(tidy_tsbl_vars$value)) < sum(is.na(tsbl_vars$value))
+        )
+      }
+
+    }
   }
 })

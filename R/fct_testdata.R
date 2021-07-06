@@ -109,9 +109,10 @@ load_csbl_vars <- function(use_online_data = FALSE) {
 #' @export
 load_stock_return <- function(use_online_data = FALSE,
                               period_type = c("month", "quarter", "year"),
-                              stock_codes = c("000651", "000333", "600066",
-                                "000550", "600031", "000157")
-                              ){
+                              stock_codes = c(
+                                "000651", "000333", "600066",
+                                "000550", "600031", "000157"
+                              )) {
   # Prepare data
   if (use_online_data) {
 
@@ -194,7 +195,7 @@ load_stock_return <- function(use_online_data = FALSE,
     tsbl_return <- readRDS(tsbl_return_file)
     assertive::assert_is_inherited_from(tsbl_return, c("tbl_ts"))
 
-    if(!is.null(stock_codes)) {
+    if (!is.null(stock_codes)) {
       tsbl_return <- tsbl_return %>%
         dplyr::filter(.data$stkcd %in% stock_codes)
     }
@@ -214,7 +215,7 @@ load_stock_return <- function(use_online_data = FALSE,
 #' @return A tsibble of market return time-series.
 #' @export
 load_market_return <- function(use_online_data = FALSE,
-                              period_type = c("month", "quarter", "year")) {
+                               period_type = c("month", "quarter", "year")) {
 
   # Prepare data
   if (use_online_data) {
@@ -262,7 +263,7 @@ load_market_return <- function(use_online_data = FALSE,
     tsbl_return <- tbl_return %>%
       tsibble::as_tsibble(
         index = "date"
-      )%>%
+      ) %>%
       dplyr::select(
         c("date", "period"),
         dplyr::everything()
@@ -410,4 +411,75 @@ periodize_index <- function(tsbl_vars, period_field = "period") {
     dplyr::select(-c({{ period_field }}))
 
   tsbl_vars_new
+}
+
+
+#' Tidy tsibble of variables by filling gaps and imputing nas
+#'
+#' This function is a wrapper of [tsibble::fill_gaps()] and [tidyr::fill()]. It
+#' firstly fills gas with nas, then imputes nas with front/behind values
+#' or keeps nas.
+#'
+#' @param tsbl_vars A tsibble of time series vars.
+#' @param fill_gaps A character of handling with gaps, default is individual.
+#' * `individual` inserts `NA` for each keyed unit within its own period.
+#' * `full` fills `NA` over the entire time span of the data (a.k.a. fully balanced panel).
+#' * `start` pad `NA` to the same starting point (i.e. `min(<index>)`) across units.
+#' * `end` pad `NA` to the same ending point (i.e. `max(<index>)`) across units.
+#' @param fill_nas A character of direction in which to fill missing value,
+#'   default is down. Currently either "down" (the default), "up",
+#'   "downup" (i.e. first down and then up) or
+#'   "updown" (first up and then down). "keep" means to keep nas.
+#'
+#' @return A tsibble with after filling gaps and nas.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'    tsbl_vars_new <- periodize_index(tsbl_vars, period_field = "period")
+#'    tidy_tsbl <- tidy_tsbl(tsbl_vars_new,
+#'                           fill_gaps = "individual",
+#'                           fill_nas = "down")
+#' }
+tidy_tsbl <- function(tsbl_vars,
+                      fill_gaps = c("individual", "full", "start", "end"),
+                      fill_nas = c("down", "up", "downup", "updown", "keep")) {
+
+  # Validate parameters
+  assertive::assert_is_inherited_from(tsbl_vars, c("tbl_ts"))
+
+  tsbl_vars <- tsbl_vars %>%
+    tsibble::group_by_key()
+
+  fill_gaps <- match.arg(fill_gaps)
+  tidy_tsbl <- switch(fill_gaps,
+    "individual" = {
+      tsibble::fill_gaps(tsbl_vars, .full = FALSE)
+    },
+    "full" = {
+      tsibble::fill_gaps(tsbl_vars, .full = TRUE)
+    },
+    "start" = {
+      tsibble::fill_gaps(tsbl_vars, .full = start())
+    },
+    "end" = {
+      tsibble::fill_gaps(tsbl_vars, .full = end())
+    }
+  )
+
+  # Fill NAs in numeric fields by fill_nas
+  fill_nas <- match.arg(fill_nas)
+  if (fill_nas != "keep") {
+    tidy_tsbl <- tidy_tsbl %>%
+      tidyr::fill(where(~ is.numeric(.)), .direction = fill_nas)
+  }
+
+  # Always fill NAs in non-numeric fields by "updwon"
+  tidy_tsbl <- tidy_tsbl %>%
+    tidyr::fill(where(~ !is.numeric(.)), .direction = "updown")
+
+  tidy_tsbl <- tidy_tsbl %>%
+    dplyr::ungroup()
+
+  tidy_tsbl
 }
